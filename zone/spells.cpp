@@ -1951,7 +1951,9 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 			
 			if (RuleB(Custom, MulticlassingEnabled)) {
 				c->SendSpellBarEnable(spell_id);
-				ZeroBardPulseVars();
+				if (!IsBeneficialSpell(spell_id)) {
+					ZeroBardPulseVars();
+				}
 			}			
 		}
 		LogSpells("Bard song [{}] should be started", spell_id);
@@ -7157,7 +7159,7 @@ void Client::SetLinkedSpellReuseTimer(uint32 timer_id, uint32 duration)
 
 bool Client::IsLinkedSpellReuseTimerReady(uint32 timer_id)
 {
-	if (timer_id > 19)
+	if (timer_id > 250)
 		return true;
 	return GetPTimers().Expired(&database, pTimerLinkedSpellReuseStart + timer_id, false);
 }
