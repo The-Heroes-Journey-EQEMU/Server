@@ -501,6 +501,29 @@ int64 Client::CalcBaseHP() {
 }
 
 int64 Client::_CalcBaseHP(int class_id)
+int64 Client::CalcBaseHP() {
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        int classes_bits = GetClassesBits();
+        int64 highest_base_hp = 0; // Start with zero to ensure we only keep higher values
+
+        for (const auto& class_bitmask : player_class_bitmasks) {
+            uint8 class_id = class_bitmask.first;
+            uint16 class_bit = class_bitmask.second;
+            if ((classes_bits & class_bit) != 0) {
+                int64 class_base_hp = _CalcBaseHP(class_id);
+                if (class_base_hp > highest_base_hp) {
+                    highest_base_hp = class_base_hp; // Keep the highest HP value found
+                }
+            }
+        }
+
+        return highest_base_hp > 0 ? highest_base_hp : 5; // Ensure at least a minimal HP value is returned
+    } else {
+        return _CalcBaseHP(GetClass());
+    }
+}
+
+int64 Client::_CalcBaseHP(int class_id)
 {
 	if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
 		int stats = GetSTA();
@@ -509,7 +532,7 @@ int64 Client::_CalcBaseHP(int class_id)
 			stats += 255;
 		}
 		base_hp = 5;
-		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		auto base_data = zone->GetBaseData(GetLevel(), class_id);
 		if (base_data.level == GetLevel()) {
 			base_hp += base_data.hp + (base_data.hp_fac * stats);
 			base_hp += itembonuses.heroic_max_hp;
@@ -552,6 +575,11 @@ int64 Client::CalcMaxMana()
 				break;
 			}
 		case 'N': {
+				if (RuleB(Custom, MulticlassingEnabled)) {
+					max_mana = CalcBaseMana();
+				} else {
+					max_mana = 0;
+				}
 				if (RuleB(Custom, MulticlassingEnabled)) {
 					max_mana = CalcBaseMana();
 				} else {
@@ -605,6 +633,29 @@ int64 Client::CalcBaseMana() {
 }
 
 int64 Client::_CalcBaseMana(int class_id)
+int64 Client::CalcBaseMana() {
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        int classes_bits = GetClassesBits();
+        int64 highest_base_mana = 0; // Initialize to zero to ensure we capture the highest value
+
+        for (const auto& class_bitmask : player_class_bitmasks) {
+            uint8 class_id = class_bitmask.first;
+            uint16 class_bit = class_bitmask.second;
+            if ((classes_bits & class_bit) != 0) {
+                int64 class_base_mana = _CalcBaseMana(class_id);
+                if (class_base_mana > highest_base_mana) {
+                    highest_base_mana = class_base_mana; // Update if this class's base mana is higher
+                }
+            }
+        }
+
+        return highest_base_mana > 0 ? highest_base_mana : 5; // Ensure a minimal mana value is returned
+    } else {
+        return _CalcBaseMana(GetClass());
+    }
+}
+
+int64 Client::_CalcBaseMana(int class_id)
 {
 	int ConvertedWisInt = 0;
 	int MindLesserFactor, MindFactor;
@@ -612,6 +663,8 @@ int64 Client::_CalcBaseMana(int class_id)
 	int64 base_mana = 0;
 	int wisint_mana = 0;
 	int64 max_m = 0;
+
+	switch (GetCasterClass(class_id)) {
 
 	switch (GetCasterClass(class_id)) {
 		case 'I':
@@ -625,7 +678,7 @@ int64 Client::_CalcBaseMana(int class_id)
 					}
 					ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
 				}
-				auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+				auto base_data = zone->GetBaseData(GetLevel(), class_id);
 				if (base_data.level == GetLevel()) {
 					max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 				}
@@ -657,7 +710,7 @@ int64 Client::_CalcBaseMana(int class_id)
 					}
 					ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
 				}
-				auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+				auto base_data = zone->GetBaseData(GetLevel(), class_id);
 				if (base_data.level == GetLevel()) {
 					max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 				}
@@ -688,6 +741,7 @@ int64 Client::_CalcBaseMana(int class_id)
 				break;
 			}
 		default: {
+				LogDebug("Invalid Class [{}] in CalcMaxMana", GetCasterClass(class_id));
 				LogDebug("Invalid Class [{}] in CalcMaxMana", GetCasterClass(class_id));
 				max_m = 0;
 				break;
@@ -730,6 +784,7 @@ int64 Client::CalcManaRegen(bool bCombat)
 		if (IsSitting() || CanMedOnHorse()) {
 			// kind of weird to do it here w/e
 			// client does some base medding regen for shrouds here
+			if (GetClass() != Class::Bard || RuleB(Custom, MulticlassingEnabled)) {
 			if (GetClass() != Class::Bard || RuleB(Custom, MulticlassingEnabled)) {
 				auto skill = GetSkill(EQ::skills::SkillMeditate);
 				if (skill > 0) {
@@ -1509,6 +1564,7 @@ int32 Client::CalcATK()
 uint32 Mob::GetInstrumentMod(uint16 spell_id)
 {
 	if (!IsBardSong(spell_id) || spells[spell_id].is_discipline || spell_id == SPELL_AMPLIFICATION) {
+	if (!IsBardSong(spell_id) || spells[spell_id].is_discipline || spell_id == SPELL_AMPLIFICATION) {
 		//Other classes can get a base effects mod using SPA 413
 		if (HasBaseEffectFocus()) {
 			return (10 + (GetFocusEffect(focusFcBaseEffects, spell_id) / 10));//TODO: change action->instrument mod to float to support < 10% focus values
@@ -1703,6 +1759,29 @@ int64 Client::CalcBaseEndurance() {
 }
 
 int64 Client::_CalcBaseEndurance(int class_id)
+int64 Client::CalcBaseEndurance() {
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        int classes_bits = GetClassesBits();
+        int64 highest_base_endur = 0; 
+
+        for (const auto& class_bitmask : player_class_bitmasks) {
+            uint8 class_id = class_bitmask.first;
+            uint16 class_bit = class_bitmask.second;
+            if ((classes_bits & class_bit) != 0) {
+                int64 class_base_endur = _CalcBaseEndurance(class_id);
+                if (class_base_endur > highest_base_endur) {
+                    highest_base_endur = class_base_endur; 
+                }
+            }
+        }
+
+        return highest_base_endur > 0 ? highest_base_endur : 5; 
+    } else {
+        return _CalcBaseEndurance(GetClass());
+    }
+}
+
+int64 Client::_CalcBaseEndurance(int class_id)
 {
 	int64 base_end = 0;
 	if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
@@ -1714,7 +1793,7 @@ int64 Client::_CalcBaseEndurance(int class_id)
 		else if (stats > 100.0f) {
 			stats = 2.5f * (stats - 100.0f) + 100.0f;
 		}
-		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		auto base_data = zone->GetBaseData(GetLevel(), class_id);
 		if (base_data.level == GetLevel()) {
 			base_end = base_data.end + itembonuses.heroic_max_end + (base_data.end_fac * static_cast<int>(stats));
 		}
