@@ -3858,19 +3858,19 @@ void Mob::BuffProcess()
 							}
 						}
 						
-						// This will suspend detrimental bard songs on mobs. Maybe useful later.
-						/* else {
+						
+						else {
 							// Attempt to make bard detrimental songs work similarly.
 							Client* caster = entity_list.GetClientByName(buffs[buffs_i].caster_name);
 
 							if (caster) {								
-								if (caster->FindMemmedSpellBySpellID(spellid) >= 0 && IsBardSong(buffs[buffs_i].spellid)) {
-									if (caster->CalculateDistance(GetX(), GetY(), GetZ()) < caster->GetRangeDistTargetSizeMod(this)) {
-										suspended = true;
+								if (caster->FindMemmedSpellBySpellID(spellid) >= 0 && IsBardSong(spellid)) {
+									if (caster->CalculateDistance(GetX(), GetY(), GetZ()) < (spells[spellid].range + caster->GetRangeDistTargetSizeMod(this))) {
+										caster->ApplyBardPulse(spellid, this, (EQ::spells::CastingSlot)caster->FindMemmedSpellBySpellID(spellid));
 									}									
 								}
 							}
-						} */
+						}
 					}
 
 					if (!suspended || !RuleB(Custom, SuspendGroupBuffs)) {
