@@ -1352,6 +1352,8 @@ void Mob::ZeroBardPulseVars()
 	bardsong_target_id = 0;
 	bardsong_slot = CastingSlot::Gem1;
 	bardsong_timer.Disable();
+
+	LogDebug("ZeroBardPulseVars");
 }
 
 void Mob::InterruptSpell(uint16 spellid)
@@ -1950,9 +1952,11 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 			
 			if (RuleB(Custom, MulticlassingEnabled)) {				
-				if (!IsBeneficialSpell(spell_id)) {
+				if (IsDetrimentalSpell(spell_id)) {
 					c->SendSpellBarEnable(spell_id);
-					ZeroBardPulseVars();
+					c->ZeroBardPulseVars();
+
+					LogDebug("Resetting Bard Song State");
 				}
 			}			
 		}
