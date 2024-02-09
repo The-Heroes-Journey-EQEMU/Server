@@ -619,8 +619,6 @@ int64 Client::_CalcBaseMana(int class_id)
 	int64 max_m = 0;
 
 	switch (GetCasterClass(class_id)) {
-
-	switch (GetCasterClass(class_id)) {
 		case 'I':
 			WisInt = GetINT();
 			if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
