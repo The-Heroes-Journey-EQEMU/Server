@@ -680,8 +680,8 @@ int64 Client::_CalcBaseMana(int class_id)
 			break;
 		case 'N': {
 				auto base_data = zone->GetBaseData(GetLevel(), GetClass());
-				if (base_data) {
-					max_m = base_data->base_mana;
+				if (base_data.level == GetLevel()) {
+					max_m = base_data.mana;
 				} else {
 					max_m = 0;
 				}
