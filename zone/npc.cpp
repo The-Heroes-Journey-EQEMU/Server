@@ -512,34 +512,19 @@ NPC::~NPC()
 {
 	AI_Stop();
 
-	if(proximity != nullptr) {
+	if (proximity) {
 		entity_list.RemoveProximity(GetID());
 		safe_delete(proximity);
 	}
 
 	safe_delete(NPCTypedata_ours);
 
-	{
-	ItemList::iterator cur,end;
-	cur = itemlist.begin();
-	end = itemlist.end();
-	for(; cur != end; ++cur) {
-		ServerLootItem_Struct* item = *cur;
-		safe_delete(item);
-	}
-	itemlist.clear();
+	for (auto* e : itemlist) {
+		safe_delete(e);
 	}
 
-	{
-	std::list<struct NPCFaction*>::iterator cur,end;
-	cur = faction_list.begin();
-	end = faction_list.end();
-	for(; cur != end; ++cur) {
-		struct NPCFaction* fac = *cur;
-		safe_delete(fac);
-	}
+	itemlist.clear();
 	faction_list.clear();
-	}
 
 	safe_delete(reface_timer);
 	safe_delete(swarmInfoPtr);
@@ -2425,7 +2410,7 @@ void NPC::PetOnSpawn(NewSpawn_Struct* ns)
 			swarm_owner->IsClient() &&
 			RuleB(Pets, ClientPetsUseOwnerNameInLastName)
 		) {
-			const auto& tmp_lastname = fmt::format("{}'s Pet", swarm_owner->GetName());
+			const auto& tmp_lastname = fmt::format("{}'s Swarm", swarm_owner->GetName());
 			if (tmp_lastname.size() < sizeof(ns->spawn.lastName)) {
 				strn0cpy(ns->spawn.lastName, tmp_lastname.c_str(), sizeof(ns->spawn.lastName));
 			}
@@ -2442,7 +2427,32 @@ void NPC::PetOnSpawn(NewSpawn_Struct* ns)
 			if (c) {
 				SetPetOwnerClient(true);
 				if (RuleB(Pets, ClientPetsUseOwnerNameInLastName)) {
-					const auto& tmp_lastname = fmt::format("{}'s Pet", c->GetName());
+					std::string tmp_lastname;				
+					switch(ns->spawn.race) {
+						case Race::AirElemental2:
+						case Race::AirElemental:
+						case Race::EarthElemental2:
+						case Race::EarthElemental:
+						case Race::WaterElemental2:
+						case Race::WaterElemental:
+						case Race::FireElemental2:
+						case Race::FireElemental:
+						case Race::Elemental:
+							tmp_lastname = fmt::format("{}'s Elemental Minion", c->GetName());
+							break;
+						case Race::Skeleton:
+						case Race::Skeleton2:
+						case Race::Skeleton3:
+							tmp_lastname = fmt::format("{}'s Skeletal Minion", c->GetName());
+							break;
+						case Race::Spectre:
+						case Race::Spectre2:
+							tmp_lastname = fmt::format("{}'s Reaper", c->GetName());
+							break;
+						default:
+							tmp_lastname = fmt::format("{}'s Minion", c->GetName());
+					}
+
 					if (tmp_lastname.size() < sizeof(ns->spawn.lastName)) {
 						strn0cpy(ns->spawn.lastName, tmp_lastname.c_str(), sizeof(ns->spawn.lastName));
 					}
@@ -3204,19 +3214,17 @@ FACTION_VALUE NPC::GetReverseFactionCon(Mob* iOther) {
 
 //Look through our faction list and return a faction con based
 //on the npc_value for the other person's primary faction in our list.
-FACTION_VALUE NPC::CheckNPCFactionAlly(int32 other_faction) {
-	std::list<struct NPCFaction*>::iterator cur,end;
-	cur = faction_list.begin();
-	end = faction_list.end();
-	for(; cur != end; ++cur) {
-		struct NPCFaction* fac = *cur;
-		if ((int32)fac->factionID == other_faction) {
-			if (fac->npc_value > 0)
+FACTION_VALUE NPC::CheckNPCFactionAlly(int32 other_faction)
+{
+	for (const auto& e : faction_list) {
+		if (e.faction_id == other_faction) {
+			if (e.npc_value > 0) {
 				return FACTION_ALLY;
-			else if (fac->npc_value < 0)
+			} else if (e.npc_value < 0) {
 				return FACTION_SCOWLS;
-			else
+			} else {
 				return FACTION_INDIFFERENTLY;
+			}
 		}
 	}
 
@@ -3225,14 +3233,16 @@ FACTION_VALUE NPC::CheckNPCFactionAlly(int32 other_faction) {
 	// where an npc is on a faction but has no hits (hence no entry in
 	// npc_faction_entries).
 
-	if (GetPrimaryFaction() == other_faction)
+	if (GetPrimaryFaction() == other_faction) {
 		return FACTION_ALLY;
-	else
+	} else {
 		return FACTION_INDIFFERENTLY;
+	}
 }
 
-bool NPC::IsFactionListAlly(uint32 other_faction) {
-	return(CheckNPCFactionAlly(other_faction) == FACTION_ALLY);
+bool NPC::IsFactionListAlly(uint32 other_faction)
+{
+	return CheckNPCFactionAlly(other_faction) == FACTION_ALLY;
 }
 
 int NPC::GetScore()
@@ -3673,9 +3683,9 @@ void NPC::AIYellForHelp(Mob *sender, Mob *attacker)
 			 */
 			if (mob->GetLevel() >= 50 || mob->AlwaysAggro() || attacker->GetLevelCon(mob->GetLevel()) != CON_GRAY) {
 				if (mob->GetPrimaryFaction() == sender->CastToNPC()->GetPrimaryFaction()) {
-					const NPCFactionList *cf = content_db.GetNPCFactionEntry(mob->CastToNPC()->GetNPCFactionID());
-					if (cf) {
-						if (cf->assistprimaryfaction == 0) {
+					const auto f = zone->GetNPCFaction(mob->CastToNPC()->GetNPCFactionID());
+					if (f) {
+						if (f->ignore_primary_assist) {
 							continue; //Same faction and ignore primary assist
 						}
 					}

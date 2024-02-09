@@ -2117,6 +2117,9 @@ void Client::SendManaUpdate()
 	mana_update->spawn_id = GetID();
 	QueuePacket(mana_app);
 	safe_delete(mana_app);
+	if (RuleB(Custom, ServerAuthStats)) {
+		CastToClient()->SendEdgeManaStats();
+	}
 }
 
 // sends endurance update to self
@@ -2129,6 +2132,9 @@ void Client::SendEnduranceUpdate()
 	endurance_update->spawn_id = GetID();
 	QueuePacket(end_app);
 	safe_delete(end_app);
+	if (RuleB(Custom, ServerAuthStats)) {
+		CastToClient()->SendEdgeEnduranceStats();
+	}
 }
 
 void Client::FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho)
@@ -2757,27 +2763,103 @@ bool Client::HasSkill(EQ::skills::SkillType skill_id) const {
 	return((GetSkill(skill_id) > 0) && CanHaveSkill(skill_id));
 }
 
-bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const {
-	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && class_ == Class::Berserker && skill_id == EQ::skills::Skill1HPiercing)
-		skill_id = EQ::skills::Skill2HPiercing;
+bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const {    
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        unsigned int classes_bits = GetClassesBits();
 
-	return(content_db.GetSkillCap(GetClass(), skill_id, RuleI(Character, MaxLevel)) > 0);
-	//if you don't have it by max level, then odds are you never will?
+        for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+            if (classes_bits & (1 << i)) {
+                int classID = i + 1;
+
+                EQ::skills::SkillType adjusted_skill_id = skill_id;
+                if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && classID == Class::Berserker && skill_id == EQ::skills::Skill1HPiercing) {
+                    adjusted_skill_id = EQ::skills::Skill2HPiercing;
+                }
+
+                if (content_db.GetSkillCap(classID, adjusted_skill_id, RuleI(Character, MaxLevel)) > 0) {
+                    return true; // Skill is available for this class
+                }
+            }
+        }
+
+        // Skill is not available for any of the classes
+        return false;
+    } else {
+        if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && class_ == Class::Berserker && skill_id == EQ::skills::Skill1HPiercing)
+            skill_id = EQ::skills::Skill2HPiercing;
+
+        return(content_db.GetSkillCap(GetClass(), skill_id, RuleI(Character, MaxLevel)) > 0);
+    }
 }
 
 uint16 Client::MaxSkill(EQ::skills::SkillType skillid, uint16 class_, uint16 level) const {
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        unsigned int classes_bits = GetClassesBits();
+        uint16 maxSkill = 0;
+
+        for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+            if (classes_bits & (1 << i)) {
+                uint16 classID = i + 1;
+
+                EQ::skills::SkillType adjusted_skillid = skillid;
+                if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && classID == Class::Berserker && skillid == EQ::skills::Skill1HPiercing) {
+                    adjusted_skillid = EQ::skills::Skill2HPiercing;
+                }
+
+                uint16 skillCap = content_db.GetSkillCap(classID, adjusted_skillid, level);
+                
+                if (skillCap > maxSkill) {
+                    maxSkill = skillCap;
+                }
+            }
+        }
+
+        return maxSkill;
+    } else {
+        if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && class_ == Class::Berserker && skillid == EQ::skills::Skill1HPiercing)
+            skillid = EQ::skills::Skill2HPiercing;
+
+        return(content_db.GetSkillCap(class_, skillid, level));
+    }
+}
+
+uint16 Client::MaxSkillOriginal(EQ::skills::SkillType skillid, uint16 class_, uint16 level) const {
 	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && class_ == Class::Berserker && skillid == EQ::skills::Skill1HPiercing)
 		skillid = EQ::skills::Skill2HPiercing;
 
-	return(content_db.GetSkillCap(class_, skillid, level));
+	return(content_db.GetSkillCap(class_, skillid, level));    
 }
 
 uint8 Client::SkillTrainLevel(EQ::skills::SkillType skillid, uint16 class_)
 {
-	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && class_ == Class::Berserker && skillid == EQ::skills::Skill1HPiercing)
-		skillid = EQ::skills::Skill2HPiercing;
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        unsigned int classes_bits = GetClassesBits();
+        uint8 earliestTrainLevel = std::numeric_limits<uint8>::max();
 
-	return(content_db.GetTrainLevel(class_, skillid, RuleI(Character, MaxLevel)));
+        for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+            if (classes_bits & (1 << i)) {
+                uint16 classID = i + 1;
+
+                EQ::skills::SkillType adjusted_skillid = skillid;
+                if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && classID == Class::Berserker && skillid == EQ::skills::Skill1HPiercing) {
+                    adjusted_skillid = EQ::skills::Skill2HPiercing;
+                }
+
+                uint8 trainLevel = content_db.GetTrainLevel(classID, adjusted_skillid, RuleI(Character, MaxLevel));
+                
+                if (trainLevel < earliestTrainLevel) {
+                    earliestTrainLevel = trainLevel;
+                }
+            }
+        }
+
+        return earliestTrainLevel == std::numeric_limits<uint8>::max() ? 0 : earliestTrainLevel;
+    } else {
+        if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && class_ == Class::Berserker && skillid == EQ::skills::Skill1HPiercing)
+            skillid = EQ::skills::Skill2HPiercing;
+
+        return(content_db.GetTrainLevel(class_, skillid, RuleI(Character, MaxLevel)));
+    }
 }
 
 uint16 Client::GetMaxSkillAfterSpecializationRules(EQ::skills::SkillType skillid, uint16 maxSkill)
@@ -7385,39 +7467,42 @@ FACTION_VALUE Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_ra
 }
 
 //Sets the characters faction standing with the specified NPC.
-void Client::SetFactionLevel(uint32 char_id, uint32 npc_id, uint8 char_class, uint8 char_race, uint8 char_deity, bool quest)
+void Client::SetFactionLevel(
+	uint32 character_id,
+	uint32 npc_faction_id,
+	uint8 class_id,
+	uint8 race_id,
+	uint8 deity_id,
+	bool is_quest
+)
 {
-	int32 faction_id[MAX_NPC_FACTIONS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	int32 npc_value[MAX_NPC_FACTIONS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	uint8 temp[MAX_NPC_FACTIONS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	int32 current_value;
+	auto l = zone->GetNPCFactionEntries(npc_faction_id);
 
-	// Get the npc faction list
-	if (!content_db.GetNPCFactionList(npc_id, faction_id, npc_value, temp)) {
+	if (l.empty()) {
 		return;
 	}
 
-	for (int i = 0; i < MAX_NPC_FACTIONS; i++) {
-		int32 faction_before_hit;
-		FactionMods fm;
-		int32 this_faction_max;
-		int32 this_faction_min;
+	int current_value;
 
-		if (faction_id[i] <= 0)
+	for (auto& e : l) {
+		if (e.faction_id <= 0 || e.value == 0) {
 			continue;
+		}
 
-		// Find out starting faction for this faction
-		// It needs to be used to adj max and min personal
-		// The range is still the same, 1200-3000(4200), but adjusted for base
-		content_db.GetFactionData(&fm, GetClass(), GetFactionRace(), GetDeity(), faction_id[i]);
+		int faction_before;
+		int faction_minimum;
+		int faction_maximum;
 
-		if (quest)
-		{
-			//The ole switcheroo
-			if (npc_value[i] > 0)
-				npc_value[i] = -std::abs(npc_value[i]);
-			else if (npc_value[i] < 0)
-				npc_value[i] = std::abs(npc_value[i]);
+		FactionMods faction_modifiers;
+
+		content_db.GetFactionData(&faction_modifiers, class_id, race_id, deity_id, e.faction_id);
+
+		if (is_quest) {
+			if (e.npc_value > 0) {
+				e.npc_value = -std::abs(e.npc_value);
+			} else if (e.npc_value < 0) {
+				e.npc_value = std::abs(e.npc_value);
+			}
 		}
 
 		// Adjust the amount you can go up or down so the resulting range
@@ -7425,23 +7510,36 @@ void Client::SetFactionLevel(uint32 char_id, uint32 npc_id, uint8 char_class, ui
 		//
 		// Adjust these values for cases where starting faction is below
 		// min or above max by not allowing any earn in those directions.
-		this_faction_min = fm.min - fm.base;
-		this_faction_min = std::min(0, this_faction_min);
-		this_faction_max = fm.max - fm.base;
-		this_faction_max = std::max(0, this_faction_max);
+		faction_minimum = faction_modifiers.min - faction_modifiers.base;
+		faction_minimum = std::min(0, faction_minimum);
+
+		faction_maximum = faction_modifiers.max - faction_modifiers.base;
+		faction_maximum = std::max(0, faction_maximum);
 
 		// Get the characters current value with that faction
-		current_value = GetCharacterFactionLevel(faction_id[i]);
-		faction_before_hit = current_value;
+		current_value = GetCharacterFactionLevel(e.faction_id);
+		faction_before = current_value;
 
-		UpdatePersonalFaction(char_id, npc_value[i], faction_id[i], &current_value, temp[i], this_faction_min, this_faction_max);
+		UpdatePersonalFaction(
+			character_id,
+			e.value,
+			e.faction_id,
+			&current_value,
+			e.temp,
+			faction_minimum,
+			faction_maximum
+		);
 
-		//Message(Chat::Lime, "Min(%d) Max(%d) Before(%d), After(%d)\n", this_faction_min, this_faction_max, faction_before_hit, current_value);
-
-		SendFactionMessage(npc_value[i], faction_id[i], faction_before_hit, current_value, temp[i], this_faction_min, this_faction_max);
+		SendFactionMessage(
+			e.value,
+			e.faction_id,
+			faction_before,
+			current_value,
+			e.temp,
+			faction_minimum,
+			faction_maximum
+		);
 	}
-
-	return;
 }
 
 void Client::SetFactionLevel2(uint32 char_id, int32 faction_id, uint8 char_class, uint8 char_race, uint8 char_deity, int32 value, uint8 temp)
@@ -8213,33 +8311,92 @@ void Client::CashReward(uint32 copper, uint32 silver, uint32 gold, uint32 platin
 	QueuePacket(outapp.get());
 }
 
-void Client::RewardFaction(int id, int amount)
+void Client::RewardFaction(int faction_id, int amount)
 {
-	// first we hit the primary faction, even without any associations
-	SetFactionLevel2(CharacterID(), id, GetClass(), GetBaseRace(), GetDeity(), amount, false);
+	SetFactionLevel2(CharacterID(), faction_id, GetClass(), GetBaseRace(), GetDeity(), amount, false);
 
-	auto faction_assoc = content_db.GetFactionAssociationHit(id);
-	// We could log here, but since it's actually expected for some not to have entries, it would be noisy.
-	if (!faction_assoc) {
+	auto f = zone->GetFactionAssociation(faction_id);
+	if (!f) {
 		return;
 	}
 
-	// now hit them in order
-	for (int i = 0; i < MAX_FACTION_ASSOC; ++i) {
-		if (faction_assoc->hits[i].id <= 0) // we don't allow later entries
-			break;
-		if (faction_assoc->hits[i].multiplier == 0.0f) {
-			LogFaction("Bad association multiplier for ID {} entry {}", id, i + 1);
-			continue;
+	std::vector<int> faction_ids = {
+		f->id_1,
+		f->id_2,
+		f->id_3,
+		f->id_4,
+		f->id_5,
+		f->id_6,
+		f->id_7,
+		f->id_8,
+		f->id_9,
+		f->id_10
+	};
+
+	std::vector<float> faction_modifiers = {
+		f->mod_1,
+		f->mod_2,
+		f->mod_3,
+		f->mod_4,
+		f->mod_5,
+		f->mod_6,
+		f->mod_7,
+		f->mod_8,
+		f->mod_9,
+		f->mod_10
+	};
+
+	std::vector<float> temporary_values = {
+		static_cast<float>(faction_modifiers[0] * amount),
+		static_cast<float>(faction_modifiers[1] * amount),
+		static_cast<float>(faction_modifiers[2] * amount),
+		static_cast<float>(faction_modifiers[3] * amount),
+		static_cast<float>(faction_modifiers[4] * amount),
+		static_cast<float>(faction_modifiers[5] * amount),
+		static_cast<float>(faction_modifiers[6] * amount),
+		static_cast<float>(faction_modifiers[7] * amount),
+		static_cast<float>(faction_modifiers[8] * amount),
+		static_cast<float>(faction_modifiers[9] * amount)
+	};
+
+	std::vector<int> signs = {
+		temporary_values[0] < 0.0f ? -1 : 1,
+		temporary_values[1] < 0.0f ? -1 : 1,
+		temporary_values[2] < 0.0f ? -1 : 1,
+		temporary_values[3] < 0.0f ? -1 : 1,
+		temporary_values[4] < 0.0f ? -1 : 1,
+		temporary_values[5] < 0.0f ? -1 : 1,
+		temporary_values[6] < 0.0f ? -1 : 1,
+		temporary_values[7] < 0.0f ? -1 : 1,
+		temporary_values[8] < 0.0f ? -1 : 1,
+		temporary_values[9] < 0.0f ? -1 : 1
+	};
+
+	std::vector<int> new_values = {
+		std::max(1, static_cast<int>(std::abs(temporary_values[0]))) * signs[0],
+		std::max(1, static_cast<int>(std::abs(temporary_values[1]))) * signs[1],
+		std::max(1, static_cast<int>(std::abs(temporary_values[2]))) * signs[2],
+		std::max(1, static_cast<int>(std::abs(temporary_values[3]))) * signs[3],
+		std::max(1, static_cast<int>(std::abs(temporary_values[4]))) * signs[4],
+		std::max(1, static_cast<int>(std::abs(temporary_values[5]))) * signs[5],
+		std::max(1, static_cast<int>(std::abs(temporary_values[6]))) * signs[6],
+		std::max(1, static_cast<int>(std::abs(temporary_values[7]))) * signs[7],
+		std::max(1, static_cast<int>(std::abs(temporary_values[8]))) * signs[8],
+		std::max(1, static_cast<int>(std::abs(temporary_values[9]))) * signs[9]
+	};
+
+	for (uint16 slot_id = 0; slot_id < faction_ids.size(); slot_id++) {
+		if (faction_ids[slot_id] > 0) {
+			SetFactionLevel2(
+				CharacterID(),
+				faction_ids[slot_id],
+				GetClass(),
+				GetBaseRace(),
+				GetDeity(),
+				new_values[slot_id],
+				false
+			);
 		}
-
-		// value is truncated and min clamped to 1 (or -1)
-		float temp = faction_assoc->hits[i].multiplier * amount;
-		int sign = temp < 0.0f ? -1 : 1;
-		int32 new_amount = std::max(1, static_cast<int32>(std::abs(temp))) * sign;
-
-		SetFactionLevel2(CharacterID(), faction_assoc->hits[i].id, GetClass(), GetBaseRace(), GetDeity(),
-				 new_amount, false);
 	}
 }
 
@@ -9019,6 +9176,7 @@ void Client::ShowDevToolsMenu()
 
 	menu_reload_three += Saylink::Silent("#reload data_buckets_cache", "Databuckets");
 	menu_reload_three += " | " + Saylink::Silent("#reload doors", "Doors");
+	menu_reload_three += " | " + Saylink::Silent("#reload factions", "Factions");
 	menu_reload_three += " | " + Saylink::Silent("#reload ground_spawns", "Ground Spawns");
 
 	menu_reload_four += Saylink::Silent("#reload logs", "Level Based Experience Modifiers");
@@ -9936,12 +10094,38 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
-			continue;
-		}
+        if (RuleB(Custom, MulticlassingEnabled)) {
+            unsigned int classes_bits = GetClassesBits();
+            bool any_class_usable = false;
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
-			continue;
+            for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+                if (classes_bits & (1 << i)) {
+                    uint16 classID = i + 1; // Adjust if class index calculation is different
+
+					if (max_level && spells[spell_id].classes[classID - 1] > max_level) {
+						continue;
+					}
+
+					if (min_level > 1 && spells[spell_id].classes[classID - 1] < min_level) {
+						continue;
+					}
+
+                    any_class_usable = true;
+                    break; // Stop checking if any class is usable
+                }
+            }
+
+            if (!any_class_usable) {
+                continue;
+            }
+        } else {
+			if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
+				continue;
+			}
+
+			if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+				continue;
+			}
 		}
 
 		if (spells[spell_id].skill == EQ::skills::SkillTigerClaw) {
@@ -10993,7 +11177,24 @@ void Client::SendReloadCommandMessages() {
 	);
 
 	auto dztemplates_link = Saylink::Silent("#reload dztemplates");
-	Message(Chat::White, fmt::format("Usage: {} - Reloads Dynamic Zone Templates globally", dztemplates_link).c_str());
+
+	Message(
+		Chat::White,
+		fmt::format(
+			"Usage: {} - Reloads Dynamic Zone Templates globally",
+			dztemplates_link
+		).c_str()
+	);
+
+	auto factions_link = Saylink::Silent("#reload factions");
+
+	Message(
+		Chat::White,
+		fmt::format(
+			"Usage: {} - Reloads Factions globally",
+			factions_link
+		).c_str()
+	);
 
 	auto ground_spawns_link = Saylink::Silent("#reload ground_spawns");
 
@@ -11476,18 +11677,46 @@ std::string Client::GetGuildPublicNote()
 
 void Client::MaxSkills()
 {
-	for (const auto &s : EQ::skills::GetSkillTypeMap()) {
-		auto current_skill_value = (
-			EQ::skills::IsSpecializedSkill(s.first) ?
-			MAX_SPECIALIZED_SKILL :
-			content_db.GetSkillCap(GetClass(), s.first, GetLevel())
-		);
+    for (const auto &s : EQ::skills::GetSkillTypeMap()) {
+        uint16 highestSkillCap = 0;
 
-		if (GetSkill(s.first) < current_skill_value) {
-			SetSkill(s.first, current_skill_value);
-		}
-	}
+        if (RuleB(Custom, MulticlassingEnabled)) {
+            unsigned int classes_bits = GetClassesBits();
+
+            // Loop through each bit in classes_bits
+            for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+                // Check if the ith bit is set
+                if (classes_bits & (1 << i)) {
+                    // Compute the class ID from the bit position
+                    uint16 classID = i + 1;
+
+                    uint16 classSkillCap = (
+                        EQ::skills::IsSpecializedSkill(s.first) ?
+                        MAX_SPECIALIZED_SKILL :
+                        content_db.GetSkillCap(classID, s.first, GetLevel())
+                    );
+
+                    // Update highestSkillCap if this class has a higher skill cap
+                    if (classSkillCap > highestSkillCap) {
+                        highestSkillCap = classSkillCap;
+                    }
+                }
+
+				// Set skill to the highest cap found across all classes
+				if (GetSkill(s.first) < highestSkillCap) {
+					SetSkill(s.first, highestSkillCap);
+				}
+            }
+        } else {
+            highestSkillCap = (
+                EQ::skills::IsSpecializedSkill(s.first) ?
+                MAX_SPECIALIZED_SKILL :
+                content_db.GetSkillCap(GetClass(), s.first, GetLevel())
+            );
+        }
+    }
 }
+
 
 void Client::SendPath(Mob* target)
 {
@@ -12003,4 +12232,42 @@ void Client::SetEXPModifier(uint32 zone_id, float exp_modifier, int16 instance_v
 	);
 
 	database.LoadCharacterEXPModifier(this);
+}
+
+uint32 Client::GetClassesBits() const
+{
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		return m_pp.classes;
+	} else {
+		return GetPlayerClassBit(m_pp.class_);
+	}
+}
+
+bool Client::AddExtraClass(int class_id) {
+    if (RuleB(Custom, MulticlassingEnabled) && class_id >= Class::Warrior && class_id <= Class::Berserker) {
+        int classes_bits = GetClassesBits();
+        int class_count = __builtin_popcount(classes_bits);
+        int n_class_bit = GetPlayerClassBit(class_id);
+
+        if (class_count > 2 || (classes_bits & n_class_bit)) {
+            return false;
+        } else {	
+			std::string query = StringFormat("REPLACE INTO character_multiclass_data (id, classes) VALUES (%i, %i)", character_id, (classes_bits | n_class_bit));
+        	auto results = database.QueryDatabase(query);
+
+			if (!results.Success()) {
+				return false;
+			}
+
+			m_pp.classes = classes_bits | n_class_bit;
+
+			CalcBonuses();
+			SendEdgeStatBulkUpdate();
+			SendAlternateAdvancementTable();
+		}
+
+        return true;
+    } else {
+        return false;
+    }
 }

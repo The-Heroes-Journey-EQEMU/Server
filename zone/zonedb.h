@@ -12,6 +12,7 @@
 #include "event_codes.h"
 #include "../common/repositories/doors_repository.h"
 #include "../common/races.h"
+#include "../common/repositories/npc_faction_entries_repository.h"
 
 #include "bot_database.h"
 
@@ -505,11 +506,10 @@ public:
 	uint32 UpdateCharacterCorpseConsent(uint32 character_id, uint32 guild_consent_id);
 
 	/* Faction   */
-	bool		GetNPCFactionList(uint32 npcfaction_id, int32* faction_id, int32* value, uint8* temp, int32* primary_faction = 0);
 	bool		GetFactionData(FactionMods* fd, uint32 class_mod, uint32 race_mod, uint32 deity_mod, int32 faction_id); //needed for factions Dec, 16 2001
 	bool		GetFactionName(int faction_id, char* name, uint32 buflen); // needed for factions Dec, 16 2001
 	std::string GetFactionName(int faction_id);
-	bool		GetFactionIdsForNPC(uint32 nfl_id, std::list<struct NPCFaction*> *faction_list, int32* primary_faction = 0); // improve faction handling
+	bool		GetFactionIDsForNPC(uint32 npc_faction_id, std::list<NpcFactionEntriesRepository::NpcFactionEntries>* faction_list, int32* primary_faction = 0); // improve faction handling
 	bool		SetCharacterFactionLevel(uint32 char_id, int32 faction_id, int32 value, uint8 temp, faction_map &val_list); // needed for factions Dec, 16 2001
 	bool		LoadFactionData();
 	inline uint32 GetMaxFaction() { return max_faction; }
@@ -598,8 +598,8 @@ public:
 	/* Tradeskills  */
 	bool	GetTradeRecipe(const EQ::ItemInstance* container, uint8 c_type, uint32 some_id, Client* c, DBTradeskillRecipe_Struct* spec, bool* is_augmented);
 	bool	GetTradeRecipe(uint32 recipe_id, uint8 c_type, uint32 some_id, Client* c, DBTradeskillRecipe_Struct* spec);
-	uint32	GetZoneForage(uint32 ZoneID, uint8 skill); /* for foraging */
-	uint32	GetZoneFishing(uint32 ZoneID, uint8 skill, uint32 &npc_id, uint8 &npc_chance);
+	uint32	LoadForage(uint32 zone_id, uint8 skill_level);
+	uint32	LoadFishing(uint32 zone_id, uint8 skill_level, uint32 &npc_id, uint8 &npc_chance);
 	void	UpdateRecipeMadecount(uint32 recipe_id, uint32 char_id, uint32 madecount);
 	bool	EnableRecipe(uint32 recipe_id);
 	bool	DisableRecipe(uint32 recipe_id);

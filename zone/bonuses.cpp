@@ -252,7 +252,7 @@ void Mob::AddItemBonuses(const EQ::ItemInstance* inst, StatBonuses* b, bool is_a
 		return;
 	}
 
-	if (IsClient() && !is_tribute && !inst->IsEquipable(GetBaseRace(), GetClass())) {
+	if (IsClient() && !is_tribute && !inst->IsEquipable(GetBaseRace(), CastToClient()->GetClassesBits())) {
 		if (item->ItemType != EQ::item::ItemTypeFood && item->ItemType != EQ::item::ItemTypeDrink) {
 			return;
 		}
@@ -722,8 +722,10 @@ void Mob::AdditiveWornBonuses(const EQ::ItemInstance* inst, StatBonuses* b, bool
 
 	const auto* item = inst->GetItem();
 
-	if (!inst->IsEquipable(GetBaseRace(), GetClass())) {
-		return;
+	if (IsClient()) {
+		if (!inst->IsEquipable(GetBaseRace(), CastToClient()->GetClassesBits())) {
+			return;
+		}
 	}
 
 	if (GetLevel() < item->ReqLevel) {
@@ -2053,7 +2055,7 @@ void Mob::CalcSpellBonuses(StatBonuses* newbon)
 		}
 	}
 
-	if (GetClass() == Class::Bard)
+	if (GetClass() == Class::Bard && !RuleB(Custom, MulticlassingEnabled))
 		newbon->ManaRegen = 0; // Bards do not get mana regen from spells.
 }
 

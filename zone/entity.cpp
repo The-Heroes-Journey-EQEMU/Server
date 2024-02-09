@@ -2365,7 +2365,7 @@ void EntityList::QueueClientsGuildBankItemUpdate(const GuildBankItemUpdate_Struc
 
 		if (client->IsInGuild(GuildID)) {
 			if (Item && (gbius->Permissions == GuildBankPublicIfUsable))
-				outgbius->Useable = Item->IsEquipable(client->GetBaseRace(), client->GetBaseClass());
+				outgbius->Useable = Item->IsEquipable(client->GetBaseRace(), client->GetClassesBits());
 
 			client->QueuePacket(outapp);
 		}
@@ -4641,36 +4641,44 @@ void EntityList::GroupMessage(uint32 gid, const char *from, const char *message)
 	}
 }
 
-uint16 EntityList::CreateGroundObject(uint32 itemid, const glm::vec4& position, uint32 decay_time)
+uint16 EntityList::CreateGroundObject(uint32 item_id, const glm::vec4& position, uint32 decay_time)
 {
-	const EQ::ItemData *is = database.GetItem(itemid);
-	if (!is)
+	const auto is = database.GetItem(item_id);
+	if (!is) {
 		return 0;
+	}
 
-	auto i = new EQ::ItemInstance(is, is->MaxCharges);
-	if (!i)
+	auto inst = new EQ::ItemInstance(is, is->MaxCharges);
+	if (!inst) {
 		return 0;
+	}
 
-	auto object = new Object(i, position.x, position.y, position.z, position.w, decay_time);
+	auto object = new Object(inst, position.x, position.y, position.z, position.w, decay_time);
+
 	entity_list.AddObject(object, true);
 
-	safe_delete(i);
-	if (!object)
+	safe_delete(inst);
+
+	if (!object) {
 		return 0;
+	}
 
 	return object->GetID();
 }
 
 uint16 EntityList::CreateGroundObjectFromModel(const char *model, const glm::vec4& position, uint8 type, uint32 decay_time)
 {
-	if (!model)
+	if (!model) {
 		return 0;
+	}
 
 	auto object = new Object(model, position.x, position.y, position.z, position.w, type);
+
 	entity_list.AddObject(object, true);
 
-	if (!object)
+	if (!object) {
 		return 0;
+	}
 
 	return object->GetID();
 }
@@ -4975,6 +4983,10 @@ void EntityList::ZoneWho(Client *c, Who_All_Struct *Who)
 				PlayerRace = ClientEntry->GetRace();
 			}
 
+			if (RuleB(Custom, MulticlassingEnabled)) {
+				PlayerClass = ClientEntry->GetClassesBits();
+			}
+
 			WhoAllPlayerPart1* WAPP1 = (WhoAllPlayerPart1*)Buffer;
 			WAPP1->FormatMSGID = FormatMSGID;
 			WAPP1->PIDMSGID = 0xFFFFFFFF;
@@ -5013,7 +5025,7 @@ void EntityList::ZoneWho(Client *c, Who_All_Struct *Who)
 			Buffer += sizeof(WhoAllPlayerPart4);
 		}
 
-	}
+	}	
 
 	c->QueuePacket(outapp);
 

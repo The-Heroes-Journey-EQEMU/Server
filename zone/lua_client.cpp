@@ -155,6 +155,16 @@ int Lua_Client::GetClassBitmask() {
 	return GetPlayerClassBit(self->GetClass());
 }
 
+int Lua_Client::GetClassesBitmask() {
+	Lua_Safe_Call_Int();
+	return self->GetClassesBits();
+}
+
+bool Lua_Client::AddExtraClass(int class_id) {
+	Lua_Safe_Call_Void();
+	return self->AddExtraClass(class_id);
+}
+
 int Lua_Client::GetRaceBitmask() {
 	Lua_Safe_Call_Int();
 	return GetPlayerRaceBit(self->GetBaseRace());
@@ -390,9 +400,9 @@ int Lua_Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 race, uint
 	return static_cast<int>(self->GetFactionLevel(char_id, npc_id, race, class_, deity, faction, npc));
 }
 
-void Lua_Client::SetFactionLevel(uint32 char_id, uint32 npc_id, int char_class, int char_race, int char_deity) {
+void Lua_Client::SetFactionLevel(uint32 char_id, uint32 npc_faction_id, int char_class, int char_race, int char_deity) {
 	Lua_Safe_Call_Void();
-	self->SetFactionLevel(char_id, npc_id, char_class, char_race, char_deity);
+	self->SetFactionLevel(char_id, npc_faction_id, char_class, char_race, char_deity);
 }
 
 void Lua_Client::SetFactionLevel2(uint32 char_id, int faction_id, int char_class, int char_race, int char_deity, int value, int temp) {
@@ -3445,6 +3455,8 @@ luabind::scope lua_register_client() {
 	.def("GetCharacterFactionLevel", (int(Lua_Client::*)(int))&Lua_Client::GetCharacterFactionLevel)
 	.def("GetClassAbbreviation", (std::string(Lua_Client::*)(void))&Lua_Client::GetClassAbbreviation)
 	.def("GetClassBitmask", (int(Lua_Client::*)(void))&Lua_Client::GetClassBitmask)
+	.def("GetClassesBitmask", (int(Lua_Client::*)(void))&Lua_Client::GetClassesBitmask)
+	.def("AddExtraClass", (bool(Lua_Client::*)(int))&Lua_Client::AddExtraClass)
 	.def("GetClientMaxLevel", (int(Lua_Client::*)(void))&Lua_Client::GetClientMaxLevel)
 	.def("GetClientVersion", (int(Lua_Client::*)(void))&Lua_Client::GetClientVersion)
 	.def("GetClientVersionBit", (uint32(Lua_Client::*)(void))&Lua_Client::GetClientVersionBit)

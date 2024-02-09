@@ -141,7 +141,7 @@ struct CharSelectEquip : EQ::textures::Texture_Struct, EQ::textures::Tint_Struct
 struct CharacterSelectEntry_Struct
 {
 	char Name[64];
-	uint8 Class;
+	uint32 Class;
 	uint32 Race;
 	uint8 Level;
 	uint8 ShroudClass;
@@ -533,7 +533,7 @@ struct SpellBuff_Struct
 /*024*/	float	y;				// referenced by SPA 441
 /*028*/	float	x;				// unsure if all buffs get them
 /*032*/	float	z;				// as valid data
-/*036*/
+/*036*/ char    caster_name[64];
 };
 
 struct SpellBuffPacket_Struct {
@@ -1110,6 +1110,7 @@ struct PlayerProfile_Struct
 /*19558*/	uint8				guildAutoconsent;	// 0=off, 1=on
 /*19559*/	uint8				unknown19595[5];	// ***Placeholder (6/29/2005)
 /*19564*/	uint32				RestTimer;
+			uint32				classes;			// bitfield for multiclass data
 /*19568*/
 
 	// All player profile packets are translated and this overhead is ignored in out-bound packets
@@ -1330,6 +1331,36 @@ struct CombatDamage_Struct
 /* 15 */	float hit_heading;	// see above notes in Action_Struct
 /* 19 */	float hit_pitch;
 /* 23 */	uint32 special; // 2 = Rampage, 1 = Wild Rampage
+};
+
+enum eStatEntry
+{
+	eStatClassesBitmask = 1,
+	eStatCurHP,
+	eStatCurMana,
+	eStatCurEndur,
+	eStatMaxHP,
+	eStatMaxMana,
+	eStatMaxEndur,
+	eStatDummyValue,
+	eStatMax
+};
+
+struct EdgeStatEntry_Struct {
+	uint32_t statKey;
+	uint64_t statValue;
+};
+
+struct SimpleChecksum_Struct {
+	uint16_t opcode;
+	uint64_t checksum;
+	uint8_t  data[3];
+};
+
+struct EdgeStat_Struct
+{
+	uint32_t count;
+	EdgeStatEntry_Struct entries[0];
 };
 
 /*
@@ -3451,18 +3482,21 @@ struct Make_Pet_Struct { //Simple struct for getting pet info
 	uint32 min_dmg;
 	uint32 max_dmg;
 };
-struct GroundSpawn{
-	float max_x;
-	float max_y;
-	float min_x;
-	float min_y;
-	float max_z;
-	float heading;
-	char name[20];
-	uint32 item;
-	uint32 max_allowed;
-	uint32 respawntimer;
+
+struct GroundSpawn {
+	float       max_x         = 0.0f;
+	float       max_y         = 0.0f;
+	float       min_x         = 0.0f;
+	float       min_y         = 0.0f;
+	float       max_z         = 0.0f;
+	float       heading       = 0.0f;
+	std::string name          = std::string();
+	uint32      item_id       = 0;
+	uint32      max_allowed   = 1;
+	uint32      respawn_timer = 1;
+	bool        fix_z         = true;
 };
+
 struct GroundSpawns {
 	struct GroundSpawn spawn[50]; //Assigned max number to allow
 };
