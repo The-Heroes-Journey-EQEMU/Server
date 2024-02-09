@@ -739,7 +739,6 @@ int64 Client::CalcManaRegen(bool bCombat)
 			// kind of weird to do it here w/e
 			// client does some base medding regen for shrouds here
 			if (GetClass() != Class::Bard || RuleB(Custom, MulticlassingEnabled)) {
-			if (GetClass() != Class::Bard || RuleB(Custom, MulticlassingEnabled)) {
 				auto skill = GetSkill(EQ::skills::SkillMeditate);
 				if (skill > 0) {
 					regen++;
