@@ -626,8 +626,7 @@ int64 Client::_CalcBaseMana(int class_id)
 						over200 = (WisInt - 200) / -2 + WisInt;
 					}
 					ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
-				}
-				auto base_data = zone->GetBaseData(GetLevel(), class_id);
+				}				
 				if (base_data.level == GetLevel()) {
 					max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 				}
@@ -658,8 +657,7 @@ int64 Client::_CalcBaseMana(int class_id)
 						over200 = (WisInt - 200) / -2 + WisInt;
 					}
 					ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
-				}
-				auto base_data = zone->GetBaseData(GetLevel(), class_id);
+				}				
 				if (base_data.level == GetLevel()) {
 					max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 				}
