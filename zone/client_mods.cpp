@@ -679,7 +679,7 @@ int64 Client::_CalcBaseMana(int class_id)
 			}
 			break;
 		case 'N': {
-				auto base_data = database.GetBaseData(GetLevel(), class_id);
+				auto base_data = zone->GetBaseData(GetLevel(), GetClass());
 				if (base_data) {
 					max_m = base_data->base_mana;
 				} else {
