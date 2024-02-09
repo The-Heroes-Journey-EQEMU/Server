@@ -1952,7 +1952,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 			
 			if (RuleB(Custom, MulticlassingEnabled)) {				
-				if (IsDetrimentalSpell(spell_id)) {
+				if (IsBeneficialSpell(spell_id)) {
 					c->SendSpellBarEnable(spell_id);
 					c->ZeroBardPulseVars();
 
