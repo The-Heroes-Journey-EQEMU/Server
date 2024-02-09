@@ -3841,9 +3841,11 @@ void Mob::BuffProcess()
 										suspended = true;
 									} else if (caster->FindSpellBookSlotBySpellID(spellid) >= 0 && !spells[spellid].short_buff_box && !IsBardSong(spellid)) {
 										suspended = true;
-									}/* else if (caster->FindMemmedSpellBySpellID(spellid) >= 0 && IsBardSong(spellid)) {
-										suspended = true;
-									} */ // Bard songs suspension
+									} else if (caster->FindMemmedSpellBySpellID(spellid) >= 0 && IsBardSong(spellid)) {
+										if (buffs[buff_i].ticsremaining = 1 && caster = this) {
+											caster->ApplyBardPulse(spellid, this, caster->FindMemmedSpellBySpellID(spellid));
+										}
+									} 
 
 									if (suspended) {
 										LogDebug("[{}] is suspended.", spellid);

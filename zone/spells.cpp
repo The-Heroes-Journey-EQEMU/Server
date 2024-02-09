@@ -1948,12 +1948,11 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 				c->CheckSongSkillIncrease(spell_id);
 			}			
 
-			/*
+			
 			if (RuleB(Custom, MulticlassingEnabled)) {
 				c->SendSpellBarEnable(spell_id);
 				ZeroBardPulseVars();
-			}
-			*/
+			}			
 		}
 		LogSpells("Bard song [{}] should be started", spell_id);
 	}
