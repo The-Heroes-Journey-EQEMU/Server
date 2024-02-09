@@ -1385,6 +1385,7 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p) {
 		case ServerOP_RefreshCensorship:
 		case ServerOP_ReloadAAData:
 		case ServerOP_ReloadAlternateCurrencies:
+		case ServerOP_ReloadBaseData:
 		case ServerOP_ReloadBlockedSpells:
 		case ServerOP_ReloadCommands:
 		case ServerOP_ReloadDoors:
@@ -1404,6 +1405,7 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p) {
 		case ServerOP_ReloadWorld:
 		case ServerOP_ReloadZonePoints:
 		case ServerOP_ReloadZoneData:
+		case ServerOP_ReloadLoot:
 		case ServerOP_RezzPlayerAccept:
 		case ServerOP_SpawnStatusChange:
 		case ServerOP_UpdateSpawn:
@@ -1423,6 +1425,31 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p) {
 		case ServerOP_ReloadRules: {
 			zoneserver_list.SendPacket(pack);
 			RuleManager::Instance()->LoadRules(&database, "default", true);
+			break;
+		}
+		case ServerOP_IsOwnerOnline: {
+			if (pack->size != sizeof(ServerIsOwnerOnline_Struct)) {
+				break;
+			}
+
+			auto o = (ServerIsOwnerOnline_Struct*) pack->pBuffer;
+			auto cle = client_list.FindCLEByAccountID(o->account_id);
+
+			o->online = cle ? 1 : 0;
+
+			if (o->online) {
+				LogCorpsesDetail(
+					"ServerOP_IsOwnerOnline account_id [{}] corpse name [{}] found to be online, sending online update to zone_id [{}]",
+					o->account_id,
+					o->name,
+					o->zone_id
+				);
+			}
+
+			auto zs = zoneserver_list.FindByZoneID(o->zone_id);
+			if (zs) {
+				zs->SendPacket(pack);
+			}
 			break;
 		}
 		case ServerOP_ReloadContentFlags: {

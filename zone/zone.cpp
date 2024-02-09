@@ -1177,6 +1177,8 @@ bool Zone::Init(bool is_static) {
 
 	content_db.LoadGlobalLoot();
 
+	LoadBaseData();
+
 	//Load merchant data
 	LoadMerchants();
 
@@ -1888,7 +1890,7 @@ void Zone::ClearNPCTypeCache(int id) {
 	}
 }
 
-void Zone::Repop()
+void Zone::Repop(bool is_forced)
 {
 	if (!Depop()) {
 		return;
@@ -1899,6 +1901,10 @@ void Zone::Repop()
 	iterator.Reset();
 	while (iterator.MoreElements()) {
 		iterator.RemoveCurrent();
+	}
+
+	if (is_forced) {
+		ClearSpawnTimers();
 	}
 
 	npc_scale_manager->LoadScaleData();
@@ -3240,3 +3246,5 @@ void Zone::SetSecondsBeforeIdle(uint32 seconds_before_idle)
 {
 	Zone::m_seconds_before_idle = seconds_before_idle;
 }
+
+#include "zone_loot.cpp"

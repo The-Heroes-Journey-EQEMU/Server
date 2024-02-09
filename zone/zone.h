@@ -41,6 +41,11 @@
 #include "../common/repositories/npc_faction_repository.h"
 #include "../common/repositories/npc_faction_entries_repository.h"
 #include "../common/repositories/faction_association_repository.h"
+#include "../common/repositories/loottable_repository.h"
+#include "../common/repositories/loottable_entries_repository.h"
+#include "../common/repositories/lootdrop_repository.h"
+#include "../common/repositories/lootdrop_entries_repository.h"
+#include "../common/repositories/base_data_repository.h"
 
 struct EXPModifier
 {
@@ -303,7 +308,7 @@ public:
 	void ReloadWorld(uint8 global_repop);
 	void RemoveAuth(const char *iCharName, const char *iLSKey);
 	void RemoveAuth(uint32 lsid);
-	void Repop();
+	void Repop(bool is_forced = false);
 	void RequestUCSServerStatus();
 	void ResetAuth();
 	void SetDate(uint16 year, uint8 month, uint8 day, uint8 hour, uint8 minute);
@@ -425,6 +430,22 @@ public:
 	void ReloadFactionAssociations();
 	FactionAssociationRepository::FactionAssociation* GetFactionAssociation(const uint32 faction_id);
 
+	// loot
+	void LoadLootTable(const uint32 loottable_id);
+	void LoadLootTables(const std::vector<uint32>& loottable_ids);
+	void ClearLootTables();
+	void ReloadLootTables();
+	LoottableRepository::Loottable *GetLootTable(const uint32 loottable_id);
+	std::vector<LoottableEntriesRepository::LoottableEntries> GetLootTableEntries(const uint32 loottable_id) const;
+	LootdropRepository::Lootdrop GetLootdrop(const uint32 lootdrop_id) const;
+	std::vector<LootdropEntriesRepository::LootdropEntries> GetLootdropEntries(const uint32 lootdrop_id) const;
+
+	// Base Data
+	inline void ClearBaseData() { m_base_data.clear(); };
+	BaseDataRepository::BaseData GetBaseData(uint8 level, uint8 class_id);
+	void LoadBaseData();
+	void ReloadBaseData();
+
 private:
 	bool      allow_mercs;
 	bool      can_bind;
@@ -479,6 +500,15 @@ private:
 	std::vector<NpcFactionRepository::NpcFaction>                 m_npc_factions         = { };
 	std::vector<NpcFactionEntriesRepository::NpcFactionEntries>   m_npc_faction_entries  = { };
 	std::vector<FactionAssociationRepository::FactionAssociation> m_faction_associations = { };
+
+	// loot
+	std::vector<LoottableRepository::Loottable>               m_loottables        = {};
+	std::vector<LoottableEntriesRepository::LoottableEntries> m_loottable_entries = {};
+	std::vector<LootdropRepository::Lootdrop>                 m_lootdrops         = {};
+	std::vector<LootdropEntriesRepository::LootdropEntries>   m_lootdrop_entries  = {};
+
+	// Base Data
+	std::vector<BaseDataRepository::BaseData> m_base_data = { };
 };
 
 #endif

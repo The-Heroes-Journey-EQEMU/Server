@@ -5241,6 +5241,48 @@ DROP TABLE IF EXISTS item_tick
 		.sql = R"(
 ALTER TABLE `spawngroup`
 MODIFY COLUMN `name` varchar(200) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '' AFTER `id`;
+)",
+		.content_schema_update = true
+	},
+	ManifestEntry{
+		.version = 9257,
+		.description = "2024_01_16_ground_spawns_fix_z.sql",
+		.check = "SHOW COLUMNS FROM `ground_spawns` LIKE `fix_z`",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+ALTER TABLE `ground_spawns`
+ADD COLUMN `fix_z` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 AFTER `respawn_timer`;
+)",
+		.content_schema_update = true
+	},
+	ManifestEntry{
+		.version = 9258,
+		.description = "2024_02_04_base_data.sql",
+		.check = "SHOW COLUMNS FROM `base_data` LIKE `hp_regen`",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+ALTER TABLE `base_data`
+CHANGE COLUMN `unk1` `hp_regen` double NOT NULL AFTER `end`,
+CHANGE COLUMN `unk2` `end_regen` double NOT NULL AFTER `hp_regen`,
+MODIFY COLUMN `level` tinyint(3) UNSIGNED NOT NULL FIRST,
+MODIFY COLUMN `class` tinyint(2) UNSIGNED NOT NULL AFTER `level`;
+)",
+		.content_schema_update = true
+	},
+	ManifestEntry{
+		.version = 9259,
+		.description = "2024_01_13_corpse_rez_overhaul.sql",
+		.check = "SHOW COLUMNS FROM `character_corpses` LIKE 'rez_time'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+ALTER TABLE `character_corpses`
+ADD COLUMN `rez_time` int(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `wc_9`,
+ADD COLUMN `gm_exp` int(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `rez_time`,
+ADD COLUMN `killed_by` int(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `gm_exp`,
+ADD COLUMN `rezzable` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 AFTER `killed_by`;
 )"
 	},
 	ManifestEntry{

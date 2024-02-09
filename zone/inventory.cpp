@@ -25,6 +25,7 @@
 #include "zonedb.h"
 #include "../common/events/player_event_logs.h"
 #include "bot.h"
+#include "../common/repositories/character_corpse_items_repository.h"
 
 extern WorldServer worldserver;
 
@@ -1184,7 +1185,7 @@ bool Client::PutItemInInventory(int16 slot_id, const EQ::ItemInstance& inst, boo
 	// a lot of wasted checks and calls coded above...
 }
 
-void Client::PutLootInInventory(int16 slot_id, const EQ::ItemInstance &inst, ServerLootItem_Struct** bag_item_data)
+void Client::PutLootInInventory(int16 slot_id, const EQ::ItemInstance &inst, LootItem** bag_item_data)
 {
 	LogInventory("Putting loot item [{}] ([{}]) into slot [{}]", inst.GetItem()->Name, inst.GetItem()->ID, slot_id);
 
@@ -1296,7 +1297,7 @@ bool Client::TryStacking(EQ::ItemInstance* item, uint8 type, bool try_worn, bool
 // Locate an available space in inventory to place an item
 // and then put the item there
 // The change will be saved to the database
-bool Client::AutoPutLootInInventory(EQ::ItemInstance& inst, bool try_worn, bool try_cursor, ServerLootItem_Struct** bag_item_data)
+bool Client::AutoPutLootInInventory(EQ::ItemInstance& inst, bool try_worn, bool try_cursor, LootItem** bag_item_data)
 {
 	// #1: Try to auto equip
 	if (try_worn && inst.IsEquipable(GetBaseRace(), GetClassesBits()) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
@@ -4917,26 +4918,29 @@ void Client::SummonItemIntoInventory(
 
 bool Client::HasItemOnCorpse(uint32 item_id)
 {
-	const uint32 corpse_count = GetCorpseCount();
-	if (!corpse_count) {
-		return EQ::invslot::SLOT_INVALID;
+	auto corpses = CharacterCorpsesRepository::GetWhere(database, fmt::format("charid = {}", CharacterID()));
+	if (corpses.empty()) {
+		return false;
 	}
 
-	for (int i = 0; i < corpse_count; i++) {
-		const uint32 corpse_id = GetCorpseID(i);
+	std::vector<uint32> corpse_ids;
+	corpse_ids.reserve(corpses.size());
 
-		for (int16 slot_id = EQ::invslot::POSSESSIONS_BEGIN; slot_id < EQ::invslot::POSSESSIONS_END; slot_id++) {
-			const uint32 current_item_id = GetCorpseItemAt(corpse_id, slot_id);
-			if (current_item_id && current_item_id == item_id) {
-				return true;
-			}
-		}
+	for (auto &corpse : corpses) {
+		corpse_ids.push_back(corpse.id);
+	}
 
-		for (int16 slot_id = EQ::invbag::GENERAL_BAGS_BEGIN; slot_id < EQ::invbag::GENERAL_BAGS_END; slot_id++) {
-			const uint32 current_item_id = GetCorpseItemAt(corpse_id, slot_id);
-			if (current_item_id && current_item_id == item_id) {
-				return true;
-			}
+	auto items = CharacterCorpseItemsRepository::GetWhere(
+		database,
+		fmt::format(
+			"corpse_id IN ({})",
+			Strings::Join(corpse_ids, ",")
+		)
+	);
+
+	for (auto &item : items) {
+		if (item.item_id == item_id) {
+			return true;
 		}
 	}
 

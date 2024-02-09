@@ -1269,6 +1269,22 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		}
 		break;
 	}
+	case ServerOP_IsOwnerOnline: {
+		auto o = (ServerIsOwnerOnline_Struct*)pack->pBuffer;
+		if (zone) {
+			if (o->zone_id != zone->GetZoneID()) {
+				break;
+			}
+
+			Corpse* c = entity_list.GetCorpseByID(o->corpse_id);
+			if (c && o->online) {
+				c->SetOwnerOnline(true);
+			} else if (c) {
+				c->SetOwnerOnline(false);
+			}
+		}
+		break;
+	}
 	case ServerOP_OOZGroupMessage: {
 		ServerGroupChannelMessage_Struct* gcm = (ServerGroupChannelMessage_Struct*)pack->pBuffer;
 		if (zone) {
@@ -1587,12 +1603,14 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		break;
 	}
 	case ServerOP_SpawnPlayerCorpse: {
-		SpawnPlayerCorpse_Struct* s = (SpawnPlayerCorpse_Struct*)pack->pBuffer;
-		Corpse* NewCorpse = database.LoadCharacterCorpse(s->player_corpse_id);
-		if (NewCorpse)
-			NewCorpse->Spawn();
-		else
+		auto   *s = (SpawnPlayerCorpse_Struct *) pack->pBuffer;
+		Corpse *c = database.LoadCharacterCorpse(s->player_corpse_id);
+		if (c) {
+			c->Spawn();
+		}
+		else {
 			LogError("Unable to load player corpse id [{}] for zone [{}]", s->player_corpse_id, zone->GetShortName());
+		}
 
 		break;
 	}
@@ -1957,6 +1975,15 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		}
 		break;
 	}
+	case ServerOP_ReloadBaseData:
+	{
+		if (zone && zone->IsLoaded()) {
+			zone->SendReloadMessage("Base Data");
+			zone->ReloadBaseData();
+		}
+
+		break;
+	}
 	case ServerOP_ReloadBlockedSpells:
 	{
 		if (zone && zone->IsLoaded()) {
@@ -2013,6 +2040,14 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		zone->SendReloadMessage("Log Settings");
 		LogSys.LoadLogDatabaseSettings();
 		player_event_logs.ReloadSettings();
+		break;
+	}
+	case ServerOP_ReloadLoot:
+	{
+		if (zone && zone->IsLoaded()) {
+			zone->SendReloadMessage("Loot");
+			zone->ReloadLootTables();
+		}
 		break;
 	}
 	case ServerOP_ReloadMerchants: {
@@ -3508,11 +3543,6 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 			LogError("Loading items failed!");
 		}
 
-		LogInfo("Loading loot tables");
-		if (!content_db.LoadLoot(hotfix_name)) {
-			LogError("Loading loot failed!");
-		}
-
 		LogInfo("Loading skill caps");
 		if (!content_db.LoadSkillCaps(std::string(hotfix_name))) {
 			LogError("Loading skill caps failed!");
@@ -3521,11 +3551,6 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		LogInfo("Loading spells");
 		if (!content_db.LoadSpells(hotfix_name, &SPDAT_RECORDS, &spells)) {
 			LogError("Loading spells failed!");
-		}
-
-		LogInfo("Loading base data");
-		if (!content_db.LoadBaseData(hotfix_name)) {
-			LogError("Loading base data failed!");
 		}
 		break;
 	}

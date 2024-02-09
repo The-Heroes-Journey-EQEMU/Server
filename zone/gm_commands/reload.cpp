@@ -15,6 +15,7 @@ void command_reload(Client *c, const Seperator *sep)
 	bool is_rq_alias             = sep->arg[0] && Strings::Contains(command, "#rq");
 	bool is_aa                   = !strcasecmp(sep->arg[1], "aa");
 	bool is_alternate_currencies = !strcasecmp(sep->arg[1], "alternate_currencies");
+	bool is_base_data            = !strcasecmp(sep->arg[1], "base_data");
 	bool is_blocked_spells       = !strcasecmp(sep->arg[1], "blocked_spells");
 	bool is_commands             = !strcasecmp(sep->arg[1], "commands");
 	bool is_content_flags        = !strcasecmp(sep->arg[1], "content_flags");
@@ -25,6 +26,7 @@ void command_reload(Client *c, const Seperator *sep)
 	bool is_ground_spawns        = !strcasecmp(sep->arg[1], "ground_spawns");
 	bool is_level_mods           = !strcasecmp(sep->arg[1], "level_mods");
 	bool is_logs                 = !strcasecmp(sep->arg[1], "logs") || is_logs_reload_alias;
+	bool is_loot                 = !strcasecmp(sep->arg[1], "loot");
 	bool is_merchants            = !strcasecmp(sep->arg[1], "merchants");
 	bool is_npc_emotes           = !strcasecmp(sep->arg[1], "npc_emotes");
 	bool is_objects              = !strcasecmp(sep->arg[1], "objects");
@@ -45,6 +47,7 @@ void command_reload(Client *c, const Seperator *sep)
 	if (
 		!is_aa &&
 		!is_alternate_currencies &&
+		!is_base_data &&
 		!is_blocked_spells &&
 		!is_commands &&
 		!is_content_flags &&
@@ -55,6 +58,7 @@ void command_reload(Client *c, const Seperator *sep)
 		!is_ground_spawns &&
 		!is_level_mods &&
 		!is_logs &&
+		!is_loot &&
 		!is_merchants &&
 		!is_npc_emotes &&
 		!is_objects &&
@@ -84,6 +88,9 @@ void command_reload(Client *c, const Seperator *sep)
 	} else if (is_alternate_currencies) {
 		c->Message(Chat::White, "Attempting to reload Alternate Currencies globally.");
 		pack = new ServerPacket(ServerOP_ReloadAlternateCurrencies, 0);
+	} else if (is_base_data) {
+		c->Message(Chat::White, "Attempting to reload Base Data globally.");
+		pack = new ServerPacket(ServerOP_ReloadBaseData, 0);
 	} else if (is_blocked_spells) {
 		c->Message(Chat::White, "Attempting to reload Blocked Spells globally.");
 		pack = new ServerPacket(ServerOP_ReloadBlockedSpells, 0);
@@ -119,6 +126,9 @@ void command_reload(Client *c, const Seperator *sep)
 	} else if (is_logs) {
 		c->Message(Chat::White, "Attempting to reload Log Settings globally.");
 		pack = new ServerPacket(ServerOP_ReloadLogs, 0);
+	} else if (is_loot) {
+		c->Message(Chat::White, "Attempting to reload Loot globally.");
+		pack = new ServerPacket(ServerOP_ReloadLoot, 0);
 	} else if (is_merchants) {
 		c->Message(Chat::White, "Attempting to reload Merchants globally.");
 		pack = new ServerPacket(ServerOP_ReloadMerchants, 0);

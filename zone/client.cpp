@@ -9169,6 +9169,7 @@ void Client::ShowDevToolsMenu()
 	 */
 	menu_reload_one += Saylink::Silent("#reload aa", "AAs");
 	menu_reload_one += " | " + Saylink::Silent("#reload alternate_currencies", "Alternate Currencies");
+	menu_reload_one += " | " + Saylink::Silent("#reload base_data", "Base Data");
 	menu_reload_one += " | " + Saylink::Silent("#reload blocked_spells", "Blocked Spells");
 
 	menu_reload_two += Saylink::Silent("#reload commands", "Commands");
@@ -9181,6 +9182,7 @@ void Client::ShowDevToolsMenu()
 
 	menu_reload_four += Saylink::Silent("#reload logs", "Level Based Experience Modifiers");
 	menu_reload_four += " | " + Saylink::Silent("#reload logs", "Log Settings");
+	menu_reload_four += " | " + Saylink::Silent("#reload Loot", "Loot");
 
 	menu_reload_five += Saylink::Silent("#reload merchants", "Merchants");
 	menu_reload_five += " | " + Saylink::Silent("#reload npc_emotes", "NPC Emotes");
@@ -10775,7 +10777,7 @@ std::vector<Client *> Client::GetPartyMembers()
 	return clients_to_update;
 }
 
-void Client::SummonBaggedItems(uint32 bag_item_id, const std::vector<ServerLootItem_Struct>& bag_items)
+void Client::SummonBaggedItems(uint32 bag_item_id, const std::vector<LootItem>& bag_items)
 {
 	if (bag_items.empty())
 	{
@@ -11126,6 +11128,16 @@ void Client::SendReloadCommandMessages() {
 		).c_str()
 	);
 
+	auto base_data_link = Saylink::Silent("#reload base_data");
+
+	Message(
+		Chat::White,
+		fmt::format(
+			"Usage: {} - Reloads Base Data globally",
+			base_data_link
+		).c_str()
+	);
+
 	auto blocked_spells_link = Saylink::Silent("#reload blocked_spells");
 
 	Message(
@@ -11223,6 +11235,16 @@ void Client::SendReloadCommandMessages() {
 		fmt::format(
 			"Usage: {} - Reloads Log Settings globally",
 			logs_link
+		).c_str()
+	);
+
+	auto loot_link = Saylink::Silent("#reload loot");
+
+	Message(
+		Chat::White,
+		fmt::format(
+			"Usage: {} - Reloads Loot globally",
+			loot_link
 		).c_str()
 	);
 
@@ -12232,6 +12254,50 @@ void Client::SetEXPModifier(uint32 zone_id, float exp_modifier, int16 instance_v
 	);
 
 	database.LoadCharacterEXPModifier(this);
+}
+
+int Client::GetAAEXPPercentage()
+{
+	int scaled = static_cast<int>(330.0f * static_cast<float>(GetAAXP()) / GetRequiredAAExperience());
+
+	return static_cast<int>(std::round(scaled * 100.0 / 330.0));
+}
+
+int Client::GetEXPPercentage()
+{
+	float    norm = 0.0f;
+	uint32_t min  = GetEXPForLevel(GetLevel());
+	uint32_t max  = GetEXPForLevel(GetLevel() + 1);
+
+	if (min != max) {
+		norm = static_cast<float>(GetEXP() - min) / (max - min);
+	}
+
+	int scaled = static_cast<int>(330.0f * norm); // scale and truncate
+
+	return static_cast<int>(std::round(scaled * 100.0 / 330.0)); // unscaled pct
+}
+
+int Client::GetAAEXPPercentage()
+{
+	int scaled = static_cast<int>(330.0f * static_cast<float>(GetAAXP()) / GetRequiredAAExperience());
+
+	return static_cast<int>(std::round(scaled * 100.0 / 330.0));
+}
+
+int Client::GetEXPPercentage()
+{
+	float    norm = 0.0f;
+	uint32_t min  = GetEXPForLevel(GetLevel());
+	uint32_t max  = GetEXPForLevel(GetLevel() + 1);
+
+	if (min != max) {
+		norm = static_cast<float>(GetEXP() - min) / (max - min);
+	}
+
+	int scaled = static_cast<int>(330.0f * norm); // scale and truncate
+
+	return static_cast<int>(std::round(scaled * 100.0 / 330.0)); // unscaled pct
 }
 
 uint32 Client::GetClassesBits() const

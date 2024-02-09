@@ -237,9 +237,10 @@ int64 Client::CalcHPRegen(bool bCombat)
 	item_regen += aabonuses.HPRegen;
 
 	int64 base = 0;
-	auto base_data = database.GetBaseData(GetLevel(), GetClass());
-	if (base_data)
-		base = static_cast<int>(base_data->hp_regen);
+	auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+	if (base_data.level == GetLevel()) {
+		base = static_cast<int>(base_data.hp_regen);
+	}
 
 	auto level = GetLevel();
 	bool skip_innate = false;
@@ -508,9 +509,9 @@ int64 Client::_CalcBaseHP(int class_id)
 			stats += 255;
 		}
 		base_hp = 5;
-		auto base_data = database.GetBaseData(GetLevel(), class_id);
-		if (base_data) {
-			base_hp += base_data->base_hp + (base_data->hp_factor * stats);
+		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		if (base_data.level == GetLevel()) {
+			base_hp += base_data.hp + (base_data.hp_fac * stats);
 			base_hp += itembonuses.heroic_max_hp;
 		}
 	}
@@ -624,10 +625,9 @@ int64 Client::_CalcBaseMana(int class_id)
 					}
 					ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
 				}
-				auto base_data = database.GetBaseData(GetLevel(), class_id);
-				if (base_data) {
-					max_m = base_data->base_mana +
-						(ConvertedWisInt * base_data->mana_factor) + itembonuses.heroic_max_mana;
+				auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+				if (base_data.level == GetLevel()) {
+					max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 				}
 			}
 			else {
@@ -657,10 +657,9 @@ int64 Client::_CalcBaseMana(int class_id)
 					}
 					ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
 				}
-				auto base_data = database.GetBaseData(GetLevel(), class_id);
-				if (base_data) {
-					max_m = base_data->base_mana +
-						(ConvertedWisInt * base_data->mana_factor) + itembonuses.heroic_max_mana;
+				auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+				if (base_data.level == GetLevel()) {
+					max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 				}
 			}
 			else {
@@ -1715,9 +1714,9 @@ int64 Client::_CalcBaseEndurance(int class_id)
 		else if (stats > 100.0f) {
 			stats = 2.5f * (stats - 100.0f) + 100.0f;
 		}
-		auto base_data = database.GetBaseData(GetLevel(), class_id);
-		if (base_data) {
-			base_end = base_data->base_end + itembonuses.heroic_max_end + (base_data->endurance_factor * static_cast<int>(stats));
+		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		if (base_data.level == GetLevel()) {
+			base_end = base_data.end + itembonuses.heroic_max_end + (base_data.end_fac * static_cast<int>(stats));
 		}
 	}
 	else {
@@ -1752,9 +1751,9 @@ int64 Client::CalcEnduranceRegen(bool bCombat)
 {
 	int64 base = 0;
 	if (!IsStarved()) {
-		auto base_data = database.GetBaseData(GetLevel(), GetClass());
-		if (base_data) {
-			base = static_cast<int>(base_data->end_regen);
+		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		if (base_data.level == GetLevel()) {
+			base = static_cast<int>(base_data.end_regen);
 			if (!auto_attack && base > 0)
 				base += base / 2;
 		}

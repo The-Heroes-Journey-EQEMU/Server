@@ -137,6 +137,7 @@ struct Reload {
 std::vector<Reload> reload_types = {
 	Reload{.command = "aa", .opcode = ServerOP_ReloadAAData, .desc = "Alternate Advancement"},
 	Reload{.command = "alternate_currencies", .opcode = ServerOP_ReloadAlternateCurrencies, .desc = "Alternate Currencies"},
+	Reload{.command = "base_data", .opcode = ServerOP_ReloadBaseData, .desc = "Base Data"},
 	Reload{.command = "blocked_spells", .opcode = ServerOP_ReloadBlockedSpells, .desc = "Blocked Spells"},
 	Reload{.command = "commands", .opcode = ServerOP_ReloadCommands, .desc = "Commands"},
 	Reload{.command = "data_buckets_cache", .opcode = ServerOP_ReloadDataBucketsCache, .desc = "Data Buckets Cache"},
@@ -145,6 +146,7 @@ std::vector<Reload> reload_types = {
 	Reload{.command = "ground_spawns", .opcode = ServerOP_ReloadGroundSpawns, .desc = "Ground Spawns"},
 	Reload{.command = "level_mods", .opcode = ServerOP_ReloadLevelEXPMods, .desc = "Level Mods"},
 	Reload{.command = "logs", .opcode = ServerOP_ReloadLogs, .desc = "Log Settings"},
+	Reload{.command = "loot", .opcode = ServerOP_ReloadLoot, .desc = "Loot"},
 	Reload{.command = "merchants", .opcode = ServerOP_ReloadMerchants, .desc = "Merchants"},
 	Reload{.command = "npc_emotes", .opcode = ServerOP_ReloadNPCEmotes, .desc = "NPC Emotes"},
 	Reload{.command = "objects", .opcode = ServerOP_ReloadObjects, .desc = "Objects"},

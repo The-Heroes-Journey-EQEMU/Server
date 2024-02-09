@@ -4084,10 +4084,9 @@ Mob* Merc::GetOwnerOrSelf() {
 	return Result;
 }
 
-bool Merc::Death(Mob* killerMob, int64 damage, uint16 spell, EQ::skills::SkillType attack_skill)
+bool Merc::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillType attack_skill, uint8 killed_by)
 {
-	if(!NPC::Death(killerMob, damage, spell, attack_skill))
-	{
+	if (!NPC::Death(killer_mob, damage, spell, attack_skill)) {
 		return false;
 	}
 
@@ -4100,8 +4099,7 @@ bool Merc::Death(Mob* killerMob, int64 damage, uint16 spell, EQ::skills::SkillTy
 	//      entity_list.GetCorpseByID(GetID())->Depop();
 
 	// If client is in zone, suspend merc, else depop it.
-	if (!Suspend())
-	{
+	if (!Suspend()) {
 		Depop();
 	}
 
@@ -4647,7 +4645,7 @@ void Merc::UpdateEquipmentLight()
 	}
 
 	uint8 general_light_type = 0;
-	for (auto iter = itemlist.begin(); iter != itemlist.end(); ++iter) {
+	for (auto iter = m_loot_items.begin(); iter != m_loot_items.end(); ++iter) {
 		auto item = database.GetItem((*iter)->item_id);
 		if (item == nullptr) { continue; }
 
