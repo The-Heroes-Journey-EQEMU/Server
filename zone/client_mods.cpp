@@ -500,7 +500,6 @@ int64 Client::CalcBaseHP() {
     }
 }
 
-int64 Client::_CalcBaseHP(int class_id)
 int64 Client::CalcBaseHP() {
     if (RuleB(Custom, MulticlassingEnabled)) {
         int classes_bits = GetClassesBits();
@@ -632,7 +631,6 @@ int64 Client::CalcBaseMana() {
     }
 }
 
-int64 Client::_CalcBaseMana(int class_id)
 int64 Client::CalcBaseMana() {
     if (RuleB(Custom, MulticlassingEnabled)) {
         int classes_bits = GetClassesBits();
@@ -1758,7 +1756,6 @@ int64 Client::CalcBaseEndurance() {
     }
 }
 
-int64 Client::_CalcBaseEndurance(int class_id)
 int64 Client::CalcBaseEndurance() {
     if (RuleB(Custom, MulticlassingEnabled)) {
         int classes_bits = GetClassesBits();
