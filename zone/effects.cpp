@@ -686,7 +686,7 @@ bool Client::TrainDiscipline(uint32 itemid) {
 
 	//make sure we can train this...
 	//can we use the item?
-	const auto class_bit = static_cast<uint32>(1 << (player_class - 1));
+	const auto class_bit = GetClassesBits();
 	if (!(item->Classes & class_bit)) {
 		Message(Chat::Red, "Your class cannot learn from this tome.");
 		//summon them the item back...
@@ -700,21 +700,45 @@ bool Client::TrainDiscipline(uint32 itemid) {
 		return false;
 	}
 
-	//can we use the spell?
-	const auto& spell = spells[spell_id];
-	const auto level_to_use = spell.classes[player_class - 1];
-	if (level_to_use == 255) {
-		Message(Chat::Red, "Your class cannot learn from this tome.");
-		//summon them the item back...
-		SummonItem(itemid);
-		return false;
-	}
+	if (RuleB, MulticlassingEnabled) {
+		const auto& spell = spells[spell_id];
 
-	if (level_to_use > GetLevel()) {
-		Message(Chat::Red, fmt::format("You must be at least level {} to learn this discipline.", level_to_use).c_str());
-		//summon them the item back...
-		SummonItem(itemid);
-		return false;
+		bool canLearn = false;
+		for (int class_index = 0; class_index < 16; ++class_index) {
+			if (class_bits & (1 << class_index)) {
+				// Check if the player's class level is sufficient to use the spell
+				const auto level_required = spell.classes[class_index];
+				
+				if (level_required != 255 && player_level >= level_required) {
+					canLearn = true;
+					break; // Stop checking once we find a class that can learn the spell
+				}
+			}
+		}
+
+		if (!canLearn) {
+			Message(Chat::Red, "None of your classes can learn from this tome.");
+			SummonItem(itemid); // Summon the item back to the player
+			return false;
+		}
+	} else {
+		// loop over the bitmask class_bit and compare each one (0-index) to the spells[i] array (1-index)
+		//can we use the spell?
+		const auto& spell = spells[spell_id];
+		const auto level_to_use = spell.classes[player_class - 1];
+		if (level_to_use == 255) {
+			Message(Chat::Red, "Your class cannot learn from this tome.");
+			//summon them the item back...
+			SummonItem(itemid);
+			return false;
+		}
+
+		if (level_to_use > GetLevel()) {
+			Message(Chat::Red, fmt::format("You must be at least level {} to learn this discipline.", level_to_use).c_str());
+			//summon them the item back...
+			SummonItem(itemid);
+			return false;
+		}
 	}
 
 	//add it to PP.
