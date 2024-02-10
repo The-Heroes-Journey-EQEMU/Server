@@ -700,7 +700,7 @@ bool Client::TrainDiscipline(uint32 itemid) {
 		return false;
 	}
 
-	if (RuleB, MulticlassingEnabled) {
+	if (RuleB(Custom, MulticlassingEnabled)) {
 		const auto& spell = spells[spell_id];
 
 		bool canLearn = false;
