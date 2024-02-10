@@ -705,7 +705,7 @@ bool Client::TrainDiscipline(uint32 itemid) {
 
 		bool canLearn = false;
 		for (int class_index = 0; class_index < 16; ++class_index) {
-			if (class_bits & (1 << class_index)) {
+			if (class_bit & (1 << class_index)) {
 				// Check if the player's class level is sufficient to use the spell
 				const auto level_required = spell.classes[class_index];
 				
