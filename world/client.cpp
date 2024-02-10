@@ -47,7 +47,7 @@
 #include "clientlist.h"
 #include "wguild_mgr.h"
 #include "sof_char_create_data.h"
-#include "data_bucket.h"
+#include "zone/data_bucket.h"
 #include "../common/zone_store.h"
 #include "../common/repositories/account_repository.h"
 #include "../common/repositories/player_event_logs_repository.h"
