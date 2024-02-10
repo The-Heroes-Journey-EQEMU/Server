@@ -910,7 +910,7 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 		return false;
 	}
 
-	uint16_t class_bits = GetClassesBitmask();
+	uint16_t class_bits = GetClassesBits();
 	const SPDat_Spell_Struct &spell = spells[spell_id];
 	bool canLearn = false;
 
