@@ -926,14 +926,7 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 	}
 
 	if (!canLearn) {
-		Message(Chat::Red, "You cannot use this skill.");
-		return false;
-	}
-
-
-	if(level_to_use > GetLevel()) {
 		MessageString(Chat::Red, DISC_LEVEL_USE_ERROR);
-		//should summon them a new one...
 		return false;
 	}
 
