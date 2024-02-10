@@ -2852,6 +2852,8 @@ uint8 Client::SkillTrainLevel(EQ::skills::SkillType skillid, uint16 class_)
                 if (trainLevel < earliestTrainLevel) {
                     earliestTrainLevel = trainLevel;
                 }
+
+				LogDebug("earliestTrainLevel: [{}]:[{}]",earliestTrainLevel, trainLevel);
             }
         }
 
