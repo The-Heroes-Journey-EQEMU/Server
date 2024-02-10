@@ -708,14 +708,16 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	*((uint32*)ptr) = combos;
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
-		RaceClassCombos *cmb = (RaceClassCombos*)ptr;
-		cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
-		cmb->Race = character_create_race_class_combos[i].Race;
-		cmb->Class = character_create_race_class_combos[i].Class;
-		cmb->Deity = character_create_race_class_combos[i].Deity;
-		cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
-		cmb->Zone = character_create_race_class_combos[i].Zone;
-		ptr += sizeof(RaceClassCombos);
+		if (character_create_race_class_combos[i].Race <- 12) {
+			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
+			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
+			cmb->Race = character_create_race_class_combos[i].Race;
+			cmb->Class = character_create_race_class_combos[i].Class;
+			cmb->Deity = character_create_race_class_combos[i].Deity;
+			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
+			cmb->Zone = character_create_race_class_combos[i].Zone;
+			ptr += sizeof(RaceClassCombos);
+		}
 	}
 
 	QueuePacket(outapp);
