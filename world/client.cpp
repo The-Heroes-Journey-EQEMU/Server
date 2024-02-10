@@ -708,7 +708,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	*((uint32*)ptr) = combos;
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
-		auto test_db = DataBucket::GetData("Bucket");
+		std::string account_progress = DataBucketsRepository::DataBuckets::GetData(GetAccountID() + "-account-xpac");
 		if (character_create_race_class_combos[i].Race <= 12) {
 			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
 			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
