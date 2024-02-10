@@ -1725,13 +1725,12 @@ void Client::OPGMTrainSkill(const EQApplicationPacket *app)
 		uint16 skilllevel = GetRawSkill(skill);
 
 		if (skilllevel == 0) {
-			//this is a new skill..				
-				uint16 t_level = SkillTrainLevel(skill, GetClass());
+			//this is a new skill..
+			uint16 t_level = SkillTrainLevel(skill, GetClass());
 
-				if (t_level == 0) {
-					LogSkills("Tried to train a new skill [{}] which is invalid for this race/class.", skill);
-					return;
-				}
+			if (t_level == 0) {
+				LogSkills("Tried to train a new skill [{}] which is invalid for this race/class.", skill);
+				return;
 			}
 
 			SetSkill(skill, t_level);
