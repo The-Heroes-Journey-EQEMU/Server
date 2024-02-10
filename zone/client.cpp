@@ -2840,6 +2840,8 @@ uint8 Client::SkillTrainLevel(EQ::skills::SkillType skillid, uint16 class_)
             if (classes_bits & (1 << i)) {
                 uint16 classID = i + 1;
 
+				LogDebug("Checking classID: [{}]", classID);
+
                 EQ::skills::SkillType adjusted_skillid = skillid;
                 if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && classID == Class::Berserker && skillid == EQ::skills::Skill1HPiercing) {
                     adjusted_skillid = EQ::skills::Skill2HPiercing;
