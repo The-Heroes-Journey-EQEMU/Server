@@ -578,8 +578,6 @@ protected:
 
 	std::list<NpcFactionEntriesRepository::NpcFactionEntries> faction_list;
 
-	std::list<NpcFactionEntriesRepository::NpcFactionEntries> faction_list;
-
 	int32	npc_faction_id;
 	int32	primary_faction;
 	int32	faction_amount;

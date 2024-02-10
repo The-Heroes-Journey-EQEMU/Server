@@ -683,15 +683,14 @@ int64 Client::_CalcBaseMana(int class_id)
 			}
 			break;
 		case 'N': {				
-				if (base_data) {
-					max_m = base_data->base_mana;
+				if (base_data.level == GetLevel()) {
+					max_m = base_data.mana;
 				} else {
 					max_m = 0;
 				}
 				break;
 			}
 		default: {
-				LogDebug("Invalid Class [{}] in CalcMaxMana", GetCasterClass(class_id));
 				LogDebug("Invalid Class [{}] in CalcMaxMana", GetCasterClass(class_id));
 				max_m = 0;
 				break;
