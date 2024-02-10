@@ -709,7 +709,7 @@ bool Client::TrainDiscipline(uint32 itemid) {
 				// Check if the player's class level is sufficient to use the spell
 				const auto level_required = spell.classes[class_index];
 				
-				if (level_required != 255 && player_level >= level_required) {
+				if (level_required != 255 && GetLevel() >= level_required) {
 					canLearn = true;
 					break; // Stop checking once we find a class that can learn the spell
 				}
