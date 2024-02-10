@@ -47,7 +47,6 @@
 #include "clientlist.h"
 #include "wguild_mgr.h"
 #include "sof_char_create_data.h"
-#include "../zone/data_bucket.h"
 #include "../common/zone_store.h"
 #include "../common/repositories/account_repository.h"
 #include "../common/repositories/player_event_logs_repository.h"
@@ -709,8 +708,10 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	*((uint32*)ptr) = combos;
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
-		std::string account_progress = DataBucket::GetData(GetAccountID() + "-account-xpac");
-		if (character_create_race_class_combos[i].Race <= 12) {
+		bool xpac_allowed = false;
+
+
+		if (xpac_allowed) {
 			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
 			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
 			cmb->Race = character_create_race_class_combos[i].Race;
