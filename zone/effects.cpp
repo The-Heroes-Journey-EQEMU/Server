@@ -910,14 +910,26 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 		return false;
 	}
 
-	//can we use the spell?
+	uint16_t class_bits = GetClassesBitmask();
 	const SPDat_Spell_Struct &spell = spells[spell_id];
-	uint8 level_to_use = spell.classes[GetClass() - 1];
-	if(level_to_use == 255) {
-		Message(Chat::Red, "Your class cannot learn from this tome.");
-		//should summon them a new one...
+	bool canLearn = false;
+
+	for (int i = 0; i < 16; ++i) {
+		if (class_bits & (1 << i)) {
+			uint8 level_to_use = spell.classes[i];
+			
+			if (level_to_use <= GetLevel()) {
+				canLearn = true;
+				break; // Stop checking once we find a class that can learn the spell
+			}
+		}
+	}
+
+	if (!canLearn) {
+		Message(Chat::Red, "You cannot use this skill.");
 		return false;
 	}
+
 
 	if(level_to_use > GetLevel()) {
 		MessageString(Chat::Red, DISC_LEVEL_USE_ERROR);
