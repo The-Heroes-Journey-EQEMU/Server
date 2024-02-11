@@ -724,7 +724,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	}
 
 	for(int i = 0; i < combos; ++i) {
-		bool xpac_allowed = true;
+		bool xpac_allowed = true;		
 
 		// Apply race restrictions based on account expansion
 		if (RuleB(Custom, BlockRaceOnAccountProgression)) {
@@ -743,7 +743,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		}
 
 		if (xpac_allowed) {
-			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
+			RaceClassCombos *cmb = (RaceClassCombos*)ptr;	
 			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
 			cmb->Race = character_create_race_class_combos[i].Race;
 			cmb->Class = character_create_race_class_combos[i].Class;
@@ -751,6 +751,8 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
 			cmb->Zone = character_create_race_class_combos[i].Zone;
 			ptr += sizeof(RaceClassCombos);
+		} else {
+			comobs--;
 		}
 	}
 
