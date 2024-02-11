@@ -878,8 +878,8 @@ bool WorldDatabase::ReloadCharacterCreateCombos(int accountID)
         std::string prog_query = "SELECT value FROM data_buckets WHERE key = '" + std::to_string(accountID) + "-account-progression'";
         auto prog_results = QueryDatabase(prog_query);
         if (prog_results.Success() && prog_results.RowCount() > 0) {
-            auto row = prog_results.begin(); // Assuming prog_results.begin() returns an iterator or pointer to the first row
-            account_progression = trings::ToInt(row[0]);
+            auto row = prog_results.begin();
+            account_progression = strings::ToInt(row[0]);
         }   
     }
 
