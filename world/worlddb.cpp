@@ -845,9 +845,9 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 {
     character_create_race_class_combos.clear();
 
-	auto race_blacklist = "0";
-	auto class_blacklist = "0";
-	auto account_progression = 0;
+	std::string race_blacklist = "0";
+	std::string class_blacklist = "0";
+	int account_progression = 0;
 
 	// placeholder for code to query data_buckets.key = GetAccountID()+"-account-progression" for account_progression value if either RuleB is enabled
 
