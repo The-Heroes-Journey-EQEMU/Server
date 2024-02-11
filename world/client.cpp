@@ -677,8 +677,13 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
+	int account_progression = 0
 	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
-		content_db.ReloadCharacterCreateCombos(GetAccountID());	
+		std::string query = StringFormat("SELECT value FROM data_buckets WHERE key = '%d-account-progression'", GetAccountID());
+		auto results = QueryDatabase(query);
+		if (results.Success() && results.RowCount > 0) {
+			account_progression =  results.begin()[0];
+		}
 	}
 
 	// New OpCode in SoF
@@ -713,14 +718,35 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	*((uint32*)ptr) = combos;
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
-		RaceClassCombos *cmb = (RaceClassCombos*)ptr;
-		cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
-		cmb->Race = character_create_race_class_combos[i].Race;
-		cmb->Class = character_create_race_class_combos[i].Class;
-		cmb->Deity = character_create_race_class_combos[i].Deity;
-		cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
-		cmb->Zone = character_create_race_class_combos[i].Zone;
-		ptr += sizeof(RaceClassCombos);
+		bool entry_enabled = true;
+		
+		if (RuleB(Custom, BlockRaceOnAccountProgression)) {
+			if (account_progression < 1 && character_create_race_class_combos[i].Race == 128) {
+				entry_enabled = false;
+			}
+			if (account_progression < 3 && character_create_race_class_combos[i].Race == 130) {
+				entry_enabled = false;
+			}
+		}
+		if (RuleB(Custom, BlockClassOnAccountProgression)) {
+			if (account_progression < 3 && character_create_race_class_combos[i].Class == 15) {
+				entry_enabled = true;
+			}
+			if (account_progression < 5 && character_create_race_class_combos[i].Race == 16) {
+				entry_enabled = true;
+			}
+		}
+		
+		if (entry_enabled) {
+			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
+			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
+			cmb->Race = character_create_race_class_combos[i].Race;
+			cmb->Class = character_create_race_class_combos[i].Class;
+			cmb->Deity = character_create_race_class_combos[i].Deity;
+			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
+			cmb->Zone = character_create_race_class_combos[i].Zone;
+			ptr += sizeof(RaceClassCombos);
+		}
 	}
 
 	QueuePacket(outapp);
