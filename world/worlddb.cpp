@@ -808,6 +808,39 @@ bool WorldDatabase::GetCharacterLevel(const char *name, int &level)
     return true;
 }
 
+bool WorldDatabase::LoadCharacterCreateAllocations()
+{
+	character_create_allocations.clear();
+
+	std::string query = "SELECT * FROM char_create_point_allocations ORDER BY id";
+	auto results = QueryDatabase(query);
+	if (!results.Success())
+        return false;
+
+    for (auto row = results.begin(); row != results.end(); ++row) {
+        RaceClassAllocation allocate;
+		allocate.Index = Strings::ToInt(row[0]);
+		allocate.BaseStats[0] = Strings::ToInt(row[1]);
+		allocate.BaseStats[3] = Strings::ToInt(row[2]);
+		allocate.BaseStats[1] = Strings::ToInt(row[3]);
+		allocate.BaseStats[2] = Strings::ToInt(row[4]);
+		allocate.BaseStats[4] = Strings::ToInt(row[5]);
+		allocate.BaseStats[5] = Strings::ToInt(row[6]);
+		allocate.BaseStats[6] = Strings::ToInt(row[7]);
+		allocate.DefaultPointAllocation[0] = Strings::ToInt(row[8]);
+		allocate.DefaultPointAllocation[3] = Strings::ToInt(row[9]);
+		allocate.DefaultPointAllocation[1] = Strings::ToInt(row[10]);
+		allocate.DefaultPointAllocation[2] = Strings::ToInt(row[11]);
+		allocate.DefaultPointAllocation[4] = Strings::ToInt(row[12]);
+		allocate.DefaultPointAllocation[5] = Strings::ToInt(row[13]);
+		allocate.DefaultPointAllocation[6] = Strings::ToInt(row[14]);
+
+		character_create_allocations.push_back(allocate);
+    }
+
+	return true;
+}
+
 bool WorldDatabase::LoadCharacterCreateCombos()
 {
     character_create_race_class_combos.clear();
@@ -842,32 +875,6 @@ bool WorldDatabase::LoadCharacterCreateCombos()
     );
 
     return true;
-}
-
-bool WorldDatabase::LoadCharacterCreateCombos()
-{
-	character_create_race_class_combos.clear();
-
-	std::string query = "SELECT * FROM char_create_combinations ORDER BY race, class, deity, start_zone";
-	auto results = QueryDatabase(query);
-	if (!results.Success())
-        return false;
-
-	for (auto row = results.begin(); row != results.end(); ++row) {
-		RaceClassCombos combo;
-		combo.AllocationIndex = Strings::ToInt(row[0]);
-		combo.Race = Strings::ToInt(row[1]);
-		combo.Class = Strings::ToInt(row[2]);
-		combo.Deity = Strings::ToInt(row[3]);
-		combo.Zone = Strings::ToInt(row[4]);
-		combo.ExpansionRequired = Strings::ToInt(row[5]);
-
-		character_create_race_class_combos.push_back(combo);
-	}
-
-	// iterate over character_create_race_class_combos and remove any where Class is 15 or 16, or Race is 128 or 130
-
-	return true;
 }
 
 // this is a slightly modified version of SharedDatabase::GetInventory(...) for character select use-only
