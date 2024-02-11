@@ -845,7 +845,7 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 {
     character_create_race_class_combos.clear();
 
-    std::string query = "SELECT * FROM char_create_combinations ORDER BY race, class, deity, start_zone";
+    std::string query = "SELECT * FROM char_create_combinations WHERE class != 13 ORDER BY race, class, deity, start_zone";
     auto results = QueryDatabase(query);
     if (!results.Success())
         return false;
@@ -861,18 +861,6 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 
         character_create_race_class_combos.push_back(combo);
     }
-
-    // Remove entries where Class is 15 or 16, or Race is 128 or 130
-    character_create_race_class_combos.erase(
-        std::remove_if(
-            character_create_race_class_combos.begin(), 
-            character_create_race_class_combos.end(),
-            [](const RaceClassCombos& combo) {
-                return combo.Class == 15 || combo.Class == 16;
-            }
-        ),
-        character_create_race_class_combos.end()
-    );
 
     return true;
 }
