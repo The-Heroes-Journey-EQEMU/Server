@@ -1090,7 +1090,7 @@ int Client::GetDynamicAATimer(int aa_id) {
     return 0; 
 }
 
-int Client::SetDynamicAATimer(uint aa_id) {
+int Client::SetDynamicAATimer(int aa_id) {
 	if (!GetDynamicAATimer(aa_id)) {
 		int timer_id = GetNextDynamicAATimer();
 		dynamic_aa_timers[timer_id] = aa_id;
