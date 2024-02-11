@@ -1075,14 +1075,20 @@ void Client::SendAlternateAdvancementTimers() {
 
 int Client::GetDynamicAATimer(int aa_id) {
     for (int i = 1; i < 100; i++) {
-		std::string key = "aaTimer_" + std::to_string(i);
-		int value = std::to_integer(GetBucket(key));
-		if (value == aa_id) {
-			return i;
-		}
-	}
-    return 0;
+        std::string key = "aaTimer_" + std::to_string(i);
+        std::string bucketValue = GetBucket(key);
+        
+        // Check if the bucket has a value before attempting conversion
+        if (!bucketValue.empty()) {
+            int value = std::stoi(bucketValue); // Convert string value to integer
+            if (value == aa_id) {
+                return i; // Return the timer ID associated with aa_id
+            }
+        }
+    }
+    return 0; // Return 0 if no associated timer ID is found
 }
+
 
 
 int Client::SetDynamicAATimer(int aa_id) {
