@@ -2350,7 +2350,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
 		out->can_cast = 0; // todo: implement
 		out->can_scribe = 0; // todo: implement
 
-		memcpy(out->booktext, booktxt2.c_str(), length);
+		memcpy(out->booktext, booktxt2.c_str(), booktxt2.length());
 
 		if (EQ::ValueWithin(book_language, Language::CommonTongue, Language::Unknown27)) {
 			if (m_pp.languages[book_language] < Language::MaxValue) {
