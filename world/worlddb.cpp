@@ -879,7 +879,7 @@ bool WorldDatabase::ReloadCharacterCreateCombos(int accountID)
         auto prog_results = QueryDatabase(prog_query);
         if (prog_results.Success() && prog_results.RowCount() > 0) {
             auto row = prog_results.begin();
-            account_progression = strings::ToInt(row[0]);
+            account_progression = Strings::ToInt(row[0]);
         }   
     }
 
