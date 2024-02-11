@@ -9692,9 +9692,9 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 					}
 
 					if (i == 0) {
-						if (!IsCastWhileInvisibleSpell(augitem->Click.Effect)) {
-							CommonBreakInvisible(); // client can't do this for us :(
-						}
+						//if (!IsCastWhileInvisibleSpell(augitem->Click.Effect)) {
+						//	CommonBreakInvisible(); // client can't do this for us :(
+						//}
 						
 						
 					//	if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
