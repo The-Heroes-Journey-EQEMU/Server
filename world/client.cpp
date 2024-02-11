@@ -682,7 +682,8 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		std::string query = StringFormat("SELECT value FROM data_buckets WHERE key = '%d-account-progression'", GetAccountID());
 		auto results = database.QueryDatabase(query);
 		if (results.Success() && results.RowCount() > 0) {
-			account_progression =  results.begin()[0];
+			auto row = results.begin();
+			account_progression = row[0];
 		}
 	}
 
