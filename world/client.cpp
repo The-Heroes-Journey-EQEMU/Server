@@ -710,7 +710,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	int account_expansion = 0;
 
 	// Check if we need to fetch account expansion based on race or class progression rules.
-	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
+	/*if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
 		std::string bucket_key = GetAccountID() + "-Account-Expansion";
 		std::string query = "SELECT value FROM data_buckets WHERE key = '" + bucket_key + "'";
 		auto results = database.QueryDatabase(query);
@@ -721,7 +721,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 				account_expansion = Strings::ToInt(row[0]);
 			}
 		}	
-	}
+	}*/
 
 	for(int i = 0; i < combos; ++i) {
 		bool xpac_allowed = true;		
@@ -751,8 +751,6 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
 			cmb->Zone = character_create_race_class_combos[i].Zone;
 			ptr += sizeof(RaceClassCombos);
-		} else {
-			combos--;
 		}
 	}
 
