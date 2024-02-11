@@ -868,7 +868,7 @@ bool WorldDatabase::LoadCharacterCreateCombos()
             character_create_race_class_combos.begin(), 
             character_create_race_class_combos.end(),
             [](const RaceClassCombos& combo) {
-                return combo.Class == 15 || combo.Class == 16 || combo.Race == 128 || combo.Race == 130;
+                return combo.Class == 15 || combo.Class == 16;
             }
         ),
         character_create_race_class_combos.end()
