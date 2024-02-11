@@ -879,7 +879,7 @@ bool WorldDatabase::ReloadCharacterCreateCombos(int accountID)
         auto prog_results = QueryDatabase(prog_query);
         if (prog_results.Success() && prog_results.RowCount() > 0) {
             auto row = prog_results.begin(); // Assuming prog_results.begin() returns an iterator or pointer to the first row
-            account_progression = Strings::ToInt((*row)[0]); // Correctly dereference the iterator/pointer to access the first column
+            account_progression = trings::ToInt(row[0]);
         }   
     }
 
@@ -904,17 +904,17 @@ bool WorldDatabase::ReloadCharacterCreateCombos(int accountID)
     if (!results.Success())
         return false;
 
-    for (auto row = results.begin(); row != results.end(); ++row) {
-        RaceClassCombos combo;
-        combo.AllocationIndex = Strings::ToInt((*row)[0]);
-        combo.Race = Strings::ToInt((*row)[1]);
-        combo.Class = Strings::ToInt((*row)[2]);
-        combo.Deity = Strings::ToInt((*row)[3]);
-        combo.Zone = Strings::ToInt((*row)[4]);
-        combo.ExpansionRequired = Strings::ToInt((*row)[5]);
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		RaceClassCombos combo;
+		combo.AllocationIndex = Strings::ToInt(row[0]);
+		combo.Race = Strings::ToInt(row[1]);
+		combo.Class = Strings::ToInt(row[2]);
+		combo.Deity = Strings::ToInt(row[3]);
+		combo.Zone = Strings::ToInt(row[4]);
+		combo.ExpansionRequired = Strings::ToInt(row[5]);
 
-        character_create_race_class_combos.push_back(combo);
-    }
+		character_create_race_class_combos.push_back(combo);
+	}
 
     return true;
 }
