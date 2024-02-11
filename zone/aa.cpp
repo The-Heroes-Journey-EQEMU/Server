@@ -993,6 +993,10 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 		outapp->WriteSInt32(prereq.second);
 	}
 
+	if (RuleB(Custom, UseDynamicAATimers)) {
+		aai->spell_type = 0;
+	}
+
 	QueuePacket(outapp);
 	safe_delete(outapp);
 }
