@@ -874,10 +874,10 @@ bool WorldDatabase::ReloadCharacterCreateCombos(int accountID)
 	int account_progression = 0;
 
 	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
-		std::string prog_query = "SELECT value FROM data_buckets WHERE key = " + accountID + "-account-progression";
+		std::string prog_query = "SELECT value FROM data_buckets WHERE key = '" + accountID + "-account-progression'";
 		auto prog_results = QueryDatabase(prog_query);
-		if (results.Success() && results.RowCount > 0) {
-			account_progression = Strings::ToInt(row[0]);
+		if (prog_results.Success() && prog_results.RowCount > 0) {
+			account_progression = Strings::ToInt(prog_results.begin()[0]);
 		}	
 	}
 
