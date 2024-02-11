@@ -1075,7 +1075,6 @@ uint GetNextDynamicAATimer() {
 		
 		if (p_timers.Expired(&database, pTimerAAStart + i)) {
 			dynamic_aa_timers[i] = -1;
-			SendAlternateAdvancementTable();
 		}
 
         if (dynamic_aa_timers[i] == -1) {
@@ -1098,10 +1097,10 @@ bool SetDynamicAATimer(uint rank_id) {
 	if (!GetDynamicAATimer(rank_id)) {
 		int timer_id = GetNextDynamicAATimer();
 		dynamic_aa_timers[timer_id] = rank_id;
+		SendAlternateAdvancementTable();
 	}
 	return false;
-}
-	
+}	
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
@@ -1412,6 +1411,10 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		TogglePassiveAlternativeAdvancement(*rank, ability->id);
 	}
 	else {
+
+		if (RuleB(Custom, UseDynamicAATimers)) {
+			rank->spell_type = GetNextDynamicAATimer();
+		}
 
 		 //Bards can cast instant cast AAs while they are casting or channeling item cast.
 		if (!RuleB(Custom, MulticlassingEnabled) && GetClass() == Class::Bard && IsCasting() && spells[rank->spell].cast_time == 0) {
