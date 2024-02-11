@@ -2322,7 +2322,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
     }
 
 	if (booktxt2[0] != '\0') {
-		auto outapp = new EQApplicationPacket(OP_ReadBook, length + sizeof(BookText_Struct));
+		auto outapp = new EQApplicationPacket(OP_ReadBook, booktxt2.length() + sizeof(BookText_Struct));
 
 		BookText_Struct *out = (BookText_Struct *) outapp->pBuffer;
 		out->window = book->window;
