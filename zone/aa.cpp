@@ -1071,14 +1071,16 @@ void Client::SendAlternateAdvancementTimers() {
 
 // This method returns the next unused dynamic AA timer, excluding 0.
 uint Client::GetNextDynamicAATimer() {
-    for (uint i = 1; i < dynamic_aa_timers.size(); ++i) {
+    for (uint i = 2; i < dynamic_aa_timers.size(); ++i) {
 		
 		if (p_timers.Expired(&database, pTimerAAStart + i)) {
 			dynamic_aa_timers[i] = -1;
+			SendAlternateAdvancementTable();
 		}
 
         if (dynamic_aa_timers[i] == -1) {
 			LogDebug("Found Available TimerID: [{}]", i);
+			SendAlternateAdvancementTable();
             return i;
         }  
     }
