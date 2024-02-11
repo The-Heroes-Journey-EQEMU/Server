@@ -9620,14 +9620,15 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 						}
 						
 						
-						if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
-							LogDebug("WTF? : [{}]", RuleB(Custom, MulticlassingEnabled));
-							DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
-						}
+					//	if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
+					//		LogDebug("WTF? : [{}]", RuleB(Custom, MulticlassingEnabled));
+					//		DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
+					//	}
 
-						else {
+					//	else {
+						LogDebug("WTF?2");
 							CastSpell(item->Click.Effect, target_id, CastingSlot::Item, item->CastTime, 0, 0, slot_id);
-						}
+					//	}
 					} else {
 						InterruptSpell(item->Click.Effect);
 						SendSpellBarEnable(item->Click.Effect);
@@ -9696,14 +9697,15 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 						}
 						
 						
-						if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
-							LogDebug("WTF2? : [{}]", RuleB(Custom, MulticlassingEnabled));
-							DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
-						}
+					//	if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
+					//		LogDebug("WTF2? : [{}]", RuleB(Custom, MulticlassingEnabled));
+					//		DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
+					//	}
 
-						else { 
+					//	else {
+							LogDebug("WTF?");
 							CastSpell(augitem->Click.Effect, target_id, CastingSlot::Item, augitem->CastTime, 0, 0, slot_id);
-						}
+					//	}
 					} else {
 						InterruptSpell(item->Click.Effect);
 						SendSpellBarEnable(item->Click.Effect);
