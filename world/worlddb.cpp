@@ -849,6 +849,8 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 	auto class_blacklist = "0";
 	auto account_progression = 0;
 
+	// placeholder for code to query data_buckets.key = GetAccountID()+"-account-progression" for account_progression value if either RuleB is enabled
+
 	if (RuleB(Custom, BlockRaceOnAccountProgression)) {
 		if (account_progression < 1)
 			race_blacklist += ",128";
@@ -865,7 +867,7 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 			class_blacklist += ",16";
 	}
 
-    std::string query = "SELECT * FROM char_create_combinations WHERE NOT class IN (%s) OR race IN(%s) ORDER BY race, class, deity, start_zone";
+    std::string query = "SELECT * FROM char_create_combinations WHERE NOT class IN (" + class_blacklist + ") AND race NOT IN(" + race_blacklist + ") ORDER BY race, class, deity, start_zone";
     auto results = QueryDatabase(query);
     if (!results.Success())
         return false;
