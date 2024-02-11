@@ -677,9 +677,14 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
+	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
+		content_db.ReloadCharacterCreateCombos(GetAccountID());	
+	}
+
 	// New OpCode in SoF
 	uint32 allocs = character_create_allocations.size();
 	uint32 combos = character_create_race_class_combos.size();
+
 	uint32 len = sizeof(RaceClassAllocation) * allocs;
 	len += sizeof(RaceClassCombos) * combos;
 	len += sizeof(uint8);
