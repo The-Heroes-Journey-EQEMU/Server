@@ -677,7 +677,7 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
-	int account_progression = 0
+	int account_progression = 0;
 	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
 		std::string query = StringFormat("SELECT value FROM data_buckets WHERE key = '%d-account-progression'", GetAccountID());
 		auto results = QueryDatabase(query);
@@ -719,7 +719,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
 		bool entry_enabled = true;
-		
+
 		if (RuleB(Custom, BlockRaceOnAccountProgression)) {
 			if (account_progression < 1 && character_create_race_class_combos[i].Race == 128) {
 				entry_enabled = false;
