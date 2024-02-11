@@ -22,6 +22,7 @@
 #include "../common/inventory_profile.h"
 #include "../common/rulesys.h"
 #include <iostream>
+#include <algorithm>
 #include <cstdlib>
 #include <vector>
 #include "sof_char_create_data.h"
@@ -807,37 +808,40 @@ bool WorldDatabase::GetCharacterLevel(const char *name, int &level)
     return true;
 }
 
-bool WorldDatabase::LoadCharacterCreateAllocations()
+bool WorldDatabase::LoadCharacterCreateCombos()
 {
-	character_create_allocations.clear();
+    character_create_race_class_combos.clear();
 
-	std::string query = "SELECT * FROM char_create_point_allocations ORDER BY id";
-	auto results = QueryDatabase(query);
-	if (!results.Success())
+    std::string query = "SELECT * FROM char_create_combinations ORDER BY race, class, deity, start_zone";
+    auto results = QueryDatabase(query);
+    if (!results.Success())
         return false;
 
     for (auto row = results.begin(); row != results.end(); ++row) {
-        RaceClassAllocation allocate;
-		allocate.Index = Strings::ToInt(row[0]);
-		allocate.BaseStats[0] = Strings::ToInt(row[1]);
-		allocate.BaseStats[3] = Strings::ToInt(row[2]);
-		allocate.BaseStats[1] = Strings::ToInt(row[3]);
-		allocate.BaseStats[2] = Strings::ToInt(row[4]);
-		allocate.BaseStats[4] = Strings::ToInt(row[5]);
-		allocate.BaseStats[5] = Strings::ToInt(row[6]);
-		allocate.BaseStats[6] = Strings::ToInt(row[7]);
-		allocate.DefaultPointAllocation[0] = Strings::ToInt(row[8]);
-		allocate.DefaultPointAllocation[3] = Strings::ToInt(row[9]);
-		allocate.DefaultPointAllocation[1] = Strings::ToInt(row[10]);
-		allocate.DefaultPointAllocation[2] = Strings::ToInt(row[11]);
-		allocate.DefaultPointAllocation[4] = Strings::ToInt(row[12]);
-		allocate.DefaultPointAllocation[5] = Strings::ToInt(row[13]);
-		allocate.DefaultPointAllocation[6] = Strings::ToInt(row[14]);
+        RaceClassCombos combo;
+        combo.AllocationIndex = Strings::ToInt(row[0]);
+        combo.Race = Strings::ToInt(row[1]);
+        combo.Class = Strings::ToInt(row[2]);
+        combo.Deity = Strings::ToInt(row[3]);
+        combo.Zone = Strings::ToInt(row[4]);
+        combo.ExpansionRequired = Strings::ToInt(row[5]);
 
-		character_create_allocations.push_back(allocate);
+        character_create_race_class_combos.push_back(combo);
     }
 
-	return true;
+    // Remove entries where Class is 15 or 16, or Race is 128 or 130
+    character_create_race_class_combos.erase(
+        std::remove_if(
+            character_create_race_class_combos.begin(), 
+            character_create_race_class_combos.end(),
+            [](const RaceClassCombos& combo) {
+                return combo.Class == 15 || combo.Class == 16 || combo.Race == 128 || combo.Race == 130;
+            }
+        ),
+        character_create_race_class_combos.end()
+    );
+
+    return true;
 }
 
 bool WorldDatabase::LoadCharacterCreateCombos()
@@ -860,6 +864,8 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 
 		character_create_race_class_combos.push_back(combo);
 	}
+
+	// iterate over character_create_race_class_combos and remove any where Class is 15 or 16, or Race is 128 or 130
 
 	return true;
 }
