@@ -1387,7 +1387,7 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 			}
 		} 
 		else { */
-			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::Item, -1, -1, 0, -1, rank->spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
+			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, spells[rank->spell].cast_time, 0, 0, -1, rank->spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
 				return;
 			}
 		//}
