@@ -3550,8 +3550,9 @@ bool Mob::CheckSpellLevelRestriction(Mob *caster, uint16 spell_id)
 	if (check_for_restrictions) {
 		int spell_level = GetSpellMinimumLevel(spell_id);
 
+		// Exclude AA abilities (Frequently level 254)
 		// Only check for beneficial buffs
-		if (IsBuffSpell(spell_id) && IsBeneficialSpell(spell_id)) {
+		if (IsBuffSpell(spell_id) && IsBeneficialSpell(spell_id) && spell_level < 100) {
 			if (spell_level > 65) {
 				if (IsGroupSpell(spell_id) && GetLevel() < 62) {
 					can_cast = false;
