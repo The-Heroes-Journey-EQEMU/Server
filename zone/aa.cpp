@@ -981,7 +981,9 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->total_prereqs = rank->prereqs.size();
 
 	if (RuleB(Custom, UseDynamicAATimers)) {
-		aai->spell_type = GetDynamicAATimer(rank->id);
+		if (CanUseAlternateAdvancementRank(rank)) {
+			aai->spell_type = GetDynamicAATimer(aa_id);
+		}
 	}
 
 	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
@@ -1079,8 +1081,8 @@ int Client::GetNextDynamicAATimer() {
     return 0;
 }
 
-int Client::GetDynamicAATimer(uint rank_id) {
-    auto it = std::find(dynamic_aa_timers.begin() + 1, dynamic_aa_timers.end(), rank_id);
+int Client::GetDynamicAATimer(int aa_id) {
+    auto it = std::find(dynamic_aa_timers.begin() + 1, dynamic_aa_timers.end(), aa_id);
     if (it != dynamic_aa_timers.end()) {        
 		int timer_id = std::distance(dynamic_aa_timers.begin(), it);
         return timer_id;
@@ -1088,10 +1090,10 @@ int Client::GetDynamicAATimer(uint rank_id) {
     return 0; 
 }
 
-int Client::SetDynamicAATimer(uint rank_id) {
-	if (!GetDynamicAATimer(rank_id)) {
+int Client::SetDynamicAATimer(uint aa_id) {
+	if (!GetDynamicAATimer(aa_id)) {
 		int timer_id = GetNextDynamicAATimer();
-		dynamic_aa_timers[timer_id] = rank_id;
+		dynamic_aa_timers[timer_id] = aa_id;
 		return timer_id;
 	}
 	return 0;
@@ -1342,7 +1344,7 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 
 	int spell_type = rank->spell_type;
 	if (RuleB(Custom, UseDynamicAATimers)) {
-		spell_type = GetDynamicAATimer(rank->id);
+		spell_type = GetDynamicAATimer(rank->base_ability->id);
 	}
 
 
