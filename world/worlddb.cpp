@@ -845,7 +845,7 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 {
     character_create_race_class_combos.clear();
 
-    std::string query = "SELECT * FROM char_create_combinations WHERE class != 13 ORDER BY race, class, deity, start_zone";
+    std::string query = "SELECT * FROM char_create_combinations WHERE (class != 13 AND race != 1) ORDER BY race, class, deity, start_zone";
     auto results = QueryDatabase(query);
     if (!results.Success())
         return false;
