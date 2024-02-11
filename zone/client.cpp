@@ -2281,60 +2281,97 @@ void Client::SetGM(bool toggle) {
 }
 
 void Client::ReadBook(BookRequest_Struct *book) {
-	int16 book_language=0;
-	char *txtfile = book->txtfile;
+    int16 book_language = 0;    
+    char *txtfile = book->txtfile;
+    std::string txtfileString = txtfile;
+    uint32 itemID = 0; // itemID from custom data rider
+    std::string bookString; // Store the original charmfileID
 
-	if(txtfile[0] == '0' && txtfile[1] == '\0') {
-		//invalid book... coming up on non-book items.
-		return;
+    // Check if # exists in the txtfile.
+    size_t hashPosition = txtfileString.find('#');
+    if (hashPosition != std::string::npos) {
+        try {
+            itemID = static_cast<uint32>(std::stoul(txtfileString.substr(0, hashPosition)));
+            bookString = txtfileString.substr(hashPosition + 1);
+        } catch (const std::exception& e) {
+            // Failed to convert to uint, capture everything after the #
+            bookString = txtfileString.substr(hashPosition + 1);
+        }
+    } else {
+        // No # found, try to interpret as uint first.
+        try {
+            itemID = static_cast<uint32>(std::stoul(txtfileString));
+        } catch (const std::exception& e) {
+            // Failed to convert to uint, treat the entire txtfile as a string.
+            bookString = txtfileString;
+        }
+    }
+
+    std::string booktxt2;
+
+	if (!bookString.empty()) {
+		booktxt2 = content_db.GetBook(bookString.c_str(), &book_language);
 	}
 
-	std::string booktxt2 = content_db.GetBook(txtfile, &book_language);
-	int length = booktxt2.length();
+    if (book->type == 2 && itemID > 0) {
+        auto discover_charname = GetDiscoverer(itemID);
+        if (!discover_charname.empty()) {
+            // Append the discovery information to booktxt2
+            booktxt2 += "<br>Discovered by: " + discover_charname;
+        }        
+    }
 
 	if (booktxt2[0] != '\0') {
-#if EQDEBUG >= 6
-		LogInfo("Client::ReadBook() textfile:[{}] Text:[{}]", txtfile, booktxt2.c_str());
-#endif
-		auto outapp = new EQApplicationPacket(OP_ReadBook, length + sizeof(BookText_Struct));
+		auto outapp = new EQApplicationPacket(OP_ReadBook, booktxt2.length() + sizeof(BookText_Struct));
 
 		BookText_Struct *out = (BookText_Struct *) outapp->pBuffer;
 		out->window = book->window;
 
-
 		if (ClientVersion() >= EQ::versions::ClientVersion::SoF) {
+			// Find out what slot the book was read from.
 			// SoF+ need to look up book type for the output message.
-			const EQ::ItemInstance *inst = nullptr;
+			int16	read_from_slot;
 
-			if (book->invslot <= EQ::invbag::GENERAL_BAGS_END)
-			{
-				inst = m_inv[book->invslot];
+			if (book->subslot >= 0) {
+				uint16 offset;
+				offset = (book->invslot-23) * 10;	// How many packs to skip.
+				read_from_slot = 251 + offset + book->subslot;
+			}
+			else {
+				read_from_slot = book->invslot -1;
 			}
 
-			if(inst)
+			const EQ::ItemInstance *inst = nullptr;
+
+			if (read_from_slot <= EQ::invbag::GENERAL_BAGS_END)
+				{
+				inst = m_inv[read_from_slot];
+				}
+
+			if(inst) {
 				out->type = inst->GetItem()->Book;
-			else
+			}
+			else {
 				out->type = book->type;
+			}
 		}
 		else {
 			out->type = book->type;
 		}
+
 		out->invslot = book->invslot;
-		out->target_id = book->target_id;
-		out->can_cast = 0; // todo: implement
-		out->can_scribe = 0; // todo: implement
 
-		memcpy(out->booktext, booktxt2.c_str(), length);
+		memcpy(out->booktext, booktxt2.c_str(), booktxt2.length());
 
-		if (EQ::ValueWithin(book_language, Language::CommonTongue, Language::Unknown27)) {
-			if (m_pp.languages[book_language] < Language::MaxValue) {
-				GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
+		if (book_language > 0 && book_language < MAX_PP_LANGUAGE) {
+			if (m_pp.languages[book_language] < 100) {
+				GarbleMessage(out->booktext, (100 - m_pp.languages[book_language]));
 			}
-		}
+		}	
 
 		QueuePacket(outapp);
 		safe_delete(outapp);
-	}
+	}	
 }
 
 void Client::QuestReadBook(const char* text, uint8 type) {
