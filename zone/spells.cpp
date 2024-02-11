@@ -1163,9 +1163,6 @@ bool Client::CheckFizzle(uint16 spell_id)
 		}
 	}
 	
-	//is there any sort of focus that affects fizzling?
-	int par_skill;
-	int act_skill;
 	//IIRC even if you are lagging behind the skill levels you don't fizzle much
 	par_skill = spell_level * 5 - 10; 
 	if (par_skill > 235) {
