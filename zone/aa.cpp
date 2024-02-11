@@ -1084,13 +1084,13 @@ uint Client::GetNextDynamicAATimer() {
     return -1; // Indicates all timers are in use or none meet the criteria for reuse
 }
 
-uint Client::GetDynamicAATimer(uint rank_id)
-{
-	auto it = std::find(dynamic_aa_timers.begin()+1, dynamic_aa_timers.end(), rank_id);
-	if (it != dynamic_aa_timers.end()) {
-		return it;
-	}
-	return 0; // Indicates that this is 'off cooldown' and should use the reserved timer ID to demonstrate that it is available for use.
+uint Client::GetDynamicAATimer(uint rank_id) {
+    auto it = std::find(dynamic_aa_timers.begin() + 1, dynamic_aa_timers.end(), rank_id);
+    if (it != dynamic_aa_timers.end()) {
+        // Calculate and return the index (timer ID) by finding the distance from the beginning
+        return std::distance(dynamic_aa_timers.begin(), it);
+    }
+    return 0; // Indicates that this rank_id is 'off cooldown'
 }
 
 bool Client::SetDynamicAATimer(uint rank_id) {
