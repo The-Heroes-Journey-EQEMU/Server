@@ -980,6 +980,10 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->total_effects = rank->effects.size();
 	aai->total_prereqs = rank->prereqs.size();
 
+	if (RuleB(Custom, UseDynamicAATimers)) {
+		aai->spell_type = GetDynamicAATimer(rank->id);
+	}
+
 	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
 	for(auto &effect : rank->effects) {
 		outapp->WriteSInt32(effect.effect_id);
@@ -991,10 +995,6 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	for(auto &prereq : rank->prereqs) {
 		outapp->WriteSInt32(prereq.first);
 		outapp->WriteSInt32(prereq.second);
-	}
-
-	if (RuleB(Custom, UseDynamicAATimers)) {
-		aai->spell_type = GetDynamicAATimer(rank->id);
 	}
 
 	QueuePacket(outapp);
