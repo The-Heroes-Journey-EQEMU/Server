@@ -752,7 +752,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 			cmb->Zone = character_create_race_class_combos[i].Zone;
 			ptr += sizeof(RaceClassCombos);
 		} else {
-			comobs--;
+			combos--;
 		}
 	}
 
