@@ -925,6 +925,11 @@ public:
 
 	inline PTimerList &GetPTimers() { return(p_timers); }
 
+	//Dynamic AA timer stuff
+	uint GetNextDynamicAATimer();
+	uint GetDynamicAATimer(uint rank_id);	
+	bool SetDynamicAATimer(uint rank_id);
+
 	//New AA Methods
 	void SendAlternateAdvancementRank(int aa_id, int level);
 	void SendAlternateAdvancementTable();
@@ -2081,6 +2086,7 @@ private:
 	glm::vec3 m_quest_compass;
 	bool m_has_quest_compass = false;
 	std::vector<uint32_t> m_dynamic_zone_ids;
+	std::vector<uint> dynamic_aa_timers;
 
 
 public:

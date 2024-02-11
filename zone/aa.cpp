@@ -994,7 +994,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	}
 
 	if (RuleB(Custom, UseDynamicAATimers)) {
-		aai->spell_type = 0;
+		aai->spell_type = GetDynamicAATimer(rank->id);
 	}
 
 	QueuePacket(outapp);
@@ -1068,6 +1068,40 @@ void Client::SendAlternateAdvancementTimers() {
 
 	safe_delete(outapp);
 }
+
+// This method returns the next unused dynamic AA timer, excluding 0.
+uint GetNextDynamicAATimer() {
+    for (uint i = 1; i < dynamic_aa_timers.size(); ++i) {
+		
+		if (p_timers.Expired(&database, pTimerAAStart + i)) {
+			dynamic_aa_timers[i] = -1;
+			SendAlternateAdvancementTable();
+		}
+
+        if (dynamic_aa_timers[i] == -1) {
+            return i;
+        }  
+    }
+    return -1; // Indicates all timers are in use or none meet the criteria for reuse
+}
+
+uint GetDynamicAATimer(uint rank_id)
+{
+	auto it = std::find(dynamic_aa_timers.begin()+1, dynamic_aa_timers.end(), rank_id);
+	if (it != dynamic_aa_timers.end()) {
+		return it;
+	}
+	return 0; // Indicates that this is 'off cooldown' and should use the reserved timer ID to demonstrate that it is available for use.
+}
+
+bool SetDynamicAATimer(uint rank_id) {
+	if (!GetDynamicAATimer(rank_id)) {
+		int timer_id = GetNextDynamicAATimer();
+		dynamic_aa_timers[timer_id] = rank_id;
+	}
+	return false;
+}
+	
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);

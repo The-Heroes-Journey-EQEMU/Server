@@ -365,6 +365,8 @@ Client::Client(EQStreamInterface *ieqs) : Mob(
 	SetDisplayMobInfoWindow(true);
 	SetDevToolsEnabled(true);
 
+	dynamic_aa_timers(100, -1);
+
 	bot_owner_options[booDeathMarquee] = false;
 	bot_owner_options[booStatsUpdate] = false;
 	bot_owner_options[booSpawnMessageSay] = false;
