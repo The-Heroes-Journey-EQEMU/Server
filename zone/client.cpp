@@ -2322,56 +2322,45 @@ void Client::ReadBook(BookRequest_Struct *book) {
     }
 
 	if (booktxt2[0] != '\0') {
-		auto outapp = new EQApplicationPacket(OP_ReadBook, booktxt2.length() + sizeof(BookText_Struct));
+		auto outapp = new EQApplicationPacket(OP_ReadBook, length + sizeof(BookText_Struct));
 
 		BookText_Struct *out = (BookText_Struct *) outapp->pBuffer;
 		out->window = book->window;
 
+
 		if (ClientVersion() >= EQ::versions::ClientVersion::SoF) {
-			// Find out what slot the book was read from.
 			// SoF+ need to look up book type for the output message.
-			int16	read_from_slot;
-
-			if (book->subslot >= 0) {
-				uint16 offset;
-				offset = (book->invslot-23) * 10;	// How many packs to skip.
-				read_from_slot = 251 + offset + book->subslot;
-			}
-			else {
-				read_from_slot = book->invslot -1;
-			}
-
 			const EQ::ItemInstance *inst = nullptr;
 
-			if (read_from_slot <= EQ::invbag::GENERAL_BAGS_END)
-				{
-				inst = m_inv[read_from_slot];
-				}
+			if (book->invslot <= EQ::invbag::GENERAL_BAGS_END)
+			{
+				inst = m_inv[book->invslot];
+			}
 
-			if(inst) {
+			if(inst)
 				out->type = inst->GetItem()->Book;
-			}
-			else {
+			else
 				out->type = book->type;
-			}
 		}
 		else {
 			out->type = book->type;
 		}
-
 		out->invslot = book->invslot;
+		out->target_id = book->target_id;
+		out->can_cast = 0; // todo: implement
+		out->can_scribe = 0; // todo: implement
 
-		memcpy(out->booktext, booktxt2.c_str(), booktxt2.length());
+		memcpy(out->booktext, booktxt2.c_str(), length);
 
-		if (book_language > 0 && book_language < MAX_PP_LANGUAGE) {
-			if (m_pp.languages[book_language] < 100) {
-				GarbleMessage(out->booktext, (100 - m_pp.languages[book_language]));
+		if (EQ::ValueWithin(book_language, Language::CommonTongue, Language::Unknown27)) {
+			if (m_pp.languages[book_language] < Language::MaxValue) {
+				GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
 			}
-		}	
+		}
 
 		QueuePacket(outapp);
 		safe_delete(outapp);
-	}	
+	}
 }
 
 void Client::QuestReadBook(const char* text, uint8 type) {
