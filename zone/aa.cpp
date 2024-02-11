@@ -1070,7 +1070,7 @@ void Client::SendAlternateAdvancementTimers() {
 }
 
 // This method returns the next unused dynamic AA timer, excluding 0.
-uint GetNextDynamicAATimer() {
+uint Client::GetNextDynamicAATimer() {
     for (uint i = 1; i < dynamic_aa_timers.size(); ++i) {
 		
 		if (p_timers.Expired(&database, pTimerAAStart + i)) {
@@ -1084,7 +1084,7 @@ uint GetNextDynamicAATimer() {
     return -1; // Indicates all timers are in use or none meet the criteria for reuse
 }
 
-uint GetDynamicAATimer(uint rank_id)
+uint Client::GetDynamicAATimer(uint rank_id)
 {
 	auto it = std::find(dynamic_aa_timers.begin()+1, dynamic_aa_timers.end(), rank_id);
 	if (it != dynamic_aa_timers.end()) {
@@ -1093,7 +1093,7 @@ uint GetDynamicAATimer(uint rank_id)
 	return 0; // Indicates that this is 'off cooldown' and should use the reserved timer ID to demonstrate that it is available for use.
 }
 
-bool SetDynamicAATimer(uint rank_id) {
+bool Client::SetDynamicAATimer(uint rank_id) {
 	if (!GetDynamicAATimer(rank_id)) {
 		int timer_id = GetNextDynamicAATimer();
 		dynamic_aa_timers[timer_id] = rank_id;
