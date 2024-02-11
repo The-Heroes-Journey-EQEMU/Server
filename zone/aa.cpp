@@ -1074,17 +1074,13 @@ void Client::SendAlternateAdvancementTimers() {
 }
 
 int Client::GetDynamicAATimer(int aa_id) {
-    // Construct the key from aa_id to query the timer
-    std::string key = "aaTimer_" + std::to_string(aa_id);
-    std::string value = GetBucket(key);
-
-    // Check if the bucket returned a valid timer ID
-    if (!value.empty()) {
-        // Assuming the value is the timer ID as a string, convert it to an int and return
-        return std::stoi(value);
-    }
-
-    // If the bucket is empty or the aa_id does not have an associated timer, return 0 or another indicator
+    for (int i = 1; i < 100; i++) {
+		std::string key = "aaTimer_" + std::to_string(i);
+		int value = std::to_integer(GetBucket(key));
+		if (value == aa_id) {
+			return i;
+		}
+	}
     return 0;
 }
 
@@ -1103,7 +1099,6 @@ int Client::SetDynamicAATimer(int aa_id) {
     // If no available timer is found, return 0 or another indicator
     return 0;
 }
-
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
