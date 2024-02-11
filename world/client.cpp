@@ -754,8 +754,8 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		} else {
 			RaceClassCombos *cmb = (RaceClassCombos*)ptr;	
 			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
-			cmb->Race = 0;
-			cmb->Class = 0;
+			cmb->Race = -1;
+			cmb->Class = -1;
 			cmb->Deity = character_create_race_class_combos[i].Deity;
 			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
 			cmb->Zone = character_create_race_class_combos[i].Zone;
