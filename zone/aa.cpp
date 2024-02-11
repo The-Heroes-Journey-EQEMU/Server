@@ -1078,6 +1078,7 @@ uint Client::GetNextDynamicAATimer() {
 		}
 
         if (dynamic_aa_timers[i] == -1) {
+			LogDebug("Found Available TimerID: [{}]", i);
             return i;
         }  
     }
@@ -1088,7 +1089,9 @@ uint Client::GetDynamicAATimer(uint rank_id) {
     auto it = std::find(dynamic_aa_timers.begin() + 1, dynamic_aa_timers.end(), rank_id);
     if (it != dynamic_aa_timers.end()) {
         // Calculate and return the index (timer ID) by finding the distance from the beginning
-        return std::distance(dynamic_aa_timers.begin(), it);
+		int timer_id = std::distance(dynamic_aa_timers.begin(), it);
+		LogDebug("Found assigned TimerID: [{}]", timer_id);
+        return timer_id;
     }
     return 0; // Indicates that this rank_id is 'off cooldown'
 }
@@ -1097,6 +1100,7 @@ bool Client::SetDynamicAATimer(uint rank_id) {
 	if (!GetDynamicAATimer(rank_id)) {
 		int timer_id = GetNextDynamicAATimer();
 		dynamic_aa_timers[timer_id] = rank_id;
+		LogDebug("Setting TimerID: [{}]", timer_id);
 		SendAlternateAdvancementTable();
 	}
 	return false;
