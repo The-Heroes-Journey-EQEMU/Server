@@ -683,7 +683,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		auto results = database.QueryDatabase(query);
 		if (results.Success() && results.RowCount() > 0) {
 			auto row = results.begin();
-			account_progression = row[0];
+			account_progression = Strings::ToInt(row[0]);
 		}
 	}
 
