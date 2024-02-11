@@ -845,7 +845,27 @@ bool WorldDatabase::LoadCharacterCreateCombos()
 {
     character_create_race_class_combos.clear();
 
-    std::string query = "SELECT * FROM char_create_combinations WHERE NOT (class = 15 AND race = 522)  ORDER BY race, class, deity, start_zone";
+	auto race_blacklist = "0";
+	auto class_blacklist = "0";
+	auto account_progression = 0;
+
+	if (RuleB(Custom, BlockRaceOnAccountProgression)) {
+		if (account_progression < 1)
+			race_blacklist += ",128";
+		
+		if (account_progression < 3)
+			race_blacklist += ",130";
+	}
+
+	if (RuleB(Custom, BlockClassOnAccountProgression)) {
+		if (account_progression < 3)
+			class_blacklist += ",15";
+
+		if (account_progression < 5)
+			class_blacklist += ",16";
+	}
+
+    std::string query = "SELECT * FROM char_create_combinations WHERE NOT class IN (%s) OR race IN(%s) ORDER BY race, class, deity, start_zone";
     auto results = QueryDatabase(query);
     if (!results.Success())
         return false;
