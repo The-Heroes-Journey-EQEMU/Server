@@ -731,10 +731,10 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		}
 		if (RuleB(Custom, BlockClassOnAccountProgression)) {
 			if (account_progression < 3 && character_create_race_class_combos[i].Class == 15) {
-				entry_enabled = true;
+				entry_enabled = false;
 			}
-			if (account_progression < 5 && character_create_race_class_combos[i].Race == 16) {
-				entry_enabled = true;
+			if (account_progression < 5 && character_create_race_class_combos[i].Class == 16) {
+				entry_enabled = false;
 			}
 		}
 		
