@@ -714,7 +714,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		std::string bucket_key = GetAccountID() + "-Account-Expansion";
 		std::string query = "SELECT value FROM data_buckets WHERE key = '" + bucket_key + "'";
 		auto results = database.QueryDatabase(query);
-		
+
 		if (!results.Success() && results.RowCount() > 0) {
 			auto row = results.begin();
 			if (row[0]) {
@@ -743,7 +743,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		}
 
 		if (xpac_allowed) {
-			RaceClassCombos* cmb = static_cast<RaceClassCombos*>(ptr);
+			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
 			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
 			cmb->Race = character_create_race_class_combos[i].Race;
 			cmb->Class = character_create_race_class_combos[i].Class;
