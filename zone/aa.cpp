@@ -983,6 +983,8 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	if (RuleB(Custom, UseDynamicAATimers)) {
 		if (CanUseAlternateAdvancementRank(rank)) {
 			aai->spell_type = GetDynamicAATimer(aa_id);
+		} else {
+			aai->spell_type = rank->spell_type;
 		}
 	}
 
@@ -1071,33 +1073,37 @@ void Client::SendAlternateAdvancementTimers() {
 	safe_delete(outapp);
 }
 
-// This method returns the next unused dynamic AA timer, excluding 0.
-int Client::GetNextDynamicAATimer() {
-    for (uint i = 2; i < dynamic_aa_timers.size(); ++i) {
-        if (dynamic_aa_timers[i] == -1) {
-            return i;
-        }  
+int Client::GetDynamicAATimer(int aa_id) {
+    // Construct the key from aa_id to query the timer
+    std::string key = "aaTimer_" + std::to_string(aa_id);
+    std::string value = GetBucket(key);
+
+    // Check if the bucket returned a valid timer ID
+    if (!value.empty()) {
+        // Assuming the value is the timer ID as a string, convert it to an int and return
+        return std::stoi(value);
     }
+
+    // If the bucket is empty or the aa_id does not have an associated timer, return 0 or another indicator
     return 0;
 }
 
-int Client::GetDynamicAATimer(int aa_id) {
-    auto it = std::find(dynamic_aa_timers.begin() + 1, dynamic_aa_timers.end(), aa_id);
-    if (it != dynamic_aa_timers.end()) {        
-		int timer_id = std::distance(dynamic_aa_timers.begin(), it);
-        return timer_id;
-    }
-    return 0; 
-}
 
 int Client::SetDynamicAATimer(int aa_id) {
-	if (!GetDynamicAATimer(aa_id)) {
-		int timer_id = GetNextDynamicAATimer();
-		dynamic_aa_timers[timer_id] = aa_id;
-		return timer_id;
-	}
-	return 0;
-}	
+    // Iterate through possible timer IDs to find an available one
+    for (int timerID = 1; timerID <= 99; ++timerID) {
+        std::string key = "aaTimer_" + std::to_string(timerID);
+        if (GetBucket(key).empty()) { // If the timer is available
+            // Associate this timer with the given aa_id
+            SetBucket(key, std::to_string(aa_id));
+            return timerID; // Return the assigned timer ID
+        }
+    }
+
+    // If no available timer is found, return 0 or another indicator
+    return 0;
+}
+
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
