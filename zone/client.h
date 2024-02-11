@@ -927,8 +927,8 @@ public:
 
 	//Dynamic AA timer stuff
 	int GetNextDynamicAATimer();
-	int GetDynamicAATimer(uint rank_id);	
-	int SetDynamicAATimer(uint rank_id);
+	int GetDynamicAATimer(int aa_id);	
+	int SetDynamicAATimer(int aa_id);
 
 	//New AA Methods
 	void SendAlternateAdvancementRank(int aa_id, int level);
