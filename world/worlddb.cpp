@@ -869,47 +869,49 @@ bool WorldDatabase::ReloadCharacterCreateCombos(int accountID)
 {
     character_create_race_class_combos.clear();
 
-	std::string race_blacklist = "0";
-	std::string class_blacklist = "0";
-	int account_progression = 0;
+    std::string race_blacklist = "0";
+    std::string class_blacklist = "0";
+    int account_progression = 0;
 
-	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
-		std::string prog_query = "SELECT value FROM data_buckets WHERE key = '" + accountID + "-account-progression'";
-		auto prog_results = QueryDatabase(prog_query);
-		if (prog_results.Success() && prog_results.RowCount > 0) {
-			account_progression = Strings::ToInt(prog_results.begin()[0]);
-		}	
-	}
+    if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
+        // Correctly convert accountID from int to std::string for query concatenation
+        std::string prog_query = "SELECT value FROM data_buckets WHERE key = '" + std::to_string(accountID) + "-account-progression'";
+        auto prog_results = QueryDatabase(prog_query);
+        if (prog_results.Success() && prog_results.RowCount() > 0) {
+            auto row = prog_results.begin(); // Assuming prog_results.begin() returns an iterator or pointer to the first row
+            account_progression = Strings::ToInt((*row)[0]); // Correctly dereference the iterator/pointer to access the first column
+        }   
+    }
 
-	if (RuleB(Custom, BlockRaceOnAccountProgression)) {
-		if (account_progression < 1)
-			race_blacklist += ",128";
-		
-		if (account_progression < 3)
-			race_blacklist += ",130";
-	}
+    if (RuleB(Custom, BlockRaceOnAccountProgression)) {
+        if (account_progression < 1)
+            race_blacklist += ",128";
+        
+        if (account_progression < 3)
+            race_blacklist += ",130";
+    }
 
-	if (RuleB(Custom, BlockClassOnAccountProgression)) {
-		if (account_progression < 3)
-			class_blacklist += ",15";
+    if (RuleB(Custom, BlockClassOnAccountProgression)) {
+        if (account_progression < 3)
+            class_blacklist += ",15";
 
-		if (account_progression < 5)
-			class_blacklist += ",16";
-	}
+        if (account_progression < 5)
+            class_blacklist += ",16";
+    }
 
-    std::string query = "SELECT * FROM char_create_combinations WHERE NOT class IN (" + class_blacklist + ") AND race NOT IN(" + race_blacklist + ") ORDER BY race, class, deity, start_zone";
+    std::string query = "SELECT * FROM char_create_combinations WHERE class NOT IN (" + class_blacklist + ") AND race NOT IN (" + race_blacklist + ") ORDER BY race, class, deity, start_zone";
     auto results = QueryDatabase(query);
     if (!results.Success())
         return false;
 
     for (auto row = results.begin(); row != results.end(); ++row) {
         RaceClassCombos combo;
-        combo.AllocationIndex = Strings::ToInt(row[0]);
-        combo.Race = Strings::ToInt(row[1]);
-        combo.Class = Strings::ToInt(row[2]);
-        combo.Deity = Strings::ToInt(row[3]);
-        combo.Zone = Strings::ToInt(row[4]);
-        combo.ExpansionRequired = Strings::ToInt(row[5]);
+        combo.AllocationIndex = Strings::ToInt((*row)[0]);
+        combo.Race = Strings::ToInt((*row)[1]);
+        combo.Class = Strings::ToInt((*row)[2]);
+        combo.Deity = Strings::ToInt((*row)[3]);
+        combo.Zone = Strings::ToInt((*row)[4]);
+        combo.ExpansionRequired = Strings::ToInt((*row)[5]);
 
         character_create_race_class_combos.push_back(combo);
     }
