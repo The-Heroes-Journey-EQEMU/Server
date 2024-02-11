@@ -677,9 +677,9 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
-	int account_progression = 1;
+	int account_progression = 0;
 	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
-		std::string query = StringFormat("SELECT value FROM data_buckets WHERE key = '%d-account-progression'", GetAccountID());
+		std::string query = StringFormat("SELECT value FROM data_buckets WHERE data_buckets.key = '%d-account-progression'", GetAccountID());
 		auto results = database.QueryDatabase(query);
 		if (results.Success() && results.RowCount() > 0) {
 			auto row = results.begin();
