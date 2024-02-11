@@ -9619,7 +9619,7 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 							CommonBreakInvisible(); // client can't do this for us :(
 						}
 						
-						if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {wt
+						if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
 							DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
 						}
 
