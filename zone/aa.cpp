@@ -982,7 +982,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 
 	if (RuleB(Custom, UseDynamicAATimers)) {
 		if (aai->classes == 0xFFFFFFF) {
-			aai->spell_type = GetDynamicAATimer(aa_id);
+			aai->spell_type = GetDynamicAATimer(aa_id) || rank->spell_type;
 		} else {
 			aai->spell_type = rank->spell_type;
 		}
@@ -1081,6 +1081,7 @@ int Client::GetDynamicAATimer(int aa_id) {
         // Check if the bucket has a value before attempting conversion
         if (!bucketValue.empty()) {
             int value = std::stoi(bucketValue); // Convert string value to integer
+			LogDebug("Got TimerID: [{}]", value);
             if (value == aa_id) {
                 return i; // Return the timer ID associated with aa_id
             }
