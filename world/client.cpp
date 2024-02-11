@@ -681,7 +681,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
 		std::string query = StringFormat("SELECT value FROM data_buckets WHERE key = '%d-account-progression'", GetAccountID());
 		auto results = database.QueryDatabase(query);
-		if (results.Success() && results.RowCount > 0) {
+		if (results.Success() && results.RowCount() > 0) {
 			account_progression =  results.begin()[0];
 		}
 	}
