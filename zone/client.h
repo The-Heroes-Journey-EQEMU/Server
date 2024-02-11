@@ -926,9 +926,9 @@ public:
 	inline PTimerList &GetPTimers() { return(p_timers); }
 
 	//Dynamic AA timer stuff
-	uint GetNextDynamicAATimer();
-	uint GetDynamicAATimer(uint rank_id);	
-	bool SetDynamicAATimer(uint rank_id);
+	int GetNextDynamicAATimer();
+	int GetDynamicAATimer(uint rank_id);	
+	int SetDynamicAATimer(uint rank_id);
 
 	//New AA Methods
 	void SendAlternateAdvancementRank(int aa_id, int level);

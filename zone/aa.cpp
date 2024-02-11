@@ -1070,42 +1070,31 @@ void Client::SendAlternateAdvancementTimers() {
 }
 
 // This method returns the next unused dynamic AA timer, excluding 0.
-uint Client::GetNextDynamicAATimer() {
+int Client::GetNextDynamicAATimer() {
     for (uint i = 2; i < dynamic_aa_timers.size(); ++i) {
-		
-		if (p_timers.Expired(&database, pTimerAAStart + i)) {
-			dynamic_aa_timers[i] = -1;
-			SendAlternateAdvancementTable();
-		}
-
         if (dynamic_aa_timers[i] == -1) {
-			LogDebug("Found Available TimerID: [{}]", i);
-			SendAlternateAdvancementTable();
             return i;
         }  
     }
-    return -1; // Indicates all timers are in use or none meet the criteria for reuse
+    return 0;
 }
 
-uint Client::GetDynamicAATimer(uint rank_id) {
+int Client::GetDynamicAATimer(uint rank_id) {
     auto it = std::find(dynamic_aa_timers.begin() + 1, dynamic_aa_timers.end(), rank_id);
-    if (it != dynamic_aa_timers.end()) {
-        // Calculate and return the index (timer ID) by finding the distance from the beginning
+    if (it != dynamic_aa_timers.end()) {        
 		int timer_id = std::distance(dynamic_aa_timers.begin(), it);
-		LogDebug("Found assigned TimerID: [{}]", timer_id);
         return timer_id;
     }
-    return 0; // Indicates that this rank_id is 'off cooldown'
+    return 0; 
 }
 
-bool Client::SetDynamicAATimer(uint rank_id) {
+int Client::SetDynamicAATimer(uint rank_id) {
 	if (!GetDynamicAATimer(rank_id)) {
 		int timer_id = GetNextDynamicAATimer();
 		dynamic_aa_timers[timer_id] = rank_id;
-		LogDebug("Setting TimerID: [{}]", timer_id);
-		SendAlternateAdvancementTable();
+		return timer_id;
 	}
-	return false;
+	return 0;
 }	
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
@@ -1351,6 +1340,12 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		return;
 	}
 
+	int spell_type = rank->spell_type;
+	if (RuleB(Custom, UseDynamicAATimers)) {
+		spell_type = GetDynamicAATimer(rank->id);
+	}
+
+
 	bool use_toggle_passive_hotkey = UseTogglePassiveHotkey(*rank);
 
 	//make sure it is not a passive
@@ -1367,8 +1362,8 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		return;
 
 	//check cooldown
-	if (!p_timers.Expired(&database, rank->spell_type + pTimerAAStart, false)) {
-		uint32 aaremain = p_timers.GetRemainingTime(rank->spell_type + pTimerAAStart);
+	if (!p_timers.Expired(&database, spell_type + pTimerAAStart, false)) {
+		uint32 aaremain = p_timers.GetRemainingTime(spell_type + pTimerAAStart);
 		uint32 aaremain_hr = aaremain / (60 * 60);
 		uint32 aaremain_min = (aaremain / 60) % 60;
 		uint32 aaremain_sec = aaremain % 60;
@@ -1417,12 +1412,6 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		TogglePassiveAlternativeAdvancement(*rank, ability->id);
 	}
 	else {
-
-		if (RuleB(Custom, UseDynamicAATimers)) {
-			rank->spell_type = SetDynamicAATimer(rank->id);
-			SendAlternateAdvancementTable();
-		}
-
 		 //Bards can cast instant cast AAs while they are casting or channeling item cast.
 		if (!RuleB(Custom, MulticlassingEnabled) && GetClass() == Class::Bard && IsCasting() && spells[rank->spell].cast_time == 0) {
 			if (!DoCastingChecksOnCaster(rank->spell, EQ::spells::CastingSlot::AltAbility)) {
@@ -1430,12 +1419,12 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 			}
 
 			if (!SpellFinished(rank->spell, entity_list.GetMob(target_id), EQ::spells::CastingSlot::AltAbility, spells[rank->spell].mana, -1, spells[rank->spell].resist_difficulty, false, -1,
-				rank->spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
+				spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
 				return;
 			}
 		} 
 		else { 
-			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, spells[rank->spell].cast_time, 0, 0, -1, rank->spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
+			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, spells[rank->spell].cast_time, 0, 0, -1, spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
 				return;
 			}
 		}
