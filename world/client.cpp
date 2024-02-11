@@ -715,14 +715,17 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		std::string query = "SELECT value FROM data_buckets WHERE key = '" + bucket_key + "'";
 		auto results = database.QueryDatabase(query);
 
-		if (results.empty()) {
-			std::cout << "No data found for key: " << bucket_key << std::endl;
-			// If no data found, decide if you need to exit, continue, or handle differently.
-			// Assuming you want to exit the function if no expansion data is found:
-			return; // or continue; if this code is inside a loop that must keep running.
-		} else {
-			account_expansion = std::stoi(results.front());
+		if (!results.rowCount() > 0) {
+			auto firstRow = results.getRow(0); // Assuming getRow exists and returns the first row
+    		account_expansion = results.
 		}
+
+		if (!results.Success() && results.rowCount() > 0) {
+			auto row = results.begin();
+			if (row[0]) {
+				account_expansion = Strings::ToInt(row[0]);
+			}
+		}	
 	}
 
 	for(int i = 0; i < combos; ++i) {
