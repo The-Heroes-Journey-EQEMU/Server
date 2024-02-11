@@ -9619,13 +9619,14 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 							CommonBreakInvisible(); // client can't do this for us :(
 						}
 						
+						/*
 						if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
 							DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
 						}
 
-						else {
+						else { */
 							CastSpell(item->Click.Effect, target_id, CastingSlot::Item, item->CastTime, 0, 0, slot_id);
-						}
+						//}
 					} else {
 						InterruptSpell(item->Click.Effect);
 						SendSpellBarEnable(item->Click.Effect);
@@ -9693,13 +9694,14 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 							CommonBreakInvisible(); // client can't do this for us :(
 						}
 						
+						/*
 						if (GetClass() == Class::Bard && !(RuleB(Custom, MulticlassingEnabled))) {
-							DoBardCastingFromItemClick(is_casting_bard_song, augitem->CastTime, augitem->Click.Effect, target_id, CastingSlot::Item, slot_id, augitem->RecastType, augitem->RecastDelay);
+							DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
 						}
-						
-						else {
+
+						else { */
 							CastSpell(augitem->Click.Effect, target_id, CastingSlot::Item, augitem->CastTime, 0, 0, slot_id);
-						}
+						//}
 					} else {
 						InterruptSpell(item->Click.Effect);
 						SendSpellBarEnable(item->Click.Effect);
