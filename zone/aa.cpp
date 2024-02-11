@@ -982,7 +982,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 
 	if (RuleB(Custom, UseDynamicAATimers)) {
 		if (aai->classes == 0xFFFFFFF) {
-			aai->spell_type = GetDynamicAATimer(aa_id) || rank->spell_type;
+			aai->spell_type = GetDynamicAATimer(aa_id) || SetDynamicAATimer(aa_id);
 		} else {
 			aai->spell_type = rank->spell_type;
 		}
@@ -1096,7 +1096,8 @@ int Client::SetDynamicAATimer(int aa_id) {
     // Iterate through possible timer IDs to find an available one
     for (int timerID = 1; timerID <= 99; ++timerID) {
         std::string key = "aaTimer_" + std::to_string(timerID);
-        if (GetBucket(key).empty()) { // If the timer is available
+		auto bucket_value = GetBucket(key);
+        if (bucket_value.empty()) { // If the timer is available
             // Associate this timer with the given aa_id
             SetBucket(key, std::to_string(aa_id));
             return timerID; // Return the assigned timer ID
