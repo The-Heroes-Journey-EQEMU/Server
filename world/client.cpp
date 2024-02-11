@@ -714,13 +714,8 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		std::string bucket_key = GetAccountID() + "-Account-Expansion";
 		std::string query = "SELECT value FROM data_buckets WHERE key = '" + bucket_key + "'";
 		auto results = database.QueryDatabase(query);
-
-		if (!results.rowCount() > 0) {
-			auto firstRow = results.getRow(0); // Assuming getRow exists and returns the first row
-    		account_expansion = results.
-		}
-
-		if (!results.Success() && results.rowCount() > 0) {
+		
+		if (!results.Success() && results.RowCount() > 0) {
 			auto row = results.begin();
 			if (row[0]) {
 				account_expansion = Strings::ToInt(row[0]);
