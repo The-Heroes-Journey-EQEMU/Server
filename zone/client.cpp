@@ -2313,13 +2313,15 @@ void Client::ReadBook(BookRequest_Struct *book) {
 		booktxt2 = content_db.GetBook(bookString.c_str(), &book_language);
 	}
 
-    if (book->type == 2 && itemID > 0) {
-        auto discover_charname = GetDiscoverer(itemID);
-        if (!discover_charname.empty()) {
-            // Append the discovery information to booktxt2
-            booktxt2 += "<br>Discovered by: " + discover_charname;
-        }        
-    }
+	if (RuleB(Custom, UseDynamicItemDiscoveryTags)) {
+		if (book->type == 2 && itemID > 0) {
+			auto discover_charname = GetDiscoverer(itemID);
+			if (!discover_charname.empty()) {
+				// Append the discovery information to booktxt2
+				booktxt2 += "<br>Discovered by: " + discover_charname;
+			}        
+		}
+	}
 
 	if (booktxt2[0] != '\0') {
 		auto outapp = new EQApplicationPacket(OP_ReadBook, booktxt2.length() + sizeof(BookText_Struct));
