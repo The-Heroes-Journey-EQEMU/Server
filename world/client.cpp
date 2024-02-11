@@ -710,7 +710,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	int account_expansion = 0;
 
 	// Check if we need to fetch account expansion based on race or class progression rules.
-	if (RuleB("Custom", "BlockRaceOnAccountProgression") || RuleB("Custom", "BlockClassOnAccountProgression")) {
+	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
 		std::string bucket_key = GetAccountID() + "-Account-Expansion";
 		std::string query = "SELECT value FROM data_buckets WHERE key = '" + bucket_key + "'";
 		auto results = database.QueryDatabase(query);
@@ -729,7 +729,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		bool xpac_allowed = true;
 
 		// Apply race restrictions based on account expansion
-		if (RuleB("Custom", "BlockRaceOnAccountProgression")) {
+		if (RuleB(Custom, BlockRaceOnAccountProgression)) {
 			if ((character_create_race_class_combos[i].Race == 128 && account_expansion < 1) ||
 				(character_create_race_class_combos[i].Race == 130 && account_expansion < 3)) {
 				xpac_allowed = false;
@@ -737,7 +737,7 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 		}
 
 		// Apply class restrictions based on account expansion
-		if (RuleB("Custom", "BlockClassOnAccountProgression")) {
+		if (RuleB(Custom, BlockClassOnAccountProgression)) {
 			if ((character_create_race_class_combos[i].Class == 15 && account_expansion < 3) ||
 				(character_create_race_class_combos[i].Class == 16 && account_expansion < 5)) {
 				xpac_allowed = false;
