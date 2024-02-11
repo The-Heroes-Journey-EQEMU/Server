@@ -984,7 +984,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 		if (aai->classes == 0xFFFFFFF && rank->recast_time > 0) {
 			aai->spell_type = GetDynamicAATimer(aa_id) || SetDynamicAATimer(aa_id);
 		} else {
-			aai->spell_type = rank->spell_type;
+			aai->spell_type = 0;
 		}
 	}
 
