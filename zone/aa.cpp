@@ -1413,7 +1413,8 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 	else {
 
 		if (RuleB(Custom, UseDynamicAATimers)) {
-			rank->spell_type = GetNextDynamicAATimer();
+			rank->spell_type = SetDynamicAATimer(rank->id);
+			SendAlternateAdvancementTable();
 		}
 
 		 //Bards can cast instant cast AAs while they are casting or channeling item cast.
