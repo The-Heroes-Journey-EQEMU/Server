@@ -516,8 +516,6 @@ bool Client::Process() {
 			DoManaRegen();
 			DoEnduranceRegen();
 			BuffProcess();
-			SendAlternateAdvancementTable();
-			SendAlternateAdvancementStats();
 
 			if (GetTarget()) {
 				GetTarget()->SendBuffsToClient(this);
