@@ -981,7 +981,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->total_prereqs = rank->prereqs.size();
 
 	if (RuleB(Custom, UseDynamicAATimers)) {
-		if (aai->classes == 0xFFFFFFF && rank->recast_time > 0) {
+		if (aai->classes == 0xFFFFFFF && rank->recast_time > 0 && !rank->base_ability->grant_only) {
 			aai->spell_type = GetDynamicAATimer(rank->base_ability->id);
 			if (aai->spell_type == 0) {
 				SetDynamicAATimer(rank->base_ability->id);
