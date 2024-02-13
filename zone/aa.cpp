@@ -1109,9 +1109,9 @@ int Client::SetDynamicAATimer(int aa_id) {
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
-	if(rank) {
-		SendAlternateAdvancementTimer(GetDynamicAATimer(ability), 0, time(0));
-		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);
+	if(rank) {		
+		SendAlternateAdvancementTimer(rank->spell_type, 0, time(0));
+		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);		
 	}
 }
 
@@ -1351,10 +1351,10 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 	}
 
 	int spell_type = rank->spell_type;
+
 	if (RuleB(Custom, UseDynamicAATimers)) {
 		spell_type = GetDynamicAATimer(rank->base_ability->id);
 	}
-
 
 	bool use_toggle_passive_hotkey = UseTogglePassiveHotkey(*rank);
 
