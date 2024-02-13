@@ -1094,7 +1094,7 @@ int Client::GetDynamicAATimer(int aa_id) {
 
 int Client::SetDynamicAATimer(int aa_id) {
     // Iterate through possible timer IDs to find an available one
-    for (int timerID = 1; timerID <= 99; ++timerID) {
+    for (int timerID = 1; timerID < (pTimerAAEnd - pTimerAAStart); ++timerID) {
         std::string key = "aaTimer_" + std::to_string(timerID);
 		auto bucket_value = GetBucket(key);
         if (bucket_value.empty()) { // If the timer is available
