@@ -2914,7 +2914,6 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 			spell_target->HasPet() && 
 			spell_target->GetPet() && 
 			spell_target->HasPetAffinity() &&
-			spell_target->GetAA(50000) && // Improved Pet Affinity
 			!spell_target->GetPet()->IsCharmed()) {
 				SpellOnTarget(spell_id, GetPet());
 			}
