@@ -927,47 +927,47 @@ void Lua_Client::DeleteItemInInventory(int slot_id, int quantity, bool update_cl
 
 void Lua_Client::SummonItem(uint32 item_id) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id);
+	self->SummonApocItem(item_id);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges);
+	self->SummonApocItem(item_id, charges);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1);
+	self->SummonApocItem(item_id, charges, aug1);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1, uint32 aug2) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1, aug2);
+	self->SummonApocItem(item_id, charges, aug1, aug2);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1, uint32 aug2, uint32 aug3) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1, aug2, aug3);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4, aug5);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, bool attuned) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attuned);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attuned);
 }
 
 void Lua_Client::SummonItem(uint32 item_id, int charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, bool attuned, int to_slot) {
 	Lua_Safe_Call_Void();
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attuned, to_slot);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attuned, to_slot);
 }
 
 void Lua_Client::SummonFixedItem(uint32 item_id) {
