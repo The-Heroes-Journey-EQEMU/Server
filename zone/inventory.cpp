@@ -172,9 +172,9 @@ uint32 Client::GetApocItemUpgrade(uint32 item_id) {
 		int roll = zone->random.Int(1, 100);
 
 		if (roll <= RuleI(Item, RoseColoredQuestWeightDrop)) { // we didn't get apoc
-			else newitemid += 1000000;
+			newitemid += 1000000;
 		} else { // we got apoc
-			else newitemid += 2000000;
+			newitemid += 2000000;
 		}
 
 		if (new_item_id != item_id) {
