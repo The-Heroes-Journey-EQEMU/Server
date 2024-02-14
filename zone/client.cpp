@@ -2357,7 +2357,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
 			LogDebug("book_language: [{}], skill: [{}], [{}]", book_language, m_pp.languages[book_language], booktxt2);
 			if (m_pp.languages[book_language] < Language::MaxValue) {
 				LogDebug("[{}] < [{}] fucking how?", m_pp.languages[book_language], Language::MaxValue);
-				GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
+				//GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
 			}
 		}
 
