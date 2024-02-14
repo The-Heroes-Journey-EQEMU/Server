@@ -2356,6 +2356,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
 		if (EQ::ValueWithin(book_language, Language::CommonTongue, Language::Unknown27)) {
 			LogDebug("book_language: [{}], skill: [{}]", book_language, m_pp.languages[book_language]);
 			if (m_pp.languages[book_language] < Language::MaxValue) {
+				LogDebug("[{}] < [{}] fucking how?", m_pp.languages[book_language], Language::MaxValue);
 				GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
 			}
 		}
