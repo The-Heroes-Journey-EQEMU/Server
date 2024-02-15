@@ -658,8 +658,6 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
     memset(ngs->name, 0, 64);
     strcpy(ngs->name, newName);
 
-    LogDebug("Random Name Generated: [{}]", newName);
-
     QueuePacket(app);
     return true;
 }
