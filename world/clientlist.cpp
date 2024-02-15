@@ -906,7 +906,7 @@ void ClientList::SendFriendsWho(ServerFriendsWho_Struct *FriendsWho, WorldTCPCon
 				auto results = database.QueryDatabase(query);
 				for (auto& row = results.begin(); row != results.end(); ++row) {
 					if (row[0]) {
-						plclass_ = static_cast<uint32>(Strings::ToInt(row[0]), GetPlayerClassBit(cle->class_));
+						PlayerClass = static_cast<uint32>(Strings::ToInt(row[0]), GetPlayerClassBit(cle->class_));
 					}
 				}
 			}
