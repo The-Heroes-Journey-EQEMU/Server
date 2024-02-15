@@ -12369,7 +12369,7 @@ bool Client::AddExtraClass(int class_id) {
         if (class_count > 2 || (classes_bits & n_class_bit)) {
             return false;
         } else {
-			SetBucket("GestaltClasses", (classes_bits | n_class_bit));
+			SetBucket("GestaltClasses", std::to_string(classes_bits | n_class_bit));
 
 			m_pp.classes = classes_bits | n_class_bit;
 
