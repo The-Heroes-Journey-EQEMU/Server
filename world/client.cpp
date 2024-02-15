@@ -598,82 +598,66 @@ bool Client::HandleNameApprovalPacket(const EQApplicationPacket *app)
 }
 
 bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
-	// creates up to a 10 char name
-	char vowels[18]="aeiouyaeiouaeioe";
-	char cons[48]="bcdfghjklmnpqrstvwxzybcdgklmnprstvwbcdgkpstrkd";
-	char rndname[17]="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-	char paircons[33]="ngrkndstshthphsktrdrbrgrfrclcr";
-	int rndnum=emu_random.Int(0, 75),n=1;
-	bool dlc=false;
-	bool vwl=false;
-	bool dbl=false;
-	if (rndnum>63)
-	{	// rndnum is 0 - 75 where 64-75 is cons pair, 17-63 is cons, 0-16 is vowel
-		rndnum=(rndnum-61)*2;	// name can't start with "ng" "nd" or "rk"
-		rndname[0]=paircons[rndnum];
-		rndname[1]=paircons[rndnum+1];
-		n=2;
-	}
-	else if (rndnum>16)
-	{
-		rndnum-=17;
-		rndname[0]=cons[rndnum];
-	}
-	else
-	{
-		rndname[0]=vowels[rndnum];
-		vwl=true;
-	}
-	int namlen=emu_random.Int(5, 10);
-	for (int i=n;i<namlen;i++)
-	{
-		dlc=false;
-		if (vwl)	//last char was a vowel
-		{			// so pick a cons or cons pair
-			rndnum=emu_random.Int(0, 62);
-			if (rndnum>46)
-			{	// pick a cons pair
-				if (i>namlen-3)	// last 2 chars in name?
-				{	// name can only end in cons pair "rk" "st" "sh" "th" "ph" "sk" "nd" or "ng"
-					rndnum=emu_random.Int(0, 7)*2;
-				}
-				else
-				{	// pick any from the set
-					rndnum=(rndnum-47)*2;
-				}
-				rndname[i]=paircons[rndnum];
-				rndname[i+1]=paircons[rndnum+1];
-				dlc=true;	// flag keeps second letter from being doubled below
-				i+=1;
-			}
-			else
-			{	// select a single cons
-				rndname[i]=cons[rndnum];
-			}
-		}
-		else
-		{		// select a vowel
-			rndname[i]=vowels[emu_random.Int(0, 16)];
-		}
-		vwl=!vwl;
-		if (!dbl && !dlc)
-		{	// one chance at double letters in name
-			if (!emu_random.Int(0, i+9))	// chances decrease towards end of name
-			{
-				rndname[i+1]=rndname[i];
-				dbl=true;
-				i+=1;
-			}
-		}
-	}
+    // creates up to a 10 char name
+    char vowels[18] = "aeiouyaeiouaeioe";
+    char cons[48] = "bcdfghjklmnpqrstvwxzybcdgklmnprstvwbcdgkpstrkd";
+    char rndname[17] = {0};  // Initialize all to null terminator for safety
+    char paircons[33] = "ngrkndstshthphsktrdrbrgrfrclcr";
+    int rndnum = emu_random.Int(0, 75), currentLength = 1;  // Start length at 1 due to first character
+    bool dlc = false, vwl = false, dbl = false;
 
-	rndname[0]=toupper(rndname[0]);
-	NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
-	memset(ngs->name,0,64);
-	strcpy(ngs->name,rndname);
+    // Initial character setup
+    if (rndnum > 63) {
+        rndnum = (rndnum - 61) * 2; // adjust index for paircons array
+        rndname[0] = paircons[rndnum];
+        rndname[1] = paircons[rndnum + 1];
+        currentLength = 2; // Starting with a consonant pair
+    } else if (rndnum > 16) {
+        rndnum -= 17; // adjust index for cons array
+        rndname[0] = cons[rndnum];
+        // currentLength remains 1
+    } else {
+        rndname[0] = vowels[rndnum]; // no need to adjust index for vowels
+        vwl = true; // starting with a vowel
+        // currentLength remains 1
+    }
 
-	QueuePacket(app);
-	return true;
+    int namlen = emu_random.Int(5, 10); // Target name length
+
+    while (currentLength < namlen) {
+        dlc = false; // reset double letter check for each iteration
+        if (vwl) { // last char was a vowel, pick a consonant or consonant pair
+            rndnum = emu_random.Int(0, 62);
+            if (rndnum > 46 && currentLength < namlen - 1) { // ensure room for pair
+                rndnum = (rndnum - 47) * 2; // adjust index for paircons array
+                rndname[currentLength] = paircons[rndnum];
+                rndname[currentLength + 1] = paircons[rndnum + 1];
+                currentLength += 2; // added a consonant pair
+                dlc = true; // mark double letter check as true to prevent doubling
+            } else {
+                rndname[currentLength] = cons[rndnum]; // add single consonant
+                currentLength++; // increase length by one
+            }
+        } else { // last char was a consonant, pick a vowel
+            rndname[currentLength] = vowels[emu_random.Int(0, 17)]; // select a vowel
+            currentLength++; // increase length by one
+        }
+        vwl = !vwl; // toggle vowel/consonant for next iteration
+
+        if (!dbl && !dlc && currentLength < namlen && emu_random.Int(0, currentLength + 9) == 0) { // chance for double letter
+            rndname[currentLength] = rndname[currentLength - 1]; // duplicate last letter
+            currentLength++; // increase length by one
+            dbl = true; // mark double occurred
+        }
+    }
+
+    rndname[0] = toupper(rndname[0]); // capitalize first letter
+    NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
+    memset(ngs->name, 0, 64);
+    strcpy(ngs->name, rndname);
+
+    QueuePacket(app);
+    return true;
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
