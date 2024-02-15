@@ -602,64 +602,54 @@ bool Client::HandleNameApprovalPacket(const EQApplicationPacket *app)
 }
 
 bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
-    // Fantasy name generation code integration
-    std::string consonants = "bcdfghjklmnprstvwxyz";  // Avoid less common consonants for readability
-    std::string vowels = "aeiou";  // Keep standard vowels to maintain some pronounceability
-    std::string consonantBlends = "br cr dr fr gr pr tr str shr thr";
-    std::string vowelBlends = "ae ai ao au ea ei eo eu ia io iu oa oi ou ua ui uo";  // Blends for variety    
-    
-    std::vector<std::string> consBlends;
-    std::istringstream consStream(consonantBlends);
-    std::string cons;
-    while (consStream >> cons) {
-        consBlends.push_back(cons);
-    }
+    char rndname[17] = {0};  // Initialize all to null terminator for safety
 
-    std::vector<std::string> vowBlends;
-    std::istringstream vowStream(vowelBlends);
-    std::string vow;
-    while (vowStream >> vow) {
-        vowBlends.push_back(vow);
-    }
-  
+    // Definitions for name generation
+    std::string consonants = "bcdfghjklmnprstvwxyz";
+    std::string vowels = "aeiou";
+    std::vector<std::string> consBlends = {"br", "cr", "dr", "fr", "gr", "pr", "tr", "str", "shr", "thr"};
+    std::vector<std::string> vowBlends = {"ae", "ai", "ao", "au", "ea", "ei", "eo", "eu", "ia", "io", "iu", "oa", "oi", "ou", "ua", "ui", "uo"};
+
+    // Random number generation setup
     std::random_device rd;
     std::mt19937 generator(rd());
-
-    std::uniform_int_distribution<int> lengthDistribution(5, 10);
-    std::uniform_int_distribution<int> consonantDistribution(0, consonants.length() - 1);
-    std::uniform_int_distribution<int> vowelDistribution(0, vowels.length() - 1);
+    std::uniform_int_distribution<int> lengthDistribution(5, 15);
+    std::uniform_int_distribution<int> consonantDistribution(0, consonants.size() - 1);
+    std::uniform_int_distribution<int> vowelDistribution(0, vowels.size() - 1);
     std::uniform_int_distribution<int> consBlendDistribution(0, consBlends.size() - 1);
     std::uniform_int_distribution<int> vowBlendDistribution(0, vowBlends.size() - 1);
+    std::uniform_int_distribution<int> blendDecision(0, 4); // Decision for blend use
 
     int nameLength = lengthDistribution(generator);
-   
-    char rndname[17] = {0};
-    bool useBlend = false;
+    int lastBlendPosition = -5;  // Initialize to allow blend at first character
+
     for (int i = 0, j = 0; i < nameLength && j < 16; ++i) {
-        std::string part = "";
-        useBlend = (i % 4 == 0);  // Alternate between using blends and single letters
+        bool useBlend = (i - lastBlendPosition >= 5) && (blendDecision(generator) == 0); // Randomly decide to use blend based on conditions
+
         if (useBlend) {
-            part = (i % 4 == 0) ? consBlends[consBlendDistribution(generator)] : vowBlends[vowBlendDistribution(generator)];
-        } else {
-            part = (i % 4 == 0) ? consonants[consonantDistribution(generator)] : vowels[vowelDistribution(generator)];
-        }
-        for (char c : part) {
-            if (j < 16) {
-                rndname[j++] = c;
+            std::string part = (blendDecision(generator) % 2 == 0) ? consBlends[consBlendDistribution(generator)] : vowBlends[vowBlendDistribution(generator)];
+            for (char c : part) {
+                if (j < 16) rndname[j++] = c;
             }
+            lastBlendPosition = i; // Update last blend position
+        } else {
+            rndname[j++] = (i % 2 == 0) ? consonants[consonantDistribution(generator)] : vowels[vowelDistribution(generator)];
         }
     }
-    rndname[0] = toupper(rndname[0]);
 
+    rndname[0] = toupper(rndname[0]); // Capitalize the first letter
+
+    // Integrate with the rest of your method
     NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
-    memset(ngs->name, 0, 64);
-    strcpy(ngs->name, rndname);
+    memset(ngs->name, 0, 64); // Clear existing name
+    strcpy(ngs->name, rndname); // Copy new name
 
     LogDebug("Random Name Generated: [{}]", rndname);
 
     QueuePacket(app);
     return true;
 }
+
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
 	int account_progression = 0;
