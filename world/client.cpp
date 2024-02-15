@@ -609,7 +609,7 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
         // Definitions for name generation
         std::string consonants = "bcdfghjklmnprstvwxyz";  // Removed 'I' and pairs like 'll', 'rr' etc., for first letter use
         std::string vowels = "aeiou";
-        std::string validStartConsonants = "bcdfghjklmnpqrstvwxyz"; // Avoid 'I' and pairs for the first character
+        std::string validStartConsonants = "abcdefghjklmnopqrstuvwxyz"; // Avoid 'I' and pairs for the first character
         std::vector<std::string> consBlends = {"br", "cr", "dr", "fr", "gr", "pr", "tr", "str", "shr", "thr"};
         std::vector<std::string> vowBlends = {"ae", "ai", "ao", "au", "ea", "ei", "eo", "eu", "ia", "io", "iu", "oa", "oi", "ou", "ua", "ui", "uo"};
         std::vector<std::string> endingPhonemes = {"a", "e", "i", "o", "u", "os", "as", "us", "is", "y", "an", "en", "in", "on", "un"}; // Reasonable ending phonemes
@@ -633,6 +633,7 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 
         // Ensure the first character is not 'I' or a consonant pair
         rndname[totalLength++] = validStartConsonants[startConsonantDistribution(generator)];
+		rndname[totalLength++] = validStartConsonants[startConsonantDistribution(generator)];
         rndname[0] = toupper(rndname[0]); // Capitalize the first letter
 
         while (totalLength < lengthDistribution(generator) - 1) {  // Reserve space for reasonable ending
