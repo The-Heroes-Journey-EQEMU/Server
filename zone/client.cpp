@@ -12351,7 +12351,7 @@ int Client::GetEXPPercentage()
 	return static_cast<int>(std::round(scaled * 100.0 / 330.0)); // unscaled pct
 }
 
-uint32 Client::GetClassesBits() const
+uint32 Client::GetClassesBits()
 {
 	if (RuleB(Custom, MulticlassingEnabled)) {
 		// Lazy load of this
