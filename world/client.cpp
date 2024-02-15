@@ -648,7 +648,7 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
         }
 
         std::string query = StringFormat("SELECT `name` FROM `character_data` WHERE `name` = '%s'", rndname);
-        auto results = database->QueryDatabase(query);
+        auto results = database.QueryDatabase(query);
         if (!results.Success() || results.RowCount() == 0) {
             isNameUnique = true;
         }
