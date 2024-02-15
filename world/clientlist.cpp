@@ -741,15 +741,21 @@ void ClientList::SendWhoAll(uint32 fromid,const char* to, int16 admin, Who_All_S
 
 
 	// Send different info for multiclass strings. Requires clientside support.
-	if (RuleB(Custom, MulticlassingEnabled)) {		
+	if (RuleB(Custom, MulticlassingEnabled)) {      
 		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", cle->CharID());
 		auto results = database.QueryDatabase(query);
+		bool found = false;
+
 		for (auto& row = results.begin(); row != results.end(); ++row) {
-			if (row[0]) {
+			if (row[0]) { 
 				plclass_ = static_cast<uint32>(Strings::ToInt(row[0]));
-			} else {
-				plclass_ = GetPlayerClassBit(cle->class_());
+				found = true;
+				break;
 			}
+		}
+
+		if (!found) {
+			plclass_ = GetPlayerClassBit(cle->class_());
 		}
 	}
 
@@ -903,15 +909,21 @@ void ClientList::SendFriendsWho(ServerFriendsWho_Struct *FriendsWho, WorldTCPCon
 			strcpy(PlayerName,cle->name());	
 			
 			// Send different info for multiclass strings. Requires clientside support.
-			if (RuleB(Custom, MulticlassingEnabled)) {		
+			if (RuleB(Custom, MulticlassingEnabled)) {      
 				std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", cle->CharID());
-    			auto results = database.QueryDatabase(query);
+				auto results = database.QueryDatabase(query);
+				bool found = false;
+
 				for (auto& row = results.begin(); row != results.end(); ++row) {
-					if (row[0]) {
+					if (row[0]) { 
 						PlayerClass = static_cast<uint32>(Strings::ToInt(row[0]));
-					} else {
-						PlayerClass = GetPlayerClassBit(cle->class_());
+						found = true;
+						break;
 					}
+				}
+
+				if (!found) {
+					PlayerClass = GetPlayerClassBit(cle->class_());
 				}
 			}
 
