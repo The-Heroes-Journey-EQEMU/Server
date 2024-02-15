@@ -444,7 +444,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+		if (GetClassesBitmask() & (GetPlayerClassBit(Class::Berserker) | GetPlayerClassBit(Class::Warrior))) {
 			if (!dead && !IsBerserk() && GetHPRatio() < RuleI(Combat, BerserkerFrenzyStart)) {
 				entity_list.MessageCloseString(this, false, 200, 0, BERSERK_START, GetName());
 				berserk = true;
