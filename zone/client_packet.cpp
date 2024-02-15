@@ -790,7 +790,7 @@ void Client::CompleteConnect()
 	// sent to a succor point
 	SendMobPositions();
 
-	SetLastPositionBeforeBulkUpdate(GetPosition());	
+	SetLastPositionBeforeBulkUpdate(GetPosition());
 	
 	if (RuleB(Custom, ServerAuthStats)) {
 		SendEdgeStatBulkUpdate();
@@ -1033,7 +1033,7 @@ void Client::Handle_Connect_OP_ClientUpdate(const EQApplicationPacket *app)
 
 void Client::Handle_Connect_OP_ReqClientSpawn(const EQApplicationPacket *app)
 {
-	conn_state = ClientSpawnRequested;	
+	conn_state = ClientSpawnRequested;
 
 	auto outapp = new EQApplicationPacket;
 
