@@ -602,68 +602,67 @@ bool Client::HandleNameApprovalPacket(const EQApplicationPacket *app)
 }
 
 bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
-    char rndname[17] = {0};
-    bool isNameUnique = false;
+    char newName[17] = {0};
+    bool unique = false;
 
-    while (!isNameUnique) {
-        std::string consonants = "bcdfghjklmnpqrstvwxyz";
-        std::string vowels = "aeou";
-        std::string allVowels = "aeiou";
-        std::vector<std::string> endingPhonemes = {"a", "e", "i", "o", "u", "os", "as", "us", "is", "y", "an", "en", "in", "on", "un"};
+    while (!unique) {
+        std::string cons = "bcdfghjklmnpqrstvwxyz";
+        std::string vows = "aeou";
+        std::string allVows = "aeiou";
+        std::vector<std::string> endPhon = {"a", "e", "i", "o", "u", "os", "as", "us", "is", "y", "an", "en", "in", "on", "un"};
 
         std::random_device rd;
-        std::mt19937 generator(rd());
+        std::mt19937 gen(rd());
 
-        std::uniform_int_distribution<int> lengthDistribution(5, 10);
-        std::uniform_int_distribution<int> firstCharDistribution(0, 1);
-        std::uniform_int_distribution<int> consonantDistribution(0, consonants.size() - 1);
-        std::uniform_int_distribution<int> vowelDistribution(0, vowels.size() - 1);
-        std::uniform_int_distribution<int> allVowelDistribution(0, allVowels.size() - 1);
-        std::uniform_int_distribution<int> endingPhonemeDistribution(0, endingPhonemes.size() - 1);
+        std::uniform_int_distribution<int> lenDist(5, 10);
+        std::uniform_int_distribution<int> firstCharDist(0, 1);
+        std::uniform_int_distribution<int> consDist(0, cons.size() - 1);
+        std::uniform_int_distribution<int> vowDist(0, vows.size() - 1);
+        std::uniform_int_distribution<int> allVowDist(0, allVows.size() - 1);
+        std::uniform_int_distribution<int> endPhonDist(0, endPhon.size() - 1);
 
-        int totalLength = 0;
-        memset(rndname, 0, sizeof(rndname));
+        int len = 0;
+        memset(newName, 0, sizeof(newName));
 
-        if (firstCharDistribution(generator) == 0) {
-            rndname[totalLength++] = vowels[vowelDistribution(generator)];
-            rndname[totalLength++] = consonants[consonantDistribution(generator)];
+        if (firstCharDist(gen) == 0) {
+            newName[len++] = vows[vowDist(gen)];
+            newName[len++] = cons[consDist(gen)];
         } else {
-            rndname[totalLength++] = consonants[consonantDistribution(generator)];
-            rndname[totalLength++] = allVowels[allVowelDistribution(generator)];
+            newName[len++] = cons[consDist(gen)];
+            newName[len++] = allVows[allVowDist(gen)];
         }
 
-        rndname[0] = toupper(rndname[0]);
+        newName[0] = toupper(newName[0]);
 
-        while (totalLength < lengthDistribution(generator) - 1) {
-            if (totalLength % 2 == 0) {
-                rndname[totalLength++] = consonants[consonantDistribution(generator)];
+        while (len < lenDist(gen) - 1) {
+            if (len % 2 == 0) {
+                newName[len++] = cons[consDist(gen)];
             } else {
-                rndname[totalLength++] = allVowels[allVowelDistribution(generator)];
+                newName[len++] = allVows[allVowDist(gen)];
             }
         }
 
-        std::string ending = endingPhonemes[endingPhonemeDistribution(generator)];
-        for (char c : ending) {
-            if (totalLength < 10) rndname[totalLength++] = c;
+        std::string end = endPhon[endPhonDist(gen)];
+        for (char c : end) {
+            if (len < 10) newName[len++] = c;
         }
 
-        std::string query = StringFormat("SELECT `name` FROM `character_data` WHERE `name` = '%s'", rndname);
-        auto results = database.QueryDatabase(query);
-        if (!results.Success() || results.RowCount() == 0) {
-            isNameUnique = true;
+        std::string query = StringFormat("SELECT `name` FROM `character_data` WHERE `name` = '%s'", newName);
+        auto res = database.QueryDatabase(query);
+        if (!res.Success() || res.RowCount() == 0) {
+            unique = true;
         }
     }
 
     NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
     memset(ngs->name, 0, 64);
-    strcpy(ngs->name, rndname);
+    strcpy(ngs->name, newName);
 
-    LogDebug("Random Name Generated: [{}]", rndname);
+    LogDebug("Random Name Generated: [{}]", newName);
 
     QueuePacket(app);
     return true;
 }
-
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
 	int account_progression = 0;
