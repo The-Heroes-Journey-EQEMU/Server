@@ -902,7 +902,7 @@ void ClientList::SendFriendsWho(ServerFriendsWho_Struct *FriendsWho, WorldTCPCon
 			
 			// Send different info for multiclass strings. Requires clientside support.
 			if (RuleB(Custom, MulticlassingEnabled)) {		
-				std::string query = StringFormat("SELECT value FROM data_buckets WHERE key = 'GestaltClasses' AND character_id = '%d'", cle->CharID());
+				std::string query = StringFormat("SELECT value FROM data_buckets WHERE `key` = 'GestaltClasses' AND character_id = '%d'", cle->CharID());
 				auto results = database.QueryDatabase(query);
 				for (auto& row = results.begin(); row != results.end(); ++row) {
 					if (row[0]) {
