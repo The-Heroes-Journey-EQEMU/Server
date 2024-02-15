@@ -746,7 +746,6 @@ void ClientList::SendWhoAll(uint32 fromid,const char* to, int16 admin, Who_All_S
 		auto results = database.QueryDatabase(query);
 		for (auto& row = results.begin(); row != results.end(); ++row) {
 			if (row[0]) {
-				LogDebug("whoall class debug: [{}]", )
 				plclass_ = static_cast<uint32>(Strings::ToInt(row[0], GetPlayerClassBit(cle->class_())));
 			}
 		}
@@ -907,7 +906,6 @@ void ClientList::SendFriendsWho(ServerFriendsWho_Struct *FriendsWho, WorldTCPCon
     			auto results = database.QueryDatabase(query);
 				for (auto& row = results.begin(); row != results.end(); ++row) {
 					if (row[0]) {
-						LogDebug("whoall class debug: [{}]", )
 						PlayerClass = static_cast<uint32>(Strings::ToInt(row[0], GetPlayerClassBit(cle->class_())));
 					}
 				}
