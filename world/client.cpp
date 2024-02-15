@@ -606,9 +606,8 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
     std::string consonants = "bcdfghjklmnprstvwxyz";  // Avoid less common consonants for readability
     std::string vowels = "aeiou";  // Keep standard vowels to maintain some pronounceability
     std::string consonantBlends = "br cr dr fr gr pr tr str shr thr";
-    std::string vowelBlends = "ae ai ao au ea ei eo eu ia io iu oa oi ou ua ui uo";  // Blends for variety
+    std::string vowelBlends = "ae ai ao au ea ei eo eu ia io iu oa oi ou ua ui uo";  // Blends for variety    
     
-    // Split consonant and vowel blends into arrays
     std::vector<std::string> consBlends;
     std::istringstream consStream(consonantBlends);
     std::string cons;
@@ -622,27 +621,23 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
     while (vowStream >> vow) {
         vowBlends.push_back(vow);
     }
-
-    // Random device and generator setup
+  
     std::random_device rd;
     std::mt19937 generator(rd());
 
-    // Distributions for standard and blended elements
-    std::uniform_int_distribution<int> lengthDistribution(5, 15);
+    std::uniform_int_distribution<int> lengthDistribution(5, 10);
     std::uniform_int_distribution<int> consonantDistribution(0, consonants.length() - 1);
     std::uniform_int_distribution<int> vowelDistribution(0, vowels.length() - 1);
     std::uniform_int_distribution<int> consBlendDistribution(0, consBlends.size() - 1);
     std::uniform_int_distribution<int> vowBlendDistribution(0, vowBlends.size() - 1);
 
-    // Generate random length for the name
     int nameLength = lengthDistribution(generator);
-
-    // Initialize rndname with null terminators for safety
+   
     char rndname[17] = {0};
-    bool useBlend = false;  // Toggle for when to use blends vs single letters
+    bool useBlend = false;
     for (int i = 0, j = 0; i < nameLength && j < 16; ++i) {
         std::string part = "";
-        useBlend = (i % 2 == 0);  // Alternate between using blends and single letters
+        useBlend = (i % 4 == 0);  // Alternate between using blends and single letters
         if (useBlend) {
             part = (i % 4 == 0) ? consBlends[consBlendDistribution(generator)] : vowBlends[vowBlendDistribution(generator)];
         } else {
@@ -654,12 +649,11 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
             }
         }
     }
-    rndname[0] = toupper(rndname[0]);  // Capitalize the first letter
+    rndname[0] = toupper(rndname[0]);
 
-    // Integration with EQApplicationPacket structure
     NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
-    memset(ngs->name, 0, 64);  // Ensure the name array is initially empty
-    strcpy(ngs->name, rndname);  // Copy the generated name into the packet's name field
+    memset(ngs->name, 0, 64);
+    strcpy(ngs->name, rndname);
 
     LogDebug("Random Name Generated: [{}]", rndname);
 
