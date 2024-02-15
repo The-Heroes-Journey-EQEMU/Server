@@ -12355,7 +12355,7 @@ uint32 Client::GetClassesBits() const
 {
 	if (RuleB(Custom, MulticlassingEnabled)) {
 		// Lazy load of this
-		if (__builtin_popcount(m_pp.classes)) {
+		if (__builtin_popcount(m_pp.classes) == 1) {
 			m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
 		} 			
 
