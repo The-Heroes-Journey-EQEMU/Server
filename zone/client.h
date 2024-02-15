@@ -442,7 +442,7 @@ public:
 	const int64& SetMana(int64 amount);
 	int64 CalcManaRegenCap() final;
 
-	uint32 GetClassesBits();
+	uint32 GetClassesBits() const;
 	bool   AddExtraClass(int class_id);
 
 	// guild pool regen shit. Sends a SpawnAppearance with a value that regens to value * 0.001

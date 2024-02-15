@@ -12351,14 +12351,9 @@ int Client::GetEXPPercentage()
 	return static_cast<int>(std::round(scaled * 100.0 / 330.0)); // unscaled pct
 }
 
-uint32 Client::GetClassesBits()
+uint32 Client::GetClassesBits() const
 {
 	if (RuleB(Custom, MulticlassingEnabled)) {
-		// Lazy load of this
-		if (__builtin_popcount(m_pp.classes) == 1) {
-			m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
-		} 			
-
 		return m_pp.classes;
 	} else {
 		return GetPlayerClassBit(m_pp.class_);
