@@ -901,11 +901,11 @@ void ClientList::SendFriendsWho(ServerFriendsWho_Struct *FriendsWho, WorldTCPCon
 			strcpy(PlayerName,cle->name());	
 			
 			// Send different info for multiclass strings. Requires clientside support.
-			if (RuleB(Custom, MulticlassingEnabled)) {		
-				std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = \'%d\'", cle->CharID());
+			if (RuleB(Custom, MulticlassingEnabled)) {      
+				std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", cle->CharID());
 				auto results = database.QueryDatabase(query);
-				for (auto& row = results.begin(); row != results.end(); ++row) {
-					if (row[0]) {
+				for (auto& row : results) { // Assuming 'results' can be iterated directly
+					if (row[0]) { // Check if the first column is not null
 						PlayerClass = static_cast<uint32>(Strings::ToInt(row[0]), GetPlayerClassBit(cle->class_()));
 					}
 				}
