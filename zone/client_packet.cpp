@@ -789,10 +789,6 @@ void Client::CompleteConnect()
 	SendMobPositions();
 
 	SetLastPositionBeforeBulkUpdate(GetPosition());
-	
-	if (RuleB(Custom, ServerAuthStats)) {
-		SendEdgeStatBulkUpdate();
-	}
 
 	/* This sub event is for if a player logs in for the first time since entering world. */
 	if (firstlogon == 1) {
@@ -967,6 +963,16 @@ void Client::CompleteConnect()
 		GoToBind();
 		return;
 	}
+
+	// Load Multiclass Data last
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
+	}
+	
+	if (RuleB(Custom, ServerAuthStats)) {
+		SendEdgeStatBulkUpdate();
+	}
+
 }
 
 // connecting opcode handlers
