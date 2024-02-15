@@ -622,7 +622,7 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
         // currentLength remains 1
     }
 
-    int namlen = emu_random.Int(5, 10); // Target name length
+    int namlen = emu_random.Int(7, 10); // Target name length
 
     while (currentLength < namlen) {
         dlc = false; // reset double letter check for each iteration
