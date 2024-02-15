@@ -607,9 +607,9 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 
     while (!isNameUnique) {  // Keep generating until a unique name is found
         // Definitions for name generation
-        std::string consonants = "bcdfghjklmnprstvwxyz";  // Removed 'I' and pairs like 'll', 'rr' etc., for first letter use
-        std::string vowels = "aeiou";
-        std::string validStartConsonants = "abcdefghjklmnopqrstuvwxyz"; // Avoid 'I' and pairs for the first character
+        std::string consonants = "bcdfghjklmnpqrstvwxyz"; // Excluding 'I' from consonants for clarity, even though it's a vowel
+        std::string vowels = "aeou"; // Excluding 'I'
+        std::string allVowels = "aeiou"; // All vowels including 'I' for the second character
         std::vector<std::string> consBlends = {"br", "cr", "dr", "fr", "gr", "pr", "tr", "str", "shr", "thr"};
         std::vector<std::string> vowBlends = {"ae", "ai", "ao", "au", "ea", "ei", "eo", "eu", "ia", "io", "iu", "oa", "oi", "ou", "ua", "ui", "uo"};
         std::vector<std::string> endingPhonemes = {"a", "e", "i", "o", "u", "os", "as", "us", "is", "y", "an", "en", "in", "on", "un"}; // Reasonable ending phonemes
@@ -620,23 +620,31 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 
         // Bias towards shorter names: use a distribution that favors smaller numbers
         std::uniform_int_distribution<int> lengthDistribution(5, 10); // Adjusted max length
-        std::uniform_int_distribution<int> characterTypeDistribution(0, 3); // For decision making (more weight on single letters)
-        std::uniform_int_distribution<int> startConsonantDistribution(0, validStartConsonants.size() - 1);
+        std::uniform_int_distribution<int> firstCharDistribution(0, 1); // Decide if first char is vowel or consonant
         std::uniform_int_distribution<int> consonantDistribution(0, consonants.size() - 1);
         std::uniform_int_distribution<int> vowelDistribution(0, vowels.size() - 1);
+        std::uniform_int_distribution<int> allVowelDistribution(0, allVowels.size() - 1);
         std::uniform_int_distribution<int> consBlendDistribution(0, consBlends.size() - 1);
         std::uniform_int_distribution<int> vowBlendDistribution(0, vowBlends.size() - 1);
         std::uniform_int_distribution<int> endingPhonemeDistribution(0, endingPhonemes.size() - 1);
 
-        int totalLength = 0; // Total length of the name, considering blends as two characters
+        int totalLength = 0; // Total length of the name
         memset(rndname, 0, sizeof(rndname)); // Reset rndname before generating a new one
 
-        // Ensure the first character is not 'I' or a consonant pair
-        rndname[totalLength++] = validStartConsonants[startConsonantDistribution(generator)];
-		rndname[totalLength++] = validStartConsonants[startConsonantDistribution(generator)];
+        // Generate first two characters based on rules
+        if (firstCharDistribution(generator) == 0) {
+            // First character is a vowel (excluding 'I'), second must be a consonant
+            rndname[totalLength++] = vowels[vowelDistribution(generator)];
+            rndname[totalLength++] = consonants[consonantDistribution(generator)];
+        } else {
+            // First character is a consonant, second must be a vowel
+            rndname[totalLength++] = consonants[consonantDistribution(generator)];
+            rndname[totalLength++] = allVowels[allVowelDistribution(generator)]; // Allows 'I' as second character
+        }
+
         rndname[0] = toupper(rndname[0]); // Capitalize the first letter
 
-        while (totalLength < lengthDistribution(generator) - 1) {  // Reserve space for reasonable ending
+        while (totalLength < lengthDistribution(generator) - 1) { 
             bool useBlend = (totalLength >= 5) && (characterTypeDistribution(generator) == 0); // Less frequent use of blends
 
             if (useBlend && (totalLength + 2 < 10)) { // Check if adding a blend exceeds max length, reserve space for ending
@@ -657,7 +665,7 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 
         // Query database to check if this name is taken already;
         std::string query = StringFormat("SELECT `name` FROM `character_data` WHERE `name` = '%s'", rndname);
-        auto results = database.QueryDatabase(query);
+        auto results = database->QueryDatabase(query);
         if (!results.Success() || results.RowCount() == 0) {
             isNameUnique = true; // Name is unique, break out of the loop
         }
