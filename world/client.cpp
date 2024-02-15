@@ -60,6 +60,10 @@
 #include <stdlib.h>
 #include <zlib.h>
 #include <limits.h>
+#include <iostream>
+#include <string>
+#include <random>
+#include <ctime>
 
 //FatherNitwit: uncomment to enable my IP based authentication hack
 //#define IPBASED_AUTH_HACK
@@ -598,65 +602,66 @@ bool Client::HandleNameApprovalPacket(const EQApplicationPacket *app)
 }
 
 bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
-    // creates up to a 10 char name
-    char vowels[18] = "aeiouyaeiouaeioe";
-    char cons[48] = "bcdfghjklmnpqrstvwxzybcdgklmnprstvwbcdgkpstrkd";
-    char rndname[17] = {0};  // Initialize all to null terminator for safety
-    char paircons[33] = "ngrkndstshthphsktrdrbrgrfrclcr";
-    int rndnum = emu_random.Int(0, 75), currentLength = 1;  // Start length at 1 due to first character
-    bool dlc = false, vwl = false, dbl = false;
-
-    // Initial character setup
-    if (rndnum > 63) {
-        rndnum = (rndnum - 61) * 2; // adjust index for paircons array
-        rndname[0] = paircons[rndnum];
-        rndname[1] = paircons[rndnum + 1];
-        currentLength = 2; // Starting with a consonant pair
-    } else if (rndnum > 16) {
-        rndnum -= 17; // adjust index for cons array
-        rndname[0] = cons[rndnum];
-        // currentLength remains 1
-    } else {
-        rndname[0] = vowels[rndnum]; // no need to adjust index for vowels
-        vwl = true; // starting with a vowel
-        // currentLength remains 1
+    // Fantasy name generation code integration
+    std::string consonants = "bcdfghjklmnprstvwxyz";  // Avoid less common consonants for readability
+    std::string vowels = "aeiou";  // Keep standard vowels to maintain some pronounceability
+    std::string consonantBlends = "br cr dr fr gr pr tr str shr thr";
+    std::string vowelBlends = "ae ai ao au ea ei eo eu ia io iu oa oi ou ua ui uo";  // Blends for variety
+    
+    // Split consonant and vowel blends into arrays
+    std::vector<std::string> consBlends;
+    std::istringstream consStream(consonantBlends);
+    std::string cons;
+    while (consStream >> cons) {
+        consBlends.push_back(cons);
     }
 
-    int namlen = emu_random.Int(7, 10); // Target name length
+    std::vector<std::string> vowBlends;
+    std::istringstream vowStream(vowelBlends);
+    std::string vow;
+    while (vowStream >> vow) {
+        vowBlends.push_back(vow);
+    }
 
-    while (currentLength < namlen) {
-        dlc = false; // reset double letter check for each iteration
-        if (vwl) { // last char was a vowel, pick a consonant or consonant pair
-            rndnum = emu_random.Int(0, 62);
-            if (rndnum > 46 && currentLength < namlen - 1) { // ensure room for pair
-                rndnum = (rndnum - 47) * 2; // adjust index for paircons array
-                rndname[currentLength] = paircons[rndnum];
-                rndname[currentLength + 1] = paircons[rndnum + 1];
-                currentLength += 2; // added a consonant pair
-                dlc = true; // mark double letter check as true to prevent doubling
-            } else {
-                rndname[currentLength] = cons[rndnum]; // add single consonant
-                currentLength++; // increase length by one
+    // Random device and generator setup
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Distributions for standard and blended elements
+    std::uniform_int_distribution<int> lengthDistribution(5, 15);
+    std::uniform_int_distribution<int> consonantDistribution(0, consonants.length() - 1);
+    std::uniform_int_distribution<int> vowelDistribution(0, vowels.length() - 1);
+    std::uniform_int_distribution<int> consBlendDistribution(0, consBlends.size() - 1);
+    std::uniform_int_distribution<int> vowBlendDistribution(0, vowBlends.size() - 1);
+
+    // Generate random length for the name
+    int nameLength = lengthDistribution(generator);
+
+    // Initialize rndname with null terminators for safety
+    char rndname[17] = {0};
+    bool useBlend = false;  // Toggle for when to use blends vs single letters
+    for (int i = 0, j = 0; i < nameLength && j < 16; ++i) {
+        std::string part = "";
+        useBlend = (i % 2 == 0);  // Alternate between using blends and single letters
+        if (useBlend) {
+            part = (i % 4 == 0) ? consBlends[consBlendDistribution(generator)] : vowBlends[vowBlendDistribution(generator)];
+        } else {
+            part = (i % 4 == 0) ? consonants[consonantDistribution(generator)] : vowels[vowelDistribution(generator)];
+        }
+        for (char c : part) {
+            if (j < 16) {
+                rndname[j++] = c;
             }
-        } else { // last char was a consonant, pick a vowel
-            rndname[currentLength] = vowels[emu_random.Int(0, 17)]; // select a vowel
-            currentLength++; // increase length by one
-        }
-        vwl = !vwl; // toggle vowel/consonant for next iteration
-
-        if (!dbl && !dlc && currentLength < namlen && emu_random.Int(0, currentLength + 9) == 0) { // chance for double letter
-            rndname[currentLength] = rndname[currentLength - 1]; // duplicate last letter
-            currentLength++; // increase length by one
-            dbl = true; // mark double occurred
         }
     }
+    rndname[0] = toupper(rndname[0]);  // Capitalize the first letter
 
-    rndname[0] = toupper(rndname[0]); // capitalize first letter
+    // Integration with EQApplicationPacket structure
     NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
-    memset(ngs->name, 0, 64);
-    strcpy(ngs->name, rndname);
+    memset(ngs->name, 0, 64);  // Ensure the name array is initially empty
+    strcpy(ngs->name, rndname);  // Copy the generated name into the packet's name field
 
-	LogDebug("Random Name Generated: [{}]", rndname);
+    LogDebug("Random Name Generated: [{}]", rndname);
 
     QueuePacket(app);
     return true;
