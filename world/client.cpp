@@ -613,31 +613,35 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
     // Random number generation setup
     std::random_device rd;
     std::mt19937 generator(rd());
-    std::uniform_int_distribution<int> lengthDistribution(5, 15);
+
+    // Bias towards shorter names: use a distribution that favors smaller numbers
+    std::uniform_int_distribution<int> lengthDistribution(5, 10); // Adjusted max length
+    std::uniform_int_distribution<int> characterTypeDistribution(0, 3); // For decision making (more weight on single letters)
     std::uniform_int_distribution<int> consonantDistribution(0, consonants.size() - 1);
     std::uniform_int_distribution<int> vowelDistribution(0, vowels.size() - 1);
     std::uniform_int_distribution<int> consBlendDistribution(0, consBlends.size() - 1);
     std::uniform_int_distribution<int> vowBlendDistribution(0, vowBlends.size() - 1);
-    std::uniform_int_distribution<int> blendDecision(0, 4); // Decision for blend use
 
-    int nameLength = lengthDistribution(generator);
+    int totalLength = 0; // Total length of the name, considering blends as two characters
     int lastBlendPosition = -5;  // Initialize to allow blend at first character
 
-    for (int i = 0, j = 0; i < nameLength && j < 16; ++i) {
-        bool useBlend = (i - lastBlendPosition >= 5) && (blendDecision(generator) == 0); // Randomly decide to use blend based on conditions
+    while (totalLength < lengthDistribution(generator)) {
+        bool useBlend = (totalLength - lastBlendPosition >= 5) && (characterTypeDistribution(generator) == 0); // Less frequent use of blends
 
-        if (useBlend) {
-            std::string part = (blendDecision(generator) % 2 == 0) ? consBlends[consBlendDistribution(generator)] : vowBlends[vowBlendDistribution(generator)];
+        if (useBlend && (totalLength + 2 <= 10)) { // Check if adding a blend exceeds max length
+            std::string part = (characterTypeDistribution(generator) % 2 == 0) ? consBlends[consBlendDistribution(generator)] : vowBlends[vowBlendDistribution(generator)];
             for (char c : part) {
-                if (j < 16) rndname[j++] = c;
+                if (totalLength < 10) rndname[totalLength++] = c; // Treat blends as two characters
             }
-            lastBlendPosition = i; // Update last blend position
-        } else {
-            rndname[j++] = (i % 2 == 0) ? consonants[consonantDistribution(generator)] : vowels[vowelDistribution(generator)];
+            lastBlendPosition = totalLength;
+        } else if (totalLength < 10) { // Add single letter if not exceeding max length
+            rndname[totalLength++] = (characterTypeDistribution(generator) % 2 == 0) ? consonants[consonantDistribution(generator)] : vowels[vowelDistribution(generator)];
         }
     }
 
     rndname[0] = toupper(rndname[0]); // Capitalize the first letter
+
+	// Query data
 
     // Integrate with the rest of your method
     NameGeneration_Struct* ngs = (NameGeneration_Struct*)app->pBuffer;
