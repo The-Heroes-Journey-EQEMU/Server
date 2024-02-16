@@ -1629,6 +1629,7 @@ void Client::OPGMTraining(const EQApplicationPacket *app)
 		gmtrain->skills[EQ::skills::Skill1HPiercing] = gmtrain->skills[EQ::skills::Skill2HPiercing];
 		gmtrain->skills[EQ::skills::Skill2HPiercing] = 0;
 	}
+	
 //#pragma GCC pop_options
 
 	uchar ending[]={0x34,0x87,0x8a,0x3F,0x01
