@@ -3186,32 +3186,32 @@ int64_t Client::GetStatValueEdgeType(eStatEntry eLabel)
 {
 	switch (eLabel)
 	{
-		case eStatCurHP:
-		{
-			return GetHP();
-		}
 		case eStatMaxHP:
 		{	
 			CalcMaxHP();
 			return GetMaxHP();
-		}
-		case eStatCurMana:
-		{
-			return GetMana();
 		}
 		case eStatMaxMana:
 		{
 			CalcMaxMana();
 			return GetMaxMana();
 		}
-		case eStatCurEndur:
-		{
-			return GetEndurance();
-		}
 		case eStatMaxEndur:
 		{
 			CalcMaxEndurance();
 			return GetMaxEndurance();
+		}
+		case eStatCurHP:
+		{
+			return GetHP();
+		}
+		case eStatCurMana:
+		{
+			return GetMana();
+		}
+		case eStatCurEndur:
+		{
+			return GetEndurance();
 		}
 		case eStatClassesBitmask:
 		{
@@ -3219,11 +3219,40 @@ int64_t Client::GetStatValueEdgeType(eStatEntry eLabel)
 		}
 		case eStatMitigation:
 		{
+			CalcAC();
 			return GetMitigationAC();
 		}
 		case eStatEvasion:
 		{
 			return GetTotalDefense();
+		}
+		case eStatSTR:
+		{
+			return GetSTR();
+		}
+		case eStatSTA:
+		{
+			return GetSTA();
+		}
+		case eStatAGI:
+		{
+			return GetAGI();
+		}
+		case eStatDEX:
+		{
+			return GetDEX();
+		}
+		case eStatINT:
+		{
+			return GetINT();
+		}
+		case eStatWIS:
+		{
+			return GetWIS();
+		}
+		case eStatCHA:
+		{
+			return GetCHA();
 		}
 		default:
 		{
