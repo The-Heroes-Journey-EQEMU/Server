@@ -3853,7 +3853,7 @@ bool Client::CheckDoubleAttack()
 	if ((GetClassesBits() & (GetPlayerClassBit(Class::Paladin) | GetPlayerClassBit(Class::ShadowKnight))) && (!HasTwoHanderEquipped())) {
 		LogCombatDetail("Knight class without a 2 hand weapon equipped. Negating Knight's Advantage");
 		auto da_negate = 0;
-		auto ka_rank = GetAAByAAID(188) { // Knight's Advantage
+		auto ka_rank = GetAAByAAID(188);  // Knight's Advantage
 			switch (ka_rank) {
 				case 561:
 					da_negate = 3;
