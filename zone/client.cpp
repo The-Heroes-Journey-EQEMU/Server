@@ -12351,15 +12351,6 @@ int Client::GetEXPPercentage()
 	return static_cast<int>(std::round(scaled * 100.0 / 330.0)); // unscaled pct
 }
 
-uint32 Client::GetClassesBits() const
-{
-	if (RuleB(Custom, MulticlassingEnabled)) {
-		return m_pp.classes;
-	} else {
-		return GetPlayerClassBit(m_pp.class_);
-	}
-}
-
 bool Client::AddExtraClass(int class_id) {
     if (RuleB(Custom, MulticlassingEnabled) && class_id >= Class::Warrior && class_id <= Class::Berserker) {
         int classes_bits = GetClassesBits();

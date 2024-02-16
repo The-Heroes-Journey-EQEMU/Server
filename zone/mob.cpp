@@ -4571,6 +4571,23 @@ bool Mob::CanThisClassTripleAttack() const
 	}
 }
 
+uint32 Mob::GetClassesBits() const
+{
+	if (IsClient()) {
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			return m_pp.classes;
+		} else {
+			return GetPlayerClassBit(m_pp.class_);
+		}
+	} else {
+		if (IsPlayerClass(GetClass())) {
+			return GetPlayerClassBit(GetClass());
+		} else {
+			return 0;
+		}
+	}
+}
+
 bool Mob::IsWarriorClass(void) const {
     if (IsClient() && RuleB(Custom, MulticlassingEnabled)) {
         int classes_bits = CastToClient()->GetClassesBits();
