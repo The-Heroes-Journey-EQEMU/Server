@@ -926,7 +926,7 @@ int Mob::ACSum(bool skip_caps)
 	else {
 		LogCombatDetail("ACSum ac [{}]", ac);
 	}
-
+	
 	return ac;
 }
 

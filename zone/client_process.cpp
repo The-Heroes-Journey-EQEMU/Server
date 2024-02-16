@@ -517,6 +517,7 @@ bool Client::Process() {
 			DoEnduranceRegen();
 			BuffProcess();
 
+
 			if (GetTarget()) {
 				GetTarget()->SendBuffsToClient(this);
 			}

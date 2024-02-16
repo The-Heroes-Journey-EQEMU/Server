@@ -3217,6 +3217,14 @@ int64_t Client::GetStatValueEdgeType(eStatEntry eLabel)
 		{
 			return GetClassesBits();
 		}
+		case eStatMitigation:
+		{
+			return CalcAC();
+		}
+		case eStatEvasion:
+		{
+			return GetTotalDefense();
+		}
 		default:
 		{
 			return 0;

@@ -1343,6 +1343,8 @@ enum eStatEntry
 	eStatMaxHP,
 	eStatMaxMana,
 	eStatMaxEndur,
+	eStatMitigation,
+	eStatEvasion,
 	eStatDummyValue,
 	eStatMax
 };
