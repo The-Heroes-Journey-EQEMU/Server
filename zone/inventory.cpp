@@ -3219,7 +3219,7 @@ int64_t Client::GetStatValueEdgeType(eStatEntry eLabel)
 		}
 		case eStatMitigation:
 		{
-			return CalcAC();
+			return GetMitigationAC();
 		}
 		case eStatEvasion:
 		{
