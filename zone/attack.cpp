@@ -3854,31 +3854,30 @@ bool Client::CheckDoubleAttack()
 		LogCombatDetail("Knight class without a 2 hand weapon equipped. Negating Knight's Advantage");
 		auto da_negate = 0;
 		auto ka_rank = GetAAByAAID(188);  // Knight's Advantage
-			switch (ka_rank) {
-				case 561:
-					da_negate = 3;
-					break;
-				case 562:
-					da_negate = 6;
-					break;
-				case 563:
-					da_negate = 9;
-					break;
-				case 1624:
-					da_negate = 20;
-					break;
-				case 1625:
-					da_negate = 22;
-					break;
-				case 1626:
-					da_negate = 24;
-					break;
-				default:
-					da_negate = 0;
-					break;
-			}		
-		}
-	}	
+		switch (ka_rank) {
+			case 561:
+				da_negate = 3;
+				break;
+			case 562:
+				da_negate = 6;
+				break;
+			case 563:
+				da_negate = 9;
+				break;
+			case 1624:
+				da_negate = 20;
+				break;
+			case 1625:
+				da_negate = 22;
+				break;
+			case 1626:
+				da_negate = 24;
+				break;
+			default:
+				da_negate = 0;
+				break;
+		}		
+	}		
 
 	//Use skill calculations otherwise, if you only have AA applied GiveDoubleAttack chance then use that value as the base.
 	if (skill) {
