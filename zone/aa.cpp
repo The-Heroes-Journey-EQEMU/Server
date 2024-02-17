@@ -937,20 +937,20 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 		if ((ability->classes >> 1) & GetClassesBits() || (ability->classes & (1 << GetClass()))) {
 			aai->classes = 0xFFFFFFF;
 		} else {
-			aai->classes = ability->classes;
-			aai->grant_only = 1;
+			aai->classes = ability->classes;			
 		}	
 	} else {
 		if(!(ability->classes & (1 << GetClass()))) {
 			return;
 		}
-		aai->classes = ability->classes;
-		aai->grant_only = ability->grant_only;
+		aai->classes = ability->classes;		
 	}
 
 	if(!CanUseAlternateAdvancementRank(rank)) {
 		return;
 	}
+	
+	aai->grant_only = ability->grant_only;
 
 	aai->id = rank->id;
 	aai->upper_hotkey_sid = rank->upper_hotkey_sid;
