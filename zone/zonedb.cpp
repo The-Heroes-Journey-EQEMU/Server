@@ -637,7 +637,6 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 	m_epp->next_invsnapshot_time = m_epp->last_invsnapshot_time + (RuleI(Character, InvSnapshotMinIntervalM) * 60);
 
 	if (RuleB(Custom, MulticlassingEnabled)) {
-		/*
 		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", character_id);
 		auto results = database.QueryDatabase(query);
 		bool found = false;
@@ -653,9 +652,6 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 		if (!found) {
 			pp->classes = GetPlayerClassBit(pp->class_);
 		}
-		*/
-
-		pp->classes = Strings::ToInt(GetBucket("GestaltClasses"));
 	}
 
 	return true;
