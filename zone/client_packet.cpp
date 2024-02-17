@@ -788,22 +788,8 @@ void Client::CompleteConnect()
 	// sent to a succor point
 	SendMobPositions();
 
-	if (RuleB(Custom, MulticlassingEnabled)) {      
-		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", CharacterID());
-		auto results = database.QueryDatabase(query);
-		bool found = false;
-
-		for (auto& row = results.begin(); row != results.end(); ++row) {
-			if (row[0]) { 
-				m_pp.classes = static_cast<uint32>(Strings::ToInt(row[0]));
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			m_pp.classes = GetPlayerClassBit(GetClass());
-		}
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
 	}
 	
 	if (RuleB(Custom, ServerAuthStats)) {
