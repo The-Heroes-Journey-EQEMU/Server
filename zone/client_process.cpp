@@ -517,16 +517,6 @@ bool Client::Process() {
 			DoEnduranceRegen();
 			BuffProcess();
 
-			if (RuleB(Custom, MulticlassingEnabled)) {
-				m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
-				SendAlternateAdvancementTable();
-			}
-			
-			if (RuleB(Custom, ServerAuthStats)) {
-				SendEdgeStatBulkUpdate();
-			}
-
-
 			if (GetTarget()) {
 				GetTarget()->SendBuffsToClient(this);
 			}

@@ -1082,9 +1082,9 @@ int Client::GetDynamicAATimer(int aa_id) {
         // Check if the bucket has a value before attempting conversion
         if (!bucketValue.empty()) {
             int value = std::stoi(bucketValue); // Convert string value to integer
-			LogDebug("Got TimerID: [{}]", value);
+			// LogDebug("Got TimerID: [{}]", value);
             if (value == aa_id) {
-				LogDebug("Returning TimerID: [{}] - [{}]", i, value);
+				// LogDebug("Returning TimerID: [{}] - [{}]", i, value);
                 return i; // Return the timer ID associated with aa_id
             }
         }
