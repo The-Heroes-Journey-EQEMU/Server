@@ -527,6 +527,16 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 // Finish client connecting state
 void Client::CompleteConnect()
 {
+
+	// Load Multiclass Data last
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
+	}
+	
+	if (RuleB(Custom, ServerAuthStats)) {
+		SendEdgeStatBulkUpdate();
+	}
+
 	UpdateWho();
 	client_state = CLIENT_CONNECTED;
 	SendAllPackets();
@@ -963,16 +973,6 @@ void Client::CompleteConnect()
 		GoToBind();
 		return;
 	}
-
-	// Load Multiclass Data last
-	if (RuleB(Custom, MulticlassingEnabled)) {
-		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
-	}
-	
-	if (RuleB(Custom, ServerAuthStats)) {
-		SendEdgeStatBulkUpdate();
-	}
-
 }
 
 // connecting opcode handlers
