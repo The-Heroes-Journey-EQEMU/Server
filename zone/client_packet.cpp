@@ -527,16 +527,6 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 // Finish client connecting state
 void Client::CompleteConnect()
 {
-
-	// Load Multiclass Data last
-	if (RuleB(Custom, MulticlassingEnabled)) {
-		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
-	}
-	
-	if (RuleB(Custom, ServerAuthStats)) {
-		SendEdgeStatBulkUpdate();
-	}
-
 	UpdateWho();
 	client_state = CLIENT_CONNECTED;
 	SendAllPackets();
@@ -797,6 +787,15 @@ void Client::CompleteConnect()
 	// if a mob is slightly in the wall or slightly clipping a floor they will be
 	// sent to a succor point
 	SendMobPositions();
+
+	// Load Multiclass Data last
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
+	}
+	
+	if (RuleB(Custom, ServerAuthStats)) {
+		SendEdgeStatBulkUpdate();
+	}
 
 	SetLastPositionBeforeBulkUpdate(GetPosition());
 
