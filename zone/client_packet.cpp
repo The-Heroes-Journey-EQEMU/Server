@@ -789,7 +789,7 @@ void Client::CompleteConnect()
 	SendMobPositions();
 
 	if (RuleB(Custom, MulticlassingEnabled)) {      
-		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", cle->CharID());
+		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", CharacterID());
 		auto results = database.QueryDatabase(query);
 		bool found = false;
 
