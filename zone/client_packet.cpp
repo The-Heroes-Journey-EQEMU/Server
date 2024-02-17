@@ -802,7 +802,7 @@ void Client::CompleteConnect()
 		}
 
 		if (!found) {
-			PlayerClass = GetPlayerClassBit(cle->class_());
+			m_pp.classes = GetPlayerClassBit(GetClass());
 		}
 	}
 	
