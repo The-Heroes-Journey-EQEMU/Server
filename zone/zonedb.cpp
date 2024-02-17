@@ -655,7 +655,7 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 		}
 		*/
 
-		pp->classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(pp->class));
+		pp->classes = Strings::ToInt(GetBucket("GestaltClasses"));
 	}
 
 	return true;
