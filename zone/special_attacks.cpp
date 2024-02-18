@@ -426,6 +426,8 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		CheckIncreaseSkill(EQ::skills::SkillFrenzy, GetTarget(), 10);
 		DoAnim(anim1HWeapon, 0, false);
 
+		LogDebug("Attempting Frenzy: [{}]", GetClassesBits() & GetPlayerClassBit(Class::Berserker));
+
 		if (GetClassesBits() & GetPlayerClassBit(Class::Berserker)) {
 			int chance = GetLevel() * 2 + GetSkill(EQ::skills::SkillFrenzy);
 
