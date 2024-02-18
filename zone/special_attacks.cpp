@@ -286,6 +286,8 @@ void Mob::DoSpecialAttackDamage(Mob *who, EQ::skills::SkillType skill, int32 bas
 // We should probably refactor this to take the struct not the packet
 void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 {
+	LogDebug("Entering OPCombatAbility!?");
+
 	if (!GetTarget()) {
 		return;
 	}
