@@ -166,25 +166,26 @@ uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
 }
 
 uint32 Client::GetApocItemUpgrade(uint32 item_id) {
-	uint32 new_item_id = item_id;
+	if (RuleB(Custom, DoItemUpgrades)) {
+		uint32 new_item_id = item_id;
 
-	if (item_id < 1000000) { // this is a normal item
-		int roll = zone->random.Int(1, 100);
+		if (item_id < 1000000) { // this is a normal item
+			int roll = zone->random.Int(1, 100);
 
-		if (roll <= RuleI(Item, RoseColoredQuestWeightDrop)) { // we didn't get apoc
-			new_item_id += 1000000;
-		} else { // we got apoc
-			new_item_id += 2000000;
-		}
+			if (roll <= RuleI(Item, RoseColoredQuestWeightDrop)) {
+				new_item_id += 1000000;
+			} else {
+				new_item_id += 2000000;
+			}
 
-		if (new_item_id != item_id) {
-			const EQ::ItemData* item = database.GetItem(new_item_id);
-			if (item != nullptr) {
-				item_id = new_item_id;
+			if (new_item_id != item_id) {
+				const EQ::ItemData* item = database.GetItem(new_item_id);
+				if (item != nullptr) {
+					item_id = new_item_id;
+				}
 			}
 		}
 	}
-
 	return item_id;
 }
 
