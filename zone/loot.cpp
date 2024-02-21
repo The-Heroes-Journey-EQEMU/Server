@@ -265,6 +265,18 @@ void NPC::AddLootDrop(
 		return;
 	}
 
+	if (RuleB(Custom, DoItemUpgrades)) {
+		LogDebug("Upgraded attempted");
+		if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
+			LogDebug("Upgrade Succeeded");
+			item2->ID += 1000000;
+			if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
+				LogDebug("Upgrade 2Succeeded");
+				item2->ID += 1000000;
+			}
+		}		
+	}
+
 	auto item = new LootItem;
 
 	if (LogSys.log_settings[Logs::Loot].is_category_enabled == 1) {
