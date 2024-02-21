@@ -250,7 +250,7 @@ bool NPC::MeetsLootDropLevelRequirements(LootdropEntriesRepository::LootdropEntr
 
 //if itemlist is null, just send wear changes
 void NPC::AddLootDrop(
-	const EQ::ItemData *item2,
+	EQ::ItemData *item2,
 	LootdropEntriesRepository::LootdropEntries loot_drop,
 	bool wear_change,
 	uint32 augment_one,
