@@ -269,11 +269,17 @@ void NPC::AddLootDrop(
 		LogDebug("Upgraded attempted");
 		if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
 			LogDebug("Upgrade Succeeded");
-			item2 = database.GetItem(item2->ID + 1000000);
-			if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
-				LogDebug("Upgrade 2Succeeded");
-				item2 = database.GetItem(item2->ID + 1000000);
-			}
+			const EQ::ItemData *new_item = database.GetItem(item2->ID + 1000000);
+			if (new_item) {
+				item2 = new_item;
+				if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
+					LogDebug("Upgrade 2Succeeded");
+					const EQ::ItemData *new_item = database.GetItem(item2->ID + 1000000);
+					if (new_item) {
+						item2 = new_item;
+					}
+				}
+			}			
 		}		
 	}
 
