@@ -250,7 +250,7 @@ bool NPC::MeetsLootDropLevelRequirements(LootdropEntriesRepository::LootdropEntr
 
 //if itemlist is null, just send wear changes
 void NPC::AddLootDrop(
-	EQ::ItemData *item2,
+	const EQ::ItemData *item2,
 	LootdropEntriesRepository::LootdropEntries loot_drop,
 	bool wear_change,
 	uint32 augment_one,
@@ -269,10 +269,10 @@ void NPC::AddLootDrop(
 		LogDebug("Upgraded attempted");
 		if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
 			LogDebug("Upgrade Succeeded");
-			item2->ID += 1000000;
+			item2 = database.GetItem(item2->ID + 1000000);
 			if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
 				LogDebug("Upgrade 2Succeeded");
-				item2->ID += 1000000;
+				item2 = database.GetItem(item2->ID + 1000000);
 			}
 		}		
 	}

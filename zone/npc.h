@@ -323,7 +323,7 @@ public:
 	void	DisableSwarmTimer() { swarm_timer.Disable(); }
 
 	void AddLootDrop(
-		EQ::ItemData *item2,
+		const EQ::ItemData *item2,
 		LootdropEntriesRepository::LootdropEntries loot_drop,
 		bool wear_change = false,
 		uint32 augment_one = 0,
