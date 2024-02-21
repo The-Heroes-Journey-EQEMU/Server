@@ -134,7 +134,7 @@ void NPC::AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop)
 					if (RuleB(Custom, DoItemUpgrades)) {
 						if (zone->random.Real(0.0, 100.0) <= RuleI(Custom, ItemUpgradeRate)) {
 							// This is really ugly, but it should work.
-							e.item_id = GetApocItemUpgrade(item_id);
+							item_id = GetApocItemUpgrade(item_id);
 						}
 					}
 					const EQ::ItemData *database_item = database.GetItem(item_id);
