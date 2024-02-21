@@ -399,7 +399,7 @@ uint32 NPC::DoUpgradeLoot(uint32 itemID) {
 			// Rolled Awakened/RC
 			newID += 1000000;
 		}
-		if (database.getItem(newID)) {
+		if (database.GetItem(newID)) {
 			itemID = newID;
 		}
 	}
