@@ -189,7 +189,7 @@ uint32 Mob::GetApocItemUpgrade(uint32 item_id) {
 	return item_id;
 }
 
-bool Mob::SummonApocItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, uint32 aug6, bool attuned, uint16 to_slot, uint32 ornament_icon, uint32 ornament_idfile, uint32 ornament_hero_model) {
+bool Client::SummonApocItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, uint32 aug6, bool attuned, uint16 to_slot, uint32 ornament_icon, uint32 ornament_idfile, uint32 ornament_hero_model) {
 	item_id = GetApocItemUpgrade(item_id);
 
 	return SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, aug6, attuned, to_slot, ornament_icon, ornament_idfile, ornament_hero_model);
