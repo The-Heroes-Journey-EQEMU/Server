@@ -133,9 +133,17 @@ void NPC::AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop)
 					auto item_id = e.item_id;
 					if (RuleB(Custom, DoItemUpgrades)) {
 						LogDebug("Checking for upgrade...");
-						if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
-							LogDebug("Upgrade succeeded!");
-							item_id = GetApocItemUpgrade(item_id);
+						if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {							
+							if (database.GetItem(item_id + 1000000)) {
+								item_id += 1000000;
+								LogDebug("Upgrade succeeded!");
+								if (zone->random.Real(0.0, 100.0) <= RuleR(Custom, ItemUpgradeRate)) {
+									if (database.GetItem(item_id + 1000000)) {
+										item_id += 1000000;
+										LogDebug("Upgrade succeeded!");
+									}
+								}
+							}
 						}
 					}
 					const EQ::ItemData *database_item = database.GetItem(item_id);
@@ -143,7 +151,6 @@ void NPC::AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop)
 				}
 			}
 		}
-
 		return;
 	}
 
