@@ -130,6 +130,11 @@ void NPC::AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop)
 		for (const auto &e: le) {
 			for (int j = 0; j < e.multiplier; ++j) {
 				if (zone->random.Real(0.0, 100.0) <= e.chance && MeetsLootDropLevelRequirements(e, true)) {
+					if (RuleB(Custom, DoItemUpgrades)) {
+						if (zone->random.Real(0.0, 100.0) <= <float>RuleI(Custom, ItemUpgradeRate)) {
+							e.item_id = GetApocItemUpgrade(e.item_id);
+						}
+					}
 					const EQ::ItemData *database_item = database.GetItem(e.item_id);
 					AddLootDrop(database_item, e);
 				}
