@@ -393,9 +393,9 @@ uint32 NPC::DoUpgradeLoot(uint32 itemID) {
 	if (RuleB(Custom, DoItemUpgrades)) {
 		auto roll = zone->random.Real(0.0, 100.0); // Roll a number between 0 and 100
 
-		if (roll <= 10.0) { // 10% chance for 'Radiant'			
+		if (roll <= RuleR(Custom, RadiantItemDropRate)) {
 			itemID += 2000000;
-		} else if (roll <= 35.0) { 
+		} else if (roll <= RuleR(Custom, AwakenedItemDropRate)) { 
 			// Rolled Awakened/RC
 			itemID += 1000000;
 		}		
