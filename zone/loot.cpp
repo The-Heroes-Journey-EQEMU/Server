@@ -127,17 +127,17 @@ void NPC::AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop)
 
 	// if this lootdrop is droplimit=0 and mindrop 0, scan list once and return
 	if (drop_limit == 0 && min_drop == 0) {
-		for (auto &e: le) {
+		for (const auto &e: le) {
 			for (int j = 0; j < e.multiplier; ++j) {
-				if (zone->random.Real(0.0, 100.0) <= e.chance && MeetsLootDropLevelRequirements(e, true)) {
-					
+				if (zone->random.Real(0.0, 100.0) <= e.chance && MeetsLootDropLevelRequirements(e, true)) {		
+					auto item_id = e.item_id;
 					if (RuleB(Custom, DoItemUpgrades)) {
 						if (zone->random.Real(0.0, 100.0) <= RuleI(Custom, ItemUpgradeRate)) {
 							// This is really ugly, but it should work.
-							e.item_id = CastToClient()->GetApocItemUpgrade(e.item_id);
+							e.item_id = GetApocItemUpgrade(item_id);
 						}
 					}
-					EQ::ItemData *database_item = database.GetItem(e.item_id);
+					const EQ::ItemData *database_item = database.GetItem(item_id);
 					AddLootDrop(database_item, e);
 				}
 			}
