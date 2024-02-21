@@ -392,13 +392,16 @@ uint32 NPC::DoUpgradeLoot(uint32 itemID) {
 	*/
 	if (RuleB(Custom, DoItemUpgrades)) {
 		auto roll = zone->random.Real(0.0, 100.0); // Roll a number between 0 and 100
-
+		auto newID = itemID;
 		if (roll <= RuleR(Custom, RadiantItemDropRate)) {
-			itemID += 2000000;
+			newID += 2000000;
 		} else if (roll <= RuleR(Custom, AwakenedItemDropRate)) { 
 			// Rolled Awakened/RC
-			itemID += 1000000;
-		}		
+			newID += 1000000;
+		}
+		if (database.getItem(newID)) {
+			itemID = newID;
+		}
 	}
 	return itemID;
 }
