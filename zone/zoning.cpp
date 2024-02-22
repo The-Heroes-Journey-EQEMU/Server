@@ -235,13 +235,14 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 			target_instance_version
 		);
 
-		if (parse->EventPlayer(EVENT_ZONE, this, export_string, 0) != 0) {
-			auto val = parse->EventPlayer(EVENT_ZONE, this, export_string, 0);
-			if (val > 1) {
+		auto val = parse->EventPlayer(EVENT_ZONE, this, export_string, 0);
+		if (val != 0) {			
+			if (val > 0) {
 				target_zone_id = val;
+			} else {
+				SendZoneCancel(zc);
+				return;
 			}
-			SendZoneCancel(zc);
-			return;
 		}
 	}
 
