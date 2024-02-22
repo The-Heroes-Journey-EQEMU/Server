@@ -239,12 +239,15 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		if (val != 0) {			
 			if (val > 0) {
 				target_zone_id = val;
+				
 			} else {
 				SendZoneCancel(zc);
 				return;
 			}
 		}
 	}
+
+	LogDebug("target_zone_id = {}", target_zone_id);
 
 	if (player_event_logs.IsEventEnabled(PlayerEvent::ZONING)) {
 		auto e = PlayerEvent::ZoningEvent{};
