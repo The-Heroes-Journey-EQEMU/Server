@@ -960,6 +960,7 @@ RULE_BOOL(Custom, ExpandedPetAffinity, true, "Allows Pet Affinity to force buffs
 RULE_BOOL(Custom, DoItemUpgrades, true, "Retribution item upgrades")
 RULE_REAL(Custom, RadiantItemDropRate, 5.0, "Percentage chance that a drop will be upgraded")
 RULE_REAL(Custom, AwakenedItemDropRate, 25.0, "Percentage chance that a drop will be upgraded")
+RULE_BOOL(Custom, TauntTogglesPetTanking, true, "Enable to let pets hold aggro while taunt is on")
 RULE_CATEGORY_END()
 
 #undef RULE_CATEGORY
