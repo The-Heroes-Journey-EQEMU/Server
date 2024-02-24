@@ -212,11 +212,9 @@ uint64 Client::GetExperienceForKill(Mob *against)
 			ret /= 100;
 		}
 
-		LogDebug("Check 0: ret:[{}]", ret);
 		return ret;
 	}
 
-	LogDebug("Check 0: how does this fail?");
 	return 0;
 }
 
@@ -410,8 +408,6 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 {
 	add_exp = in_add_exp;
 
-	LogDebug("Initial add_exp [{}]", add_exp);
-
 	if (!resexp && (XPRate != 0))
 	{
 		add_exp = static_cast<uint64>(in_add_exp * (static_cast<float>(XPRate) / 100.0f));
@@ -440,8 +436,6 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 		if (zone->newzone_data.zone_exp_multiplier >= 0) {
 			zemmod *= zone->newzone_data.zone_exp_multiplier;
 		}
-
-		LogDebug("Checking modifiers: [{}], [{}]", totalmod, zemmod);
 
 		if (RuleB(Character, UseRaceClassExpBonuses))
 		{
@@ -500,13 +494,11 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 		}
 	}
 
-	LogDebug("getexp: [{}], add_exp: [{}]", GetEXP(), add_exp);
 	add_exp = GetEXP() + add_exp;
 }
 
 void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (!IsEXPEnabled()) {
-		LogDebug("EXP IS DISABLED");
 		return;
 	}
 
@@ -601,7 +593,6 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 
 	uint64 current_exp = GetEXP();
 	uint64 current_aa_exp = GetAAXP();
-	LogDebug("Checking theory: [{}], [{}], set_exp [{}], ", current_exp, current_aa_exp, set_exp);
 	uint64 total_current_exp = current_exp + current_aa_exp;
 	uint64 total_add_exp = set_exp + set_aaxp;
 	if (total_add_exp > total_current_exp) {

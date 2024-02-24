@@ -2572,7 +2572,6 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 		Raid*  killer_raid  = entity_list.GetRaidByClient(give_exp_client);
 
 		int64 final_exp = give_exp_client->GetExperienceForKill(this);
-		LogDebug("Check 1 XP: [{}]", final_exp);
 
 		// handle task credit on behalf of the killer
 		if (RuleB(TaskSystem, EnableTaskSystem)) {
@@ -2729,7 +2728,6 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 
 				if (con_level != CON_GRAY) {
 					if (!GetOwner() || (GetOwner() && !GetOwner()->IsClient())) {
-						LogDebug("final_exp: [{}]", final_exp);
 						give_exp_client->AddEXP(final_exp, con_level);
 
 						if (
