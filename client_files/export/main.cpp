@@ -150,19 +150,31 @@ void ExportSpells(SharedDatabase *db)
 					line.push_back('^');
 				}
 
-				if (row[i] != nullptr) {
-					line += row[i];
+				// Convert to std::string for comparison and modification
+				std::string fieldValue = row[i] ? row[i] : "";
+
+				// Check if this is the targettype field
+				if (RuleB(Spells, UseSpellImpliedTargeting) && i == 122) {
+					// Modify the targettype field value if necessary
+					if (fieldValue == "14" || fieldValue == "38") {
+						fieldValue = "6"; // Change targettype to 6
+					}
 				}
+
+				// Add the (possibly modified) field value to the line
+				line += fieldValue;
 			}
 
 			fprintf(f, "%s\n", line.c_str());
 		}
 	}
 	else {
+		LogError("Query to database failed, unable to export spells.");
 	}
 
 	fclose(f);
 }
+
 
 bool SkillUsable(SharedDatabase *db, int skill_id, int class_id)
 {
