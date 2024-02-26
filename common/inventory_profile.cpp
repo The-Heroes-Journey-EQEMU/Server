@@ -1431,11 +1431,6 @@ int16 EQ::InventoryProfile::_PutItem(int16 slot_id, ItemInstance* inst)
 	int16 result = INVALID_INDEX;
 	int16 parentSlot = INVALID_INDEX;
 
-	// Force items into the cursor slot if they don't belog to another slot
-	if (slot_id > invslot::POSSESSIONS_END && slot_id < invslot::BANK_BEGIN) {
-		slot_id = invslot::slotCursor;
-	}
-
 	if (slot_id == invslot::slotCursor) {
 		// Replace current item on cursor, if exists
 		m_cursor.pop(); // no memory delete, clients of this function know what they are doing
