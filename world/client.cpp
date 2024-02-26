@@ -2328,7 +2328,7 @@ bool Client::StoreCharacter(
 	database.SaveCharacterCreate(character_id, account_id, p_player_profile_struct);
 
 	if (RuleB(Custom, MulticlassingEnabled)) {
-		std::string insertQuery = StringFormat("REPLACE INTO data_buckets (`key`, value, expires, character_id, npc_id, bot_id) VALUES ('%s', 'GestaltClasses', 0, %d, 0, 0)", pp->classes, character_id);
+		std::string insertQuery = StringFormat("REPLACE INTO data_buckets (`key`, value, expires, character_id, npc_id, bot_id) VALUES ('%s', 'GestaltClasses', 0, %d, 0, 0)", p_player_profile_struct->classes, character_id);
     	auto results = database.QueryDatabase(insertQuery);
 	}
 
