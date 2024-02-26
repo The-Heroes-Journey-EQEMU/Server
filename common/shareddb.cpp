@@ -890,9 +890,11 @@ bool SharedDatabase::GetInventory(uint32 account_id, char *name, EQ::InventoryPr
 		safe_delete(inst);
 
 		// Save ptr to item in inventory
-		if (put_slot_id == INVALID_INDEX)
+		if (put_slot_id == INVALID_INDEX) {
 			LogError("Warning: Invalid slot_id for item in inventory: name={}, acctid={}, item_id={}, slot_id={}",
 				name, account_id, item_id, slot_id);
+			inv->DeleteItem(slot_id);
+		}
 	}
 
 	// Retrieve shared inventory
