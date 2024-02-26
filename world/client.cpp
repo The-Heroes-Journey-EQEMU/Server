@@ -1696,7 +1696,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	strn0cpy(pp.name, name, sizeof(pp.name));
 
 	pp.race             = cc->race;
-	pp.class_           = Class::Bard;
+	pp.class_           = RuleB(Custom, MulticlassingEnabled) ? Class::Bard : cc->class_;
 	pp.gender           = cc->gender;
 	pp.deity            = cc->deity;
 	pp.STR              = cc->STR;
@@ -1723,6 +1723,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	pp.cur_hp           = 1000;
 	pp.hunger_level     = 6000;
 	pp.thirst_level     = 6000;
+	pp.classes          = GetPlayerClassBit(cc->class_);
 
 	/* Set default skills for everybody */
 	pp.skills[EQ::skills::SkillSwimming]     = RuleI(Skills, SwimmingStartValue);
@@ -2325,6 +2326,11 @@ bool Client::StoreCharacter(
 	}
 
 	database.SaveCharacterCreate(character_id, account_id, p_player_profile_struct);
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		std::string insertQuery = StringFormat("REPLACE INTO data_buckets (`key`, value, expires, character_id, npc_id, bot_id) VALUES ('%s', 'GestaltClasses', 0, %d, 0, 0)", pp->classes, character_id);
+    	auto results = database.QueryDatabase(insertQuery);
+	}
 
 	std::vector<InventoryRepository::Inventory> v;
 

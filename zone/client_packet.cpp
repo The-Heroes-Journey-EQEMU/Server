@@ -789,7 +789,7 @@ void Client::CompleteConnect()
 	SendMobPositions();
 
 	if (RuleB(Custom, MulticlassingEnabled)) {
-		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.classes));
 	}
 	
 	if (RuleB(Custom, ServerAuthStats)) {
