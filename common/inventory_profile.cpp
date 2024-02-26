@@ -1431,7 +1431,8 @@ int16 EQ::InventoryProfile::_PutItem(int16 slot_id, ItemInstance* inst)
 	int16 result = INVALID_INDEX;
 	int16 parentSlot = INVALID_INDEX;
 
-	if (slot_id > invslot::POSSESSIONS_END && slot_id < invslot::WORLD_END) {
+	// Force items into the cursor slot if they don't belog to another slot
+	if (slot_id > invslot::POSSESSIONS_END && slot_id < invslot::GENERAL_BAGS_BEGIN) {
 		slot_id = invslot::slotCursor;
 	}
 
