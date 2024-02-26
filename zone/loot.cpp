@@ -390,7 +390,7 @@ uint32 NPC::DoUpgradeLoot(uint32 itemID) {
 	+145 Radiant + Mystic + Honed or Tempered
 	+146 Radiant + Mystic + Polished or Brutal
 	*/
-	if (RuleB(Custom, DoItemUpgrades)) {
+	if (RuleB(Custom, DoItemUpgrades) && !IsCharmed()) {
 		auto roll = zone->random.Real(0.0, 100.0); // Roll a number between 0 and 100
 		auto newID = itemID;
 		if (roll <= RuleR(Custom, RadiantItemDropRate)) {
