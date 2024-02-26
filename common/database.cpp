@@ -555,7 +555,7 @@ bool Database::SaveCharacterCreate(uint32 character_id, uint32 account_id, Playe
 
 	if (RuleB(Custom, MulticlassingEnabled)) {
 		std::string insertQuery = StringFormat("REPLACE INTO data_buckets (`key`, `value`,`character_id`) VALUES ('GestaltClasses', '%d', %d)", pp->classes, character_id);
-    	auto results = database.QueryDatabase(insertQuery);
+    	auto results = QueryDatabase(insertQuery);
 	}
 
 	CharacterDataRepository::ReplaceOne(*this, c);
