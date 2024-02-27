@@ -776,7 +776,7 @@ void Client::CompleteConnect()
 		zone->weatherSend(this);
 
 	TotalKarma = database.GetKarma(AccountID());
-	SendDisciplineTimers();
+	//SendDisciplineTimers();
 
 	if (parse->PlayerHasQuestSub(EVENT_ENTER_ZONE)) {
 		parse->EventPlayer(EVENT_ENTER_ZONE, this, "", 0);
