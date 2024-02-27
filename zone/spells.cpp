@@ -139,6 +139,7 @@ void NPC::SpellProcess()
 }
 
 int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unordered_set<uint16>* visited_targets = nullptr) {
+	auto spell = spells[spell_id];
 	if (RuleB(Spells, UseSpellImpliedTargeting)) {
 		// These can be check staticly
 		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
@@ -165,7 +166,7 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unorder
 			return target_id;
 		}
 
-		auto spell = spells[spell_id];
+		
 		Mob* target = entity_list.GetMob(target_id);
 
 		// Initialize visited_targets set if it's the first call
