@@ -159,7 +159,7 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 
 
 	LogDebug("Did not find any valid targets in implied target processing.");
-	return -1;
+	return target_id;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
