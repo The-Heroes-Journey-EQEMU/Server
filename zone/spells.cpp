@@ -261,8 +261,6 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		send_spellbar_enable = false;
 	}
 
-	target_id = GetSpellImpliedTargetID(spell_id, target_id);
-
 	if (target_id == -1) {
 		StopCastSpell(spell_id, send_spellbar_enable);
 		Message(Chat::SpellFailure, "You cannot find a valid target for this spell.");
@@ -279,7 +277,7 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		return false;
 	}
 
-	if (IsClient()) {
+	if (IsClient() && UseSpellImpliedTargeting) {
 		target_id = GetSpellImpliedTargetID(spell_id, target_id);
 	}
 
@@ -2444,7 +2442,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 	if(!IsValidSpell(spell_id))
 		return false;
 
-	if (IsClient()) {
+	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
 		auto target_id = GetSpellImpliedTargetID(spell_id, spell_target->GetID());
 		spell_target = entity_list.GetMob(target_id);
 	}
