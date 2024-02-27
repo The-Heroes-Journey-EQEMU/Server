@@ -138,7 +138,7 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
-int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::vector<uint16>* visited_targets = nullptr) {
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unordered_set<uint16>* visited_targets = nullptr) {
 	if (RuleB(Spells, UseSpellImpliedTargeting)) {
 		// These can be check staticly
 		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
@@ -277,7 +277,7 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		return false;
 	}
 
-	if (IsClient() && UseSpellImpliedTargeting) {
+	if (IsClient() && RuleB(Custom, UseSpellImpliedTargeting)) {
 		target_id = GetSpellImpliedTargetID(spell_id, target_id);
 	}
 
