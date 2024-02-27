@@ -131,10 +131,10 @@ void ExportSpells(SharedDatabase *db)
 {
 	bool implied_targeting = false;
 
-	std::string query = "SELECT rule_value FROM rule_values WHERE rule_name='Spells:UseSpellImpliedTargeting'";
-    auto results = db->QueryDatabase(query);
-    if (results.Success()) {    
-    	if (results.RowCount() > 0) {       
+	std::string rule_query = "SELECT rule_value FROM rule_values WHERE rule_name='Spells:UseSpellImpliedTargeting'";
+    auto rule_results = db->QueryDatabase(rule_query);
+    if (rule_results.Success()) {    
+    	if (rule_results.RowCount() > 0) {       
 			auto row = results.begin();
 			implied_targeting = (row[0] && std::string(row[0]) == "true");
 		}
