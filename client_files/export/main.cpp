@@ -154,7 +154,7 @@ void ExportSpells(SharedDatabase *db)
 				std::string fieldValue = row[i] ? row[i] : "";
 
 				// Check if this is the targettype field
-				if (RuleB(Spells, UseSpellImpliedTargeting) && i == 122) {
+				if (RuleB(Spells, UseSpellImpliedTargeting) && i == 98) {
 					// Modify the targettype field value if necessary
 					if (fieldValue == "14" || fieldValue == "38") {
 						fieldValue = "6"; // Change targettype to 6

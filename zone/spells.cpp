@@ -454,57 +454,6 @@ bool Mob::DoCastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		orgcasttime = cast_time;
 	}
 
-	/*
-	if (RuleB(Spells, UseSpellImpliedTargeting) && IsClient()) {
-		Mob* spell_target = entity_list.GetMobID(target_id);
-		uint16 cached_target_id = 0; // Temporary storage for the proposed target ID
-
-		if (spell_target) {
-			Mob* targets_target = spell_target->GetTarget();
-
-			if (IsBeneficialSpell(spell_id)) {
-				// Check the original target if it's a client
-				if (spell_target->IsClient()) {
-					cached_target_id = spell_target->GetID();
-				}
-				// Check the target's target if it's a client
-				else if (targets_target && targets_target->IsClient()) {
-					cached_target_id = targets_target->GetID();
-				}
-
-				// If no suitable target found yet, default to the caster
-				if (cached_target_id == 0) {
-					cached_target_id = this->GetID(); // Default to the caster
-				}
-			} 
-			else if (IsDetrimentalSpell(spell_id)) {
-				// Check the original target if it's not a client
-				if (!spell_target->IsClient()) {
-					cached_target_id = spell_target->GetID();
-				}
-				// Check the target's target if it's not a client
-				else if (targets_target && !targets_target->IsClient()) {
-					cached_target_id = targets_target->GetID();
-				}
-			}
-
-			// Validate the cached_target_id with DoCastingChecksOnTarget
-			if (cached_target_id > 0) {
-				Mob* cached_target_mob = entity_list.GetMobID(cached_target_id);
-				if (cached_target_mob && DoCastingChecksOnTarget(true, spell_id, cached_target_mob)) {
-					target_id = cached_target_id; // Update target_id only if checks pass
-				} else {
-					StopCastSpell(spell_id, true);
-					return false; // Stop casting if checks fail or no valid target is found
-				}
-			} else {
-				// If no target was cached (applicable for detrimental spells), stop casting
-				StopCastSpell(spell_id, true);
-				return false;
-			}
-		}
-	} */
-
 	// we checked for spells not requiring targets above
 	if(target_id == 0) {
 		LogSpells("Spell Error: no target. spell=[{}]", spell_id);
