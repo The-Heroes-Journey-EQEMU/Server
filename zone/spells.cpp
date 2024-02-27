@@ -153,12 +153,13 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 		}
 	}
 
+
+	LogDebug("Did not find any valid targets in implied target processing.");
 	return -1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // functions related to begin/finish casting, fizzling etc
-
 //
 // only CastSpell and DoCastSpell should be setting casting_spell_id.
 // basically casting_spell_id is only set when casting a triggered spell from
