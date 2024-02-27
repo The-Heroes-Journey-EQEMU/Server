@@ -147,8 +147,8 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
 		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
 			LogDebug("This is a pet spell.");
-			if (GetPetID()) {
-				return GetPetID();
+			if (CastToClient()->GetPetID()) {
+				return CastToClient()->GetPetID();
 			} else {
 				return -1;
 			}
