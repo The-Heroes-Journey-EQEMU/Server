@@ -129,7 +129,18 @@ int main(int argc, char **argv)
 
 void ExportSpells(SharedDatabase *db)
 {
-	LogInfo("Exporting Spells?");
+	bool implied_targeting = false;
+
+	std::string query = "SELECT rule_value FROM rule_values WHERE rule_name='Spells:UseSpellImpliedTargeting'";
+    auto results = db->QueryDatabase(query);
+    if (results.Success()) {    
+    	if (results.RowCount() > 0) {       
+			auto row = results.begin();
+			implied_targeting = (row[0] && std::string(row[0]) == "true");
+		}
+	}
+
+	LogInfo("Exporting Spells. Implied Targeting Mutations {}", implied_targeting ? "Enabled" : "Disabled");
 
 	std::string file = fmt::format("{}/export/spells_us.txt", path.GetServerPath());
 	FILE *f = fopen(file.c_str(), "w");
@@ -154,10 +165,9 @@ void ExportSpells(SharedDatabase *db)
 				std::string fieldValue = row[i] ? row[i] : "";
 
 				// Check if this is the targettype field
-				if (i == 98) {
+				if (implied_targeting && i == 98) {
 					// Modify the targettype field value if necessary
 					if (fieldValue == "14" || fieldValue == "38") {
-						LogInfo("Found a pet spell, mutating...");
 						fieldValue = "6"; // Change targettype to 6
 					}
 				}
@@ -225,12 +235,6 @@ int GetSkill(SharedDatabase *db, int skill_id, int class_id, int level)
 
 void ExportSkillCaps(SharedDatabase *db)
 {
-	LogInfo("Exporting Skill Caps");
-
-	const int MAX_SKILLS = 78; // Adjust if necessary, assuming 0-77 inclusive
-    const int MAX_LEVELS = 100;
-    int skills_array[MAX_SKILLS][MAX_LEVELS] = {0}; // Initialize all to 0
-
 	bool multiclassing = false;
 
 	std::string query = "SELECT rule_value FROM rule_values WHERE rule_name='Custom:MulticlassingEnabled'";
@@ -241,6 +245,12 @@ void ExportSkillCaps(SharedDatabase *db)
 			multiclassing = (row[0] && std::string(row[0]) == "true");
 		}
 	}
+
+	LogInfo("Exporting Skill Caps. Multiclassing Mutations {}", multiclassing ? "Enabled" : "Disabled");
+
+	const int MAX_SKILLS = 78; // Adjust if necessary, assuming 0-77 inclusive
+    const int MAX_LEVELS = 100;
+    int skills_array[MAX_SKILLS][MAX_LEVELS] = {0}; // Initialize all to 0
 
 	std::string file = fmt::format("{}/export/SkillCaps.txt", path.GetServerPath());
 	FILE *f = fopen(file.c_str(), "w");
