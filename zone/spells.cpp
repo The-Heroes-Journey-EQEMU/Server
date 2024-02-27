@@ -138,13 +138,9 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
-int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
-	auto spell = spells[spell_id];
-
-	LogDebug("Spell: [{}], Target: [{}]", spell_id, target_id);
-
-	// Early Checks
-	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::vector<uint16>* visited_targets = nullptr) {
+	if (RuleB(Spells, UseSpellImpliedTargeting)) {
+		// These can be check staticly
 		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
 			if (GetPet()) {
 				return GetPetID();
@@ -152,8 +148,84 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 				return -1;
 			}
 		}
-	}
 
+		if (spell.target_type == ST_Corpse) {
+			return target_id;
+		}
+
+		if (spell.target_type == ST_Self) {
+			return target_id;
+		}
+
+		if (IsPBAENukeSpell(spell_id)) {
+			return target_id;
+		}
+
+		if (spell.target_type == ST_TargetsTarget) {
+			return target_id;
+		}
+
+		auto spell = spells[spell_id];
+		Mob* target = entity_list.GetMob(target_id);
+
+		// Initialize visited_targets set if it's the first call
+		bool is_top_level_call = false;
+		if (visited_targets == nullptr) {
+			visited_targets = new std::vector<uint16>();
+			is_top_level_call = true;
+		}
+
+		// Check and add the current target_id to the visited set
+		if (target_id <= 0 || visited_targets->find(target_id) != visited_targets->end()) {
+			// Clean up if it was the top level call
+			if (is_top_level_call) {
+				delete visited_targets;
+			}
+			return -1;  // Return -1 if target_id is invalid or already visited
+		}
+
+		visited_targets->insert(target_id);  // Mark this target as visited
+
+		// Bail if we were passed an invalid target
+		if (target_id <= 0 || !target) {
+			return target_id;
+		}
+
+		// Bail if we think we are in a mob loop
+		if ((IsNPC() || IsPetOwnerNPC()) && (target->IsNPC() || target->IsPetOwnerNPC())) {
+			return target_id;
+		}
+
+		if (GetID() == target_id) {
+			return target_id;
+		}
+
+		// Main body
+		if (IsBeneficialSpell(spell_id)) {
+			// This target is likely inappropriate
+			if (!(target->IsClient() || target->IsPetOwnerClient())) {
+				if (target->GetTarget()) {
+					// Recursively scan for a target
+					target_id = GetSpellImpliedTargetID(spell_id, target->GetTarget()->GetID());
+				}
+			} else {
+				// This target is likely appropriate
+				return target->GetID();
+			}
+		} else {
+			// This target is likely appropriate
+			if (target->IsClient() || target->IsPetOwnerClient()) {
+				return target->GetID();
+			} else {
+				target_id = GetSpellImpliedTargetID(spell_id, target->GetTarget()->GetID());
+			}
+		}
+
+		// At the end of the function, before returning, clean up if this was the top-level call.
+		if (is_top_level_call) {
+			delete visited_targets;
+		}
+	}
 
 	LogDebug("Did not find any valid targets in implied target processing.");
 	return target_id;
@@ -205,6 +277,10 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 			IsValidSpell(spell_id), casting_spell_id, delaytimer, spellend_timer.Enabled());
 		StopCastSpell(spell_id, send_spellbar_enable);
 		return false;
+	}
+
+	if (IsClient()) {
+		target_id = GetSpellImpliedTargetID(spell_id, target_id);
 	}
 
 	if (!DoCastingChecksOnCaster(spell_id, slot) ||
@@ -2367,6 +2443,11 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 
 	if(!IsValidSpell(spell_id))
 		return false;
+
+	if (IsClient()) {
+		auto target_id = GetSpellImpliedTargetID(spell_id, spell_target->GetID());
+		spell_target = entity_list.GetMob(target_id);
+	}
 
 	//Death Touch targets the pet owner instead of the pet when said pet is tanking.
 	if ((RuleB(Spells, CazicTouchTargetsPetOwner) && spell_target && spell_target->HasOwner()) && !spell_target->IsBot() && (spell_id == SPELL_CAZIC_TOUCH || spell_id == SPELL_TOUCH_OF_VINITRAS)) {
