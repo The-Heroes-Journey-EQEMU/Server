@@ -138,6 +138,28 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
+	auto spell = spells[spell_id];
+	auto caster = CastToClient();
+
+	if ((item_slot != -1 && cast_time == 0) || aa_id) {
+		send_spellbar_enable = false;
+	}
+
+	// Early Checks
+	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
+		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
+			if (caster->GetPet()) {
+				return caster->GetPet();
+			} else {
+				return -1;
+			}
+		}
+	}
+
+
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // functions related to begin/finish casting, fizzling etc
 
@@ -169,6 +191,14 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		send_spellbar_enable = false;
 	}
 
+	target_id = GetSpellImpliedTargetID(spell_id, target_id);
+
+	if (target_id = -1) {
+		StopCastSpell(spell_id, send_spellbar_enable);
+		Message(Chat::SpellFailure, "You cannot find a valid target for this spell.");
+		return false;
+	}
+
 	if (!IsValidSpell(spell_id) ||
 		casting_spell_id ||
 		delaytimer ||
@@ -177,54 +207,6 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 			IsValidSpell(spell_id), casting_spell_id, delaytimer, spellend_timer.Enabled());
 		StopCastSpell(spell_id, send_spellbar_enable);
 		return false;
-	}
-
-	if (RuleB(Spells, UseSpellImpliedTargeting) && IsClient()) {
-		Mob* spell_target = entity_list.GetMobID(target_id);
-		uint16 cached_target_id = 0;
-
-		if (spell_target) {
-			Mob* targets_target = spell_target->GetTarget();
-
-			if (IsBeneficialSpell(spell_id)) {
-				
-				if (spell_target->IsClient() || spell_target->IsPetOwnerClient()) {
-					cached_target_id = spell_target->GetID();
-				}
-
-				else if (targets_target && (targets_target->IsClient() && targets_target->IsPetOwnerClient())) {
-					cached_target_id = targets_target->GetID();
-				}
-
-				if (cached_target_id == 0) {
-					cached_target_id = this->GetID();
-				}
-			} 
-			else if (IsDetrimentalSpell(spell_id)) {
-				if (!spell_target->IsClient()) {
-					cached_target_id = spell_target->GetID();
-				}
-
-				else if (targets_target && !targets_target->IsClient()) {
-					cached_target_id = targets_target->GetID();
-				}
-			}
-
-			if (cached_target_id > 0) {
-				Mob* cached_target_mob = entity_list.GetMobID(cached_target_id);
-				if (cached_target_mob && DoCastingChecksOnTarget(true, spell_id, cached_target_mob)) {
-					target_id = cached_target_id; 
-				} else {
-					StopCastSpell(spell_id, send_spellbar_enable);
-					Message(Chat::SpellFailure, "You cannot find a valid target for this spell.");
-					return false;
-				}
-			} else {				
-				StopCastSpell(spell_id, send_spellbar_enable);
-				Message(Chat::SpellFailure, "You cannot find a valid target for this spell.");
-				return false;
-			}
-		}
 	}
 
 	if (!DoCastingChecksOnCaster(spell_id, slot) ||
