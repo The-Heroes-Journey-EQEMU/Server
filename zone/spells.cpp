@@ -138,94 +138,37 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
-int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unordered_set<uint16>* visited_targets) {
-	LogDebug("Called with spell_id: [{}], target_id [{}]", spell_id, target_id);
-	auto spell = spells[spell_id];
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 	if (RuleB(Spells, UseSpellImpliedTargeting)) {
-		// These can be check staticly
-		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
+		if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
 			if (GetPet()) {
 				return GetPetID();
-			} else {
-				return -1;
 			}
 		}
 
-		if (spell.target_type == ST_Corpse) {
-			return target_id;
+		if (spells[spell_id].target_type == ST_Self || IsPBAENukeSpell(spell_id)) {
+			return GetID();
 		}
 
-		if (spell.target_type == ST_Self) {
-			return target_id;
-		}
-
-		if (IsPBAENukeSpell(spell_id)) {
-			return target_id;
-		}
-
-		if (spell.target_type == ST_TargetsTarget) {
-			return target_id;
-		}
-
-		
-		Mob* target = entity_list.GetMob(target_id);
-
-		// Initialize visited_targets set if it's the first call
-		bool is_top_level_call = false;
-		if (visited_targets == nullptr) {
-			visited_targets = new std::unordered_set<uint16>();
-			is_top_level_call = true;
-		}
-
-		// Check and add the current target_id to the visited set
-		if (target_id <= 0 || visited_targets->find(target_id) != visited_targets->end()) {
-			// Clean up if it was the top level call
-			if (is_top_level_call) {
-				delete visited_targets;
-			}
-			return -1;  // Return -1 if target_id is invalid or already visited
-		}
-
-		visited_targets->insert(target_id);  // Mark this target as visited
-
-		// Bail if we were passed an invalid target
-		if (target_id <= 0 || !target) {
-			return target_id;
-		}
-
-		// Bail if we think we are in a mob loop
-		if ((IsNPC() || IsPetOwnerNPC()) && (target->IsNPC() || target->IsPetOwnerNPC())) {
-			return target_id;
-		}
-
-		if (GetID() == target_id) {
-			return target_id;
-		}
-
-		// Main body
-		if (IsBeneficialSpell(spell_id)) {
-			// This target is likely inappropriate
-			if (!(target->IsClient() || target->IsPetOwnerClient())) {
-				if (target->GetTarget()) {
-					// Recursively scan for a target
-					target_id = GetSpellImpliedTargetID(spell_id, target->GetTarget()->GetID());
+		//Goal of Spells:UseSpellImpliedTargeting is to replicate the EQ2 feature where spells will 'pass through' invalid targets to target's target to try to find a valid target.
+		if (RuleB(Spells,UseSpellImpliedTargeting) && IsClient()) {
+			Mob* spell_target = entity_list.GetMobID(target_id);
+			if (spell_target) {
+				Mob* targets_target = spell_target->GetTarget();
+				if (targets_target) {
+					// If either this is beneficial and the target is not a player or player's pet or vis versa
+					if ((IsBeneficialSpell(spell_id) && (!(spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient()))))
+						|| (IsDetrimentalSpell(spell_id) && (spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient())))) {
+						//Check if the target's target is a valid target; we can use DoCastingChecksOnTarget() here because we can let it handle the failure as vanilla would
+						if (DoCastingChecksOnTarget(true, spell_id, targets_target)) {
+							target_id = targets_target->GetID();
+						}
+						else {							
+							return target_id;
+						}
+					}
 				}
-			} else {
-				// This target is likely appropriate
-				return target->GetID();
 			}
-		} else {
-			// This target is likely appropriate
-			if (target->IsClient() || target->IsPetOwnerClient()) {
-				return target->GetID();
-			} else {
-				target_id = GetSpellImpliedTargetID(spell_id, target->GetTarget()->GetID());
-			}
-		}
-
-		// At the end of the function, before returning, clean up if this was the top-level call.
-		if (is_top_level_call) {
-			delete visited_targets;
 		}
 	}
 
@@ -279,28 +222,7 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		return false;
 	}
 
-	//Goal of Spells:UseSpellImpliedTargeting is to replicate the EQ2 feature where spells will 'pass through' invalid targets to target's target to try to find a valid target.
-	if (RuleB(Spells,UseSpellImpliedTargeting) && IsClient()) {
-		Mob* spell_target = entity_list.GetMobID(target_id);
-		if (spell_target) {
-			Mob* targets_target = spell_target->GetTarget();
-			if (targets_target) {
-				// If either this is beneficial and the target is not a player or player's pet or vis versa
-				if ((IsBeneficialSpell(spell_id) && (!(spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient()))))
-					|| (IsDetrimentalSpell(spell_id) && (spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient())))) {
-					//Check if the target's target is a valid target; we can use DoCastingChecksOnTarget() here because we can let it handle the failure as vanilla would
-					if (DoCastingChecksOnTarget(true, spell_id, targets_target)) {
-						target_id = targets_target->GetID();
-					}
-					else {
-						//Just return false here because we are going to fail the next check block anyway if we reach this point.
-						StopCastSpell(spell_id, send_spellbar_enable);
-						return false;
-					}
-				}
-			}
-		}
-	}
+	target_id = GetSpellImpliedTargetID(spell_id, target_id);
 
 	if (!DoCastingChecksOnCaster(spell_id, slot) ||
 		!DoCastingChecksZoneRestrictions(true, spell_id) ||
