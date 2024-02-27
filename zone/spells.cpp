@@ -140,13 +140,12 @@ void NPC::SpellProcess()
 
 int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 	auto spell = spells[spell_id];
-	auto caster = CastToClient();
 
 	// Early Checks
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
 		if (spell.target_type == ST_Pet || spell.target_type == ST_SummonedPet) {
-			if (caster->GetPet()) {
-				return caster->GetPet()->GetID();
+			if (GetPet()) {
+				return GetPet()->GetID();
 			} else {
 				return -1;
 			}
