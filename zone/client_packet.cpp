@@ -781,7 +781,7 @@ void Client::CompleteConnect()
 		zone->weatherSend(this);
 
 	TotalKarma = database.GetKarma(AccountID());
-	//SendDisciplineTimers();
+	SendDisciplineTimers();
 
 	if (parse->PlayerHasQuestSub(EVENT_ENTER_ZONE)) {
 		parse->EventPlayer(EVENT_ENTER_ZONE, this, "", 0);
@@ -1317,7 +1317,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 	database.LoadCharacterInspectMessage(cid, &m_inspect_message); /* Load Character Inspect Message */
 	database.LoadCharacterSpellBook(cid, &m_pp); /* Load Character Spell Book */
 	database.LoadCharacterMemmedSpells(cid, &m_pp);  /* Load Character Memorized Spells */
-	database.LoadCharacterDisciplines(cid, &m_pp); /* Load Character Disciplines */
+	//database.LoadCharacterDisciplines(cid, &m_pp); /* Load Character Disciplines */
 	database.LoadCharacterLanguages(cid, &m_pp); /* Load Character Languages */
 	database.LoadCharacterLeadershipAbilities(cid, &m_pp); /* Load Character Leadership AA's */
 	database.LoadCharacterTribute(this); /* Load CharacterTribute */
