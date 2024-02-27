@@ -194,7 +194,7 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 
 	target_id = GetSpellImpliedTargetID(spell_id, target_id);
 
-	if (target_id = -1) {
+	if (target_id == -1) {
 		StopCastSpell(spell_id, send_spellbar_enable);
 		Message(Chat::SpellFailure, "You cannot find a valid target for this spell.");
 		return false;
