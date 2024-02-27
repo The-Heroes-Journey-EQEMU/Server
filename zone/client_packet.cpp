@@ -793,10 +793,6 @@ void Client::CompleteConnect()
 	// sent to a succor point
 	SendMobPositions();
 
-	if (RuleB(Custom, ServerAuthStats)) {
-		SendEdgeStatBulkUpdate();
-	}
-
 	SetLastPositionBeforeBulkUpdate(GetPosition());
 
 	/* This sub event is for if a player logs in for the first time since entering world. */
@@ -964,6 +960,12 @@ void Client::CompleteConnect()
 
 	RecordStats();
 	AutoGrantAAPoints();
+
+	if (RuleB(Custom, ServerAuthStats)) {
+		SendEdgeStatBulkUpdate();
+		database.LoadCharacterDisciplines(cid, &m_pp); /* Load Character Disciplines */
+		SendDisciplineUpdate();
+	}
 
 	// enforce some rules..
 	if (!CanEnterZone()) {
