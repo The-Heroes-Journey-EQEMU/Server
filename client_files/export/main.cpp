@@ -135,7 +135,7 @@ void ExportSpells(SharedDatabase *db)
     auto rule_results = db->QueryDatabase(rule_query);
     if (rule_results.Success()) {    
     	if (rule_results.RowCount() > 0) {       
-			auto row = results.begin();
+			auto row = rule_results.begin();
 			implied_targeting = (row[0] && std::string(row[0]) == "true");
 		}
 	}
