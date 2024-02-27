@@ -157,6 +157,7 @@ void ExportSpells(SharedDatabase *db)
 				if (RuleB(Spells, UseSpellImpliedTargeting) && i == 98) {
 					// Modify the targettype field value if necessary
 					if (fieldValue == "14" || fieldValue == "38") {
+						LogInfo("Found a pet spell, mutating...");
 						fieldValue = "6"; // Change targettype to 6
 					}
 				}
