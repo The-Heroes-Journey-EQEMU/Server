@@ -6383,7 +6383,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 		Mob* proc_target = GetTarget();
 		if (proc_target) {
 
-			proc_target = GetSpellImpliedTargetID(spell_id, proc_target);
+			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID()));
 
 			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
 			return true;
