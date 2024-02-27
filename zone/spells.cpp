@@ -172,7 +172,7 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unorder
 		// Initialize visited_targets set if it's the first call
 		bool is_top_level_call = false;
 		if (visited_targets == nullptr) {
-			visited_targets = new std::vector<uint16>();
+			visited_targets = new std::unordered_set<uint16>();
 			is_top_level_call = true;
 		}
 
