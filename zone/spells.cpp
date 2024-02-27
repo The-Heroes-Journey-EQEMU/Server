@@ -138,7 +138,7 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
-int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unordered_set<uint16>* visited_targets = nullptr) {
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, std::unordered_set<uint16>* visited_targets) {
 	auto spell = spells[spell_id];
 	if (RuleB(Spells, UseSpellImpliedTargeting)) {
 		// These can be check staticly
