@@ -963,7 +963,7 @@ void Client::CompleteConnect()
 
 	if (RuleB(Custom, ServerAuthStats)) {
 		SendEdgeStatBulkUpdate();
-		database.LoadCharacterDisciplines(cid, &m_pp); /* Load Character Disciplines */
+		database.LoadCharacterDisciplines(character_id, &m_pp); /* Load Character Disciplines */
 		SendDisciplineUpdate();
 	}
 
