@@ -527,6 +527,11 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 // Finish client connecting state
 void Client::CompleteConnect()
 {
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
+	}
+
 	UpdateWho();
 	client_state = CLIENT_CONNECTED;
 	SendAllPackets();
@@ -788,10 +793,6 @@ void Client::CompleteConnect()
 	// sent to a succor point
 	SendMobPositions();
 
-	if (RuleB(Custom, MulticlassingEnabled)) {
-		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
-	}
-	
 	if (RuleB(Custom, ServerAuthStats)) {
 		SendEdgeStatBulkUpdate();
 	}
