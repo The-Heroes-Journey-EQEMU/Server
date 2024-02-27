@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 
 void ExportSpells(SharedDatabase *db)
 {
-	LogInfo("Exporting Spells");
+	LogInfo("Exporting Spells?");
 
 	std::string file = fmt::format("{}/export/spells_us.txt", path.GetServerPath());
 	FILE *f = fopen(file.c_str(), "w");
