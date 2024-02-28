@@ -3210,10 +3210,10 @@ void ZoneDatabase::SavePetInfo(Client *client)
 			pet_buff.ticsremaining  = p->Buffs[slot_id].duration;
 			pet_buff.counters       = p->Buffs[slot_id].counters;
 			pet_buff.instrument_mod = p->Buffs[slot_id].bard_modifier;
-			pet_buff.castername     = p->Buffs[slot_id].caster_name;
+			pet_buff.castername     = Strings::Escape(string(p->Buffs[slot_id].caster_name));
 
 
-			strncpy(pet_buff.castername, p->Buffs[slot_id].caster_name, 64);
+			
 
 			pet_buffs.push_back(pet_buff);
 		}
