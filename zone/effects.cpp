@@ -304,11 +304,16 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 			extra_dmg += GetSkillDmgAmt(spells[spell_id].skill) * ratio / 100;
 		}
 
-		if (RuleB(Spells, DOTBonusDamageSplitOverDuration)) {
-			if (extra_dmg) {
+		if (extra_dmg) {
+			if (RuleB(Spells, DOTBonusDamageSplitOverDuration)) {
 				const int duration = CalcBuffDuration(this, target, spell_id);
 				if (duration > 0) {
 					extra_dmg /= duration;
+				}
+			} else {
+				int ruleValue = RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent);
+				if (ruleValue > 0) {
+					extra_dmg = (extra_dmg * ruleValue) / 100;
 				}
 			}
 		}
@@ -547,6 +552,11 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 				const int duration = CalcBuffDuration(this, target, spell_id);
 				if (duration > 0) {
 					extra_heal /= duration;
+				}
+			} else {
+				int ruleValue = RuleI(Spells, HOTsScaleWithHealAmtPerTickPercent);
+				if (ruleValue > 0) {
+					extra_heal = (extra_heal * ruleValue) / 100;
 				}
 			}
 
