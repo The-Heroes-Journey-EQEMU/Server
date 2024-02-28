@@ -489,6 +489,7 @@ void NPC::GetPetState(SpellBuff_Struct *pet_buffs, uint32 *items, char *name) {
 			pet_buffs[i].bard_modifier = 10;
 			pet_buffs[i].counters = buffs[i].counters;
 			pet_buffs[i].bard_modifier = buffs[i].instrument_mod;
+			strcpy(pet_buffs[i].caster_name, buffs[i].caster_name);
 		}
 		else {
 			pet_buffs[i].spellid = SPELL_UNKNOWN;
