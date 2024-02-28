@@ -3213,7 +3213,7 @@ void ZoneDatabase::SavePetInfo(Client *client)
 			pet_buff.castername     = p->Buffs[slot_id].caster_name;
 
 
-			strncpy(pet_buff.castername, p->Buffs[slot_id].caster_name, 64)
+			strncpy(pet_buff.castername, p->Buffs[slot_id].caster_name, 64);
 
 			pet_buffs.push_back(pet_buff);
 		}
