@@ -997,6 +997,9 @@ public:
 	void SetTitleSuffix(std::string suffix);
 	void MemorizeSpell(uint32 slot, uint32 spell_id, uint32 scribing, uint32 reduction = 0);
 
+	// Custom DispelMagic routine for players
+	void DispelMagic(Mob* casterm, uint16 spell_id, int effect_value);
+
 	int GetAAEXPPercentage();
 	int GetEXPPercentage();
 

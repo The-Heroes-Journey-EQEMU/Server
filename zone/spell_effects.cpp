@@ -7409,6 +7409,22 @@ bool Mob::PassLimitClass(uint32 Classes_, uint16 Class_)
 	return false;
 }
 
+void Client::DispelMagic(Mob* caster, uint16 spell_id, int effect_value) 
+{
+	for (int slot = 0; slot < GetMaxTotalSlots(); slot++) {
+		if (
+			buffs[slot].spellid != SPELL_UNKNOWN &&
+			spells[buffs[slot].spellid].dispel_flag == 0 &&
+			!IsDiscipline(buffs[slot].spellid)
+		) {
+			if (caster && TryDispel(caster->GetCasterLevel(spell_id), buffs[slot].casterlevel, effect_value)) {
+				BuffFadeBySlot(slot);
+				break;
+			}
+		}
+	}
+}
+
 void Mob::DispelMagic(Mob* caster, uint16 spell_id, int effect_value) 
 {
 	int sumDuration = 0;
