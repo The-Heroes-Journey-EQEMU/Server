@@ -523,6 +523,7 @@ void NPC::SetPetState(SpellBuff_Struct *pet_buffs, uint32 *items) {
 			buffs[i].counters			= pet_buffs[i].counters;
 			buffs[i].hit_number			= spells[pet_buffs[i].spellid].hit_number;
 			buffs[i].instrument_mod		= pet_buffs[i].bard_modifier;
+			strcpy(buffs[i].caster_name, pet_buffs[i].caster_name);
 		}
 		else {
 			buffs[i].spellid = SPELL_UNKNOWN;
