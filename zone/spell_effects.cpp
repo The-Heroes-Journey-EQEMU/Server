@@ -7411,15 +7411,37 @@ bool Mob::PassLimitClass(uint32 Classes_, uint16 Class_)
 
 void Mob::DispelMagic(Mob* caster, uint16 spell_id, int effect_value) 
 {
+	int sumDuration = 0;
+	int buffCount = 0;
+
+	effect_value = zone->random.Roll0(effect_value);
+
 	for (int slot = 0; slot < GetMaxTotalSlots(); slot++) {
 		if (
 			buffs[slot].spellid != SPELL_UNKNOWN &&
 			spells[buffs[slot].spellid].dispel_flag == 0 &&
 			!IsDiscipline(buffs[slot].spellid)
 		) {
-			if (caster && TryDispel(caster->GetCasterLevel(spell_id), buffs[slot].casterlevel, effect_value)) {
-				BuffFadeBySlot(slot);
-				break;
+			sumDuration += buffs[slot].ticsremaining;
+			buffCount++;
+		}
+	}
+
+	if (buffCount > 0 && sumDuration > 0) {
+		sumDuration -= sumDuration * (effect_value/100);
+		sumDuration /= buffCount;
+		if (sumDuration > 0) {
+			for (int slot = 0; slot < GetMaxTotalSlots(); slot++) {
+				if (
+					buffs[slot].spellid != SPELL_UNKNOWN &&
+					spells[buffs[slot].spellid].dispel_flag == 0 &&
+					!IsDiscipline(buffs[slot].spellid)
+				) {
+					buffs[slot].ticsremaining -= sumDuration;
+					if (buffs[slot].ticsremaining <= 0) {
+						BuffFadeBySlot(slot);
+					}
+				}
 			}
 		}
 	}
