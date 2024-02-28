@@ -10804,6 +10804,7 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 		return;
 	}
 
+	/*
 	MoveItem_Struct* mi = (MoveItem_Struct*)app->pBuffer;
 	if (spellend_timer.Enabled() && casting_spell_id && !(GetClassesBits() & GetPlayerClassBit(Class::Bard)));
 	{
@@ -10822,6 +10823,7 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 			return;
 		}
 	}
+	*/
 
 	// Illegal bagslot usage checks. Currently, user only receives a message if this check is triggered.
 	bool mi_hack = false;
