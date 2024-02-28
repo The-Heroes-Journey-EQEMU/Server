@@ -3212,6 +3212,9 @@ void ZoneDatabase::SavePetInfo(Client *client)
 			pet_buff.instrument_mod = p->Buffs[slot_id].bard_modifier;
 			pet_buff.castername     = p->Buffs[slot_id].caster_name;
 
+
+			strncpy(pet_buff.castername, p->Buffs[slot_id].caster_name, 64)
+
 			pet_buffs.push_back(pet_buff);
 		}
 
