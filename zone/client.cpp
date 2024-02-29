@@ -2324,15 +2324,14 @@ void Client::ReadBook(BookRequest_Struct *book) {
 				}        
 			}
 		} else {
-			const auto* item_data = database.GetItem(itemID);
+			const auto* item_data = database.GetItem(itemID);			
 			if (item_data) {
 				auto item_name = item_data->Name;
+				std::regex fine_steel_pattern("Fine Steel [A-Za-z]+");
+				if (std::regex_match(item_name, fine_steel_pattern)) {
+					booktxt2 += "<br>Discovered by: Enchanted Loom";
+				}
 			}
-
-			std::regex fine_steel_pattern("Fine Steel [A-Za-z]+");
-			if (std::regex_match(discover_charname, fine_steel_pattern)) {
-                booktxt2 += "<br>Discovered by: Enchanted Loom";
-            }
 		}
 	}
 
