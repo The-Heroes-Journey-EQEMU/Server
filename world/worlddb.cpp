@@ -131,7 +131,24 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 
 		// Send UNKNOWN CLASS for multiclassing
 		if (RuleB(Custom, MulticlassingEnabled)) {
-			p_character_select_entry_struct->Class = 0xFFFF;
+			
+			std::string queryinner = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", character_id);
+			auto resultsinner = database.QueryDatabase(queryinner);
+			bool found = false;
+
+			for (auto& row = resultsinner.begin(); row != resultsinner.end(); ++row) {
+				if (row[0]) { 
+					pp->classes = static_cast<uint32>(Strings::ToInt(row[0]));
+					found = true;
+					break;
+				}
+			}
+			
+			if (pp->classes & GetPlayerClassBit(Class::Monk)) {
+				p_character_select_entry_struct->Class = Class::Monk;
+			} else {
+				p_character_select_entry_struct->Class = 0xFFFF;
+			}			
 		} else {
 			p_character_select_entry_struct->Class =  (uint8) Strings::ToUnsignedInt(row[4]);
 		}	
