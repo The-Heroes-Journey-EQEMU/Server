@@ -527,6 +527,11 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 // Finish client connecting state
 void Client::CompleteConnect()
 {
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.class_));
+	}
+
 	UpdateWho();
 	client_state = CLIENT_CONNECTED;
 	SendAllPackets();
@@ -788,14 +793,6 @@ void Client::CompleteConnect()
 	// sent to a succor point
 	SendMobPositions();
 
-	if (RuleB(Custom, MulticlassingEnabled)) {
-		m_pp.classes = Strings::ToInt(GetBucket("GestaltClasses"), GetPlayerClassBit(m_pp.classes));
-	}
-	
-	if (RuleB(Custom, ServerAuthStats)) {
-		SendEdgeStatBulkUpdate();
-	}
-
 	SetLastPositionBeforeBulkUpdate(GetPosition());
 
 	/* This sub event is for if a player logs in for the first time since entering world. */
@@ -963,6 +960,12 @@ void Client::CompleteConnect()
 
 	RecordStats();
 	AutoGrantAAPoints();
+
+	if (RuleB(Custom, ServerAuthStats)) {
+		SendEdgeStatBulkUpdate();
+		database.LoadCharacterDisciplines(character_id, &m_pp); /* Load Character Disciplines */
+		SendDisciplineUpdate();
+	}
 
 	// enforce some rules..
 	if (!CanEnterZone()) {
@@ -1316,7 +1319,11 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 	database.LoadCharacterInspectMessage(cid, &m_inspect_message); /* Load Character Inspect Message */
 	database.LoadCharacterSpellBook(cid, &m_pp); /* Load Character Spell Book */
 	database.LoadCharacterMemmedSpells(cid, &m_pp);  /* Load Character Memorized Spells */
-	database.LoadCharacterDisciplines(cid, &m_pp); /* Load Character Disciplines */
+	
+	if (!RuleB(Custom, ServerAuthStats)) {
+		database.LoadCharacterDisciplines(cid, &m_pp); /* Load Character Disciplines */
+	}
+	
 	database.LoadCharacterLanguages(cid, &m_pp); /* Load Character Languages */
 	database.LoadCharacterLeadershipAbilities(cid, &m_pp); /* Load Character Leadership AA's */
 	database.LoadCharacterTribute(this); /* Load CharacterTribute */
@@ -10797,8 +10804,10 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 		return;
 	}
 
+	
 	MoveItem_Struct* mi = (MoveItem_Struct*)app->pBuffer;
-	if (spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
+	/*
+	if (spellend_timer.Enabled() && casting_spell_id && !(GetClassesBits() & GetPlayerClassBit(Class::Bard)));
 	{
 		if (mi->from_slot != mi->to_slot && (mi->from_slot <= EQ::invslot::GENERAL_END || mi->from_slot > 39) && IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot))
 		{
@@ -10815,6 +10824,7 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 			return;
 		}
 	}
+	*/
 
 	// Illegal bagslot usage checks. Currently, user only receives a message if this check is triggered.
 	bool mi_hack = false;

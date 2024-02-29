@@ -350,7 +350,7 @@ public:
 	void NegateSpellEffectBonuses(uint16 spell_id);
 	bool NegateSpellEffect(uint16 spell_id, int effect_id);
 	float GetActSpellRange(uint16 spell_id, float range);
-	int64 GetActSpellDamage(uint16 spell_id, int64 value, Mob* target = nullptr);
+	int64 GetActSpellDamage(uint16 spell_id, int64 value, Mob* target = nullptr, int percent_modifier = 0);
 	int64 GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_buff_tic = true);
 	int64 GetActSpellHealing(uint16 spell_id, int64 value, Mob* target = nullptr, bool from_buff_tic = false);
 	int32 GetActSpellCost(uint16 spell_id, int32 cost);
@@ -368,6 +368,7 @@ public:
 	void SendSpellBarDisable();
 	void SendSpellBarEnable(uint16 spellid);
 	void ZeroCastingVars();
+	int GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id);
 	virtual void SpellProcess();
 	virtual bool CastSpell(uint16 spell_id, uint16 target_id, EQ::spells::CastingSlot slot = EQ::spells::CastingSlot::Item, int32 casttime = -1,
 		int32 mana_cost = -1, uint32* oSpellWillFinish = 0, uint32 item_slot = 0xFFFFFFFF,

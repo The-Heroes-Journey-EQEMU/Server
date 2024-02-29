@@ -286,6 +286,13 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 							dmg = caster->GetActReflectedSpellDamage(spell_id, (int64)(spells[spell_id].base_value[i] * partial / 100), reflect_effectiveness);
 						}
 						else {
+							//maybe allowing pets to cast spells as if the owner cast them by a % number.
+							if (RuleI(Spells, PetsScaleWithOwnerPercent) > 0 && caster->GetOwner() && caster->GetOwner()->IsClient() && !IsCharmed())
+							{	
+								//share stats
+								Client* owner = caster->GetOwner()->CastToClient();
+								dmg = owner->GetActSpellDamage(spell_id, dmg, this, RuleI(Spells, PetsScaleWithOwnerPercent));								
+							}
 							dmg = caster->GetActSpellDamage(spell_id, dmg, this);
 						}
 						caster->ResourceTap(-dmg, spell_id);
@@ -3829,7 +3836,7 @@ void Mob::BuffProcess()
 				{
 					bool suspended = false;
 
-					if (RuleB(Custom, SuspendGroupBuffs)) {						
+					if (RuleB(Custom, SuspendGroupBuffs) && IsBeneficialSpell(buffs[buffs_i].spellid)) {						
 						uint32 spellid = buffs[buffs_i].spellid;
 						if (IsClient() || (IsPetOwnerClient()) && buffs[buffs_i].caster_name) {
 							Client* caster = entity_list.GetClientByName(buffs[buffs_i].caster_name);
@@ -6382,6 +6389,9 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 	if (IsValidSpell(proc_spellid) && spell_id != focusspellid && spell_id != proc_spellid) {
 		Mob* proc_target = GetTarget();
 		if (proc_target) {
+
+			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID()));
+
 			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
 			return true;
 		}
