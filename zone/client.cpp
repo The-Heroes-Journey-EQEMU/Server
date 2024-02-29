@@ -2324,7 +2324,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
 		} else {
 			const auto* item_data = database.GetItem(itemID);			
 			if (item_data) {
-				auto item_name = item_data->Name;
+				std::string item_name = item_data->Name;
 				if (item_name.find("Fine Steel") == 0) {
 					booktxt2 += "<br>Discovered by: Enchanted Loom";
 				}
