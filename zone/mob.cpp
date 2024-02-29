@@ -1223,7 +1223,7 @@ void Mob::FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho)
 
 	if (RuleB(Custom, MulticlassingEnabled) && IsClient()) {
 		if (CastToClient()->GetClassesBits() & GetPlayerClassBit(Class::Monk)) {
-			if (ns->spawn.race == Race::Human || ns->spawn.race == Race::Iksar) {
+			if (ns->spawn.race == Race::Human || ns->spawn.race == Race::Iksar || ns->spawn.race == Race::Froglok2) {
 				ns->spawn.class_ = Class::Monk;
 			}
 		}
