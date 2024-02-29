@@ -144,7 +144,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 				}
 			}
 			
-			if (pp.classes & GetPlayerClassBit(Class::Monk) && ((uint32) Strings::ToUnsignedInt(row[3] == Race::Human)) {
+			if (pp.classes & GetPlayerClassBit(Class::Monk) && ((uint32)Strings::ToUnsignedInt(row[3]) == Race::Human)) {
 				p_character_select_entry_struct->Class = Class::Monk;
 			} else {
 				p_character_select_entry_struct->Class = 0xFFFF;
