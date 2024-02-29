@@ -167,10 +167,15 @@ uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
 
 uint32 Mob::GetApocItemUpgrade(uint32 item_id) {
 	if (RuleB(Custom, DoItemUpgrades)) {
+
+		LogDebug("Attempting Upgrade for: [{}]", item_id);
+
 		uint32 new_item_id = item_id;
 
 		if (item_id < 1000000) { // this is a normal item
 			int roll = zone->random.Int(1, 100);
+
+			LogDebug("Upgrade Rolled: [{}]", roll);
 
 			if (roll <= RuleI(Item, RoseColoredQuestWeightDrop)) {
 				new_item_id += 1000000;
@@ -182,6 +187,9 @@ uint32 Mob::GetApocItemUpgrade(uint32 item_id) {
 				const EQ::ItemData* item = database.GetItem(new_item_id);
 				if (item != nullptr) {
 					item_id = new_item_id;
+					LogDebug("Found eligible upgrade for [{}] is [{}]", item_id, new_item_id);
+				} else {
+					LogDebug("Unable to find a valid upgrade for [{}]", item_id);
 				}
 			}
 		}
