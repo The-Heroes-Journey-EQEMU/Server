@@ -129,6 +129,30 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 		memset(p_character_select_entry_struct->Name, 0, sizeof(p_character_select_entry_struct->Name));
 		strcpy(p_character_select_entry_struct->Name, row[1]);
 
+		// Send UNKNOWN CLASS for multiclassing
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			
+			std::string queryinner = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", character_id);
+			auto resultsinner = database.QueryDatabase(queryinner);
+			bool found = false;
+
+			for (auto& row = resultsinner.begin(); row != resultsinner.end(); ++row) {
+				if (row[0]) { 
+					pp.classes = static_cast<uint32>(Strings::ToInt(row[0]));
+					found = true;
+					break;
+				}
+			}
+			
+			if (pp.classes & GetPlayerClassBit(Class::Monk) && ((uint32) Strings::ToUnsignedInt(row[3] == Race::Human)) {
+				p_character_select_entry_struct->Class = Class::Monk;
+			} else {
+				p_character_select_entry_struct->Class = 0xFFFF;
+			}			
+		} else {
+			p_character_select_entry_struct->Class =  (uint8) Strings::ToUnsignedInt(row[4]);
+		}	
+
 		p_character_select_entry_struct->Race = (uint32) Strings::ToUnsignedInt(row[3]);
 		p_character_select_entry_struct->Level = (uint8) Strings::ToUnsignedInt(row[5]);
 		p_character_select_entry_struct->ShroudClass = p_character_select_entry_struct->Class;
@@ -146,30 +170,6 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 			p_character_select_entry_struct->Equip[material_slot].Unknown2 = 0;
 			p_character_select_entry_struct->Equip[material_slot].Color = 0;
 		}
-
-		// Send UNKNOWN CLASS for multiclassing
-		if (RuleB(Custom, MulticlassingEnabled)) {
-			
-			std::string queryinner = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", character_id);
-			auto resultsinner = database.QueryDatabase(queryinner);
-			bool found = false;
-
-			for (auto& row = resultsinner.begin(); row != resultsinner.end(); ++row) {
-				if (row[0]) { 
-					pp.classes = static_cast<uint32>(Strings::ToInt(row[0]));
-					found = true;
-					break;
-				}
-			}
-			
-			if ((pp.classes & GetPlayerClassBit(Class::Monk)) && (p_character_select_entry_struct->Race == Race::Human)) {
-				p_character_select_entry_struct->Class = Class::Monk;
-			} else {
-				p_character_select_entry_struct->Class = 0xFFFF;
-			}			
-		} else {
-			p_character_select_entry_struct->Class =  (uint8) Strings::ToUnsignedInt(row[4]);
-		}	
 
 		p_character_select_entry_struct->Unknown15 = 0xFF;
 		p_character_select_entry_struct->Unknown19 = 0xFF;
