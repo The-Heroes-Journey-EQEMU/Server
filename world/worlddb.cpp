@@ -138,7 +138,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 
 			for (auto& row = resultsinner.begin(); row != resultsinner.end(); ++row) {
 				if (row[0]) { 
-					pp->classes = static_cast<uint32>(Strings::ToInt(row[0]));
+					pp.classes = static_cast<uint32>(Strings::ToInt(row[0]));
 					found = true;
 					break;
 				}
