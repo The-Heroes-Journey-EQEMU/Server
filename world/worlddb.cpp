@@ -146,6 +146,8 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 			
 			if (!found) {
 				p_character_select_entry_struct->Class = (uint8) Strings::ToUnsignedInt(row[4]); // Fallback to default class if not found
+			} else 	if ((pp.classes & GetPlayerClassBit(Class::Monk)) && ((uint32)Strings::ToUnsignedInt(row[3]) == Race::Human || (uint32)Strings::ToUnsignedInt(row[3]) == Race::Iksar)) {
+				p_character_select_entry_struct->Class = Class::Monk;
 			} else {
 				// Extract class IDs from the bitmask
 				std::vector<uint32> classIDs;
@@ -163,7 +165,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 					p_character_select_entry_struct->Class = 0xFFFF; // Fallback if no classes were found in bitmask
 				}
 			}
-			                 
+
 		} else {
 			p_character_select_entry_struct->Class = (uint8) Strings::ToUnsignedInt(row[4]);
 		}
