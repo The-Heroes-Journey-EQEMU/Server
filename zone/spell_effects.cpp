@@ -1106,7 +1106,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					break;
 				}
 				if (caster->IsClient()) {
-					caster->castToClient()->DispelMagic(caster, spell_id, effect_value);
+					caster->CastToClient()->DispelMagic(caster, spell_id, effect_value);
 				} else {
 					DispelMagic(caster, spell_id, effect_value);
 				}				
