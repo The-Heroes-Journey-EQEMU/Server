@@ -1302,7 +1302,7 @@ bool ZoneDatabase::GetTradeRecipe(
 			buf2 += fmt::format(", {}", item->ID);
 		}
 
-		sum += item->ID;
+		sum += (item->ID % 1000000);
 		count++;
 
 		LogTradeskills(
