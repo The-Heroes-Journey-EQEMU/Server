@@ -2297,7 +2297,7 @@ void ClientTaskState::CreateTaskDynamicZone(Client* client, int task_id, Dynamic
 	}
 
 	if (zone_info) { 
-		dz_request.SetName(zone_info->long_name.empty() ? task->title : *zone_info->long_name);
+		dz_request.SetName(zone_info->long_name.empty() ? task->title : zone_info->long_name);
 	} else {
 		dz_request.SetName(task->title);		
 	}
