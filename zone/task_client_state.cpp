@@ -2295,12 +2295,7 @@ void ClientTaskState::CreateTaskDynamicZone(Client* client, int task_id, Dynamic
 	if (zone_info) { 
 		dz_request.SetName(zone_info->long_name->empty() ? task->title : *zone_info->long_name);
 	} else {
-		auto zone_info_base = zone_store.GetZone(dz_request.GetZoneID());
-		if (zone_info_base) {  // Check if zone_info_base and its long_name are not nullptr
-			dz_request.SetName(zone_info_base->long_name->empty() ? task->title : *zone_info_base->long_name);
-		} else {
-			dz_request.SetName(task->title);
-		}
+		dz_request.SetName(task->title);		
 	}
 
 	dz_request.SetMinPlayers(task->min_players);
