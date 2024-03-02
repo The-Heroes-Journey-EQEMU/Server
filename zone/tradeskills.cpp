@@ -1454,12 +1454,12 @@ bool ZoneDatabase::GetTradeRecipe(
 				return false;
 			}
 
-			const auto item = database.GetItem(inst->GetItem()->ID);
+			const auto item = database.GetItem(inst->GetItem()->ID % 1000000);
 			if (!item) {
 				continue;
 			}
 
-			if (item->ID == Strings::ToUnsignedInt(row[0])) {
+			if ((item->ID % 1000000) == Strings::ToUnsignedInt(row[0])) {
 				component_count++;
 			}
 
