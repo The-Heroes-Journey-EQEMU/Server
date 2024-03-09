@@ -4522,8 +4522,9 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 								RuleI(Range, SpellMessages),
 								Chat::NonMelee, /* 283 */
 								FilterSpellDamage,
-								OTHER_HIT_NONMELEE, /* %1 hit %2 for %3 points of non-melee damage. */
+								HIT_NON_MELEE, /* %1 hit %2 for %3 points of non-melee damage. */
 								0,
+								attacker->GetCleanName(),
 								GetCleanName(), /* Message1 */
 								ConvertArray(damage, val1) /* Message2 */
 							);
