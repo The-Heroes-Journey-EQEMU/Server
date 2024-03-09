@@ -4491,6 +4491,7 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 		//Note: if players can become pets, they will not receive damage messages of their own
 		//this was done to simplify the code here (since we can only effectively skip one mob on queue)		
 		Mob* skip = attacker;
+		eqFilterType filter;				
 		if (attacker && attacker->IsPet() && !attacker->IsBot()) {
 			//attacker is a pet, let pet owners see their pet's damage
 			Mob* owner = attacker->GetOwner();
@@ -4528,8 +4529,7 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 							);
 						}
 					}
-				} else {
-					eqFilterType filter;					
+				} else {						
 					if (damage > 0) {
 
 					} else if (damage == -5) {
