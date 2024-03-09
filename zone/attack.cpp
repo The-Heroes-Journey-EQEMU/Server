@@ -4735,7 +4735,7 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 				GetCleanName(), /* Message1 */
 				itoa(damage), /* Message2 */				
 				spells[spell_id].name, /* Message3 */
-				attacker->GetCleanName(), /* Message4 */
+				attacker->GetCleanName() /* Message4 */
 			);
 		}
 	}
