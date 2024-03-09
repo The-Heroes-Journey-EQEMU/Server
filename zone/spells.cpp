@@ -4352,6 +4352,16 @@ bool Mob::SpellOnTarget(
 				} else {
 					MessageString(Chat::SpellFailure, TARGET_RESISTED, spells[spell_id].name);
 					spelltar->MessageString(Chat::SpellFailure, YOU_RESIST, spells[spell_id].name);
+
+					if (RuleB(Spells, BroadcastResistMessages)) {
+						entity_list.MessageClose(
+							this, 
+							true, 
+							RuleI(Range, SpellMessages), 
+							Chat::SpellFailure, 
+							sprintf("%s resisted the %s spell.", spelltar->GetCleanName(), spells[spell_id].name)
+						);
+					}
 				}
 
 				if (spelltar->IsAIControlled()) {
