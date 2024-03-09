@@ -4347,7 +4347,11 @@ bool Mob::SpellOnTarget(
 				LogSpells("Spell [{}] was completely resisted by [{}]", spell_id, spelltar->GetName());
 
 				if (spells[spell_id].resist_type == RESIST_PHYSICAL){
-					MessageString(Chat::SpellFailure, PHYSICAL_RESIST_FAIL,spells[spell_id].name);
+					if (IsPet() && GetOwner()) {
+						GetOwner()->Message(Chat::SpellFailure, sprintf("%s resisted your pet's %s ability.", spelltar->GetCleanName(), GetCleanName()));
+					} else {
+						MessageString(Chat::SpellFailure, PHYSICAL_RESIST_FAIL,spells[spell_id].name);
+					}
 					spelltar->MessageString(Chat::SpellFailure, YOU_RESIST, spells[spell_id].name);
 				} else {
 					if (IsPet() && GetOwner()) {
