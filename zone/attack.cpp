@@ -4495,26 +4495,29 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 		if (attacker && attacker->IsPet() && !attacker->IsBot()) {
 			//attacker is a pet, let pet owners see their pet's damage
 			Mob* owner = attacker->GetOwner();
-			char val1[20] = { 0 };
 			if (owner && owner->IsClient()) {
-				if (FromDamageShield) {
-					// TODO
-				} {										
-					entity_list.FilteredMessageCloseString(
-						attacker,
-						true,
-						RuleI(Range, SpellMessages),
-						Chat::NonMelee,
-						FilterPetSpells,
-						OTHER_HIT_NONMELEE, /* %1 hit %2 for %3 points of non-melee damage. */
-						0,
-						attacker->GetCleanName(), 
-						GetCleanName(), 
-						ConvertArray(damage, val1)
-					);					
+				if ((IsValidSpell(spell_id) || FromDamageShield) && damage > 0) {
+					char val1[20] = { 0 }; // special crap for spell damage, looks hackish to me
+					if (FromDamageShield) {
+						// TODO
+					} else {
+						entity_list.FilteredMessageCloseString(
+							attacker, /* Sender */
+							false, /* Sender is attacker, so do not skip */
+							RuleI(Range, SpellMessages),
+							Chat::NonMelee, /* 283 */
+							FilterPetSpells,
+							OTHER_HIT_NONMELEE, /* %1 hit %2 for %3 points of non-melee damage. */
+							0,
+							attacker->GetCleanName(), /* Message1 */
+							GetCleanName(), /* Message2 */
+							ConvertArray(damage, val1) /* Message3 */
+						);
+					}
+				} else {
+
 				}
 			}
-
 			skip = owner;
 		}
 		else {
