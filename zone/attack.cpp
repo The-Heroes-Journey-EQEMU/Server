@@ -4520,7 +4520,7 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 								true, /* Sender is attacker, so do not skip */
 								RuleI(Range, SpellMessages),
 								Chat::NonMelee, /* 283 */
-								FilterSpellDamage;,
+								FilterSpellDamage,
 								OTHER_HIT_NONMELEE, /* %1 hit %2 for %3 points of non-melee damage. */
 								0,
 								GetCleanName(), /* Message1 */
