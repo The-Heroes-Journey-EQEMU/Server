@@ -4512,8 +4512,8 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 								attacker,		/* sent above */
 								GetCleanName(), /* Message1 */
 								itoa(damage), /* Message2 */
-								attacker->GetCleanName(), /* Message3 */
-								spells[spell_id].name /* Message4 */
+								spells[spell_id].name, /* Message3 */
+								attacker->GetCleanName() /* Message4 */
 							);
 						} else {						
 							entity_list.FilteredMessageCloseString(
@@ -4733,9 +4733,9 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 				OTHER_HIT_DOT,  /* MessageFormat: %1 has taken %2 damage from %3 by %4. */
 				attacker,		/* sent above */
 				GetCleanName(), /* Message1 */
-				itoa(damage), /* Message2 */
-				attacker->GetCleanName(), /* Message3 */
-				spells[spell_id].name /* Message4 */
+				itoa(damage), /* Message2 */				
+				spells[spell_id].name, /* Message3 */
+				attacker->GetCleanName(), /* Message4 */
 			);
 		}
 	}
