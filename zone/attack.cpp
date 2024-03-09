@@ -4495,36 +4495,23 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 		if (attacker && attacker->IsPet() && !attacker->IsBot()) {
 			//attacker is a pet, let pet owners see their pet's damage
 			Mob* owner = attacker->GetOwner();
+			char val1[20] = { 0 };
 			if (owner && owner->IsClient()) {
-				if (FromDamageShield && damage > 0) {
-					//special crap for spell damage, looks hackish to me
-					char val1[20] = { 0 };
-					owner->MessageString(Chat::NonMelee, OTHER_HIT_NONMELEE, GetCleanName(), ConvertArray(damage, val1));
-				}
-				else {
-					if (damage > 0) {
-						if (IsValidSpell(spell_id)) {
-							filter = iBuffTic ? FilterDOT : FilterSpellDamage;
-						} else {
-							filter = FilterPetHits;
-						}
-					} else if (damage == -5) {
-						filter = FilterNone;    //cant filter invulnerable
-					} else {
-						filter = FilterPetMisses;
-					}
-
-					if (!FromDamageShield) {
-						entity_list.QueueCloseClients(
-							attacker, /* Sender */
-							outapp, /* packet */
-							false, /* Skip Sender */
-							((IsValidSpell(spell_id)) ? RuleI(Range, SpellMessages) : RuleI(Range, DamageMessages)),
-							0, /* don't skip anyone on spell */
-							true, /* Packet ACK */
-							filter /* eqFilterType filter */
-						);
-					}
+				if (FromDamageShield) {
+					// TODO
+				} {										
+					entity_list.FilteredMessageCloseString(
+						attacker,
+						true,
+						RuleI(Range, SpellMessages),
+						Chat::NonMelee,
+						FilterPetSpells,
+						OTHER_HIT_NONMELEE, /* %1 hit %2 for %3 points of non-melee damage. */
+						0,
+						attacker->GetCleanName(), 
+						GetCleanName(), 
+						ConvertArray(damage, val1)
+					);					
 				}
 			}
 
