@@ -4532,12 +4532,22 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 					}
 				} else {						
 					if (damage > 0) {
-
+						filter = FilterPetHits;
 					} else if (damage == -5) {
-
+						filter = FilterNone;
 					} else {
-
+						filter = FilterPetMisses;
 					}
+
+					entity_list.QueueCloseClients(
+						attacker, /* Sender */
+						outapp, /* packet */
+						false, /* Skip Sender */
+						RuleI(Range, DamageMessages),
+						0, /* don't skip anyone on spell */
+						true, /* Packet ACK */
+						filter /* eqFilterType filter */
+					);
 				}
 			}
 			skip = owner;
