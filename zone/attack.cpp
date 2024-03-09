@@ -4507,7 +4507,7 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 								true, /* Skip Sender */
 								RuleI(Range, SpellMessages),
 								Chat::DotDamage, /* Type: 325 */
-								FilterDOT, /* FilterType: 19 */
+								FilterPetSpells, /* FilterType: 19 */
 								OTHER_HIT_DOT,  /* MessageFormat: %1 has taken %2 damage from %3 by %4. */
 								attacker,		/* sent above */
 								GetCleanName(), /* Message1 */
@@ -4521,7 +4521,7 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 								true, /* Sender is attacker, so do not skip */
 								RuleI(Range, SpellMessages),
 								Chat::NonMelee, /* 283 */
-								FilterSpellDamage,
+								FilterPetSpells,
 								HIT_NON_MELEE, /* %1 hit %2 for %3 points of non-melee damage. */
 								0,
 								attacker->GetCleanName(),
