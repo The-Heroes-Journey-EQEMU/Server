@@ -243,8 +243,19 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 	EVENT_ITEM_ScriptStopReturn();
 
 	// TODO: update calling methods and script apis to handle a failure return
+	
+    // Start timing
+    auto start = std::chrono::high_resolution_clock::now();
 
-	const EQ::ItemData* item = database.GetItem(item_id);
+    const EQ::ItemData* item = database.GetItem(item_id);
+
+    // Stop timing
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Compute the difference between the end time and the start time
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+
+	LogQuestDebug("Time taken for database.GetItem: [{}] ms", elapsed.count());
 
 	// make sure the item exists
 	if(item == nullptr) {
