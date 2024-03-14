@@ -847,7 +847,7 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 					new_loot_drop_entry.equip_item = 1;
 					new_loot_drop_entry.item_charges = static_cast<int8>(inst->GetCharges());
 
-					tradingWith->CastToNPC()->AddLootDrop(
+					tradingWith->CastToNPC()->AddLootDropFixed(
 						item,
 						new_loot_drop_entry,
 						true
