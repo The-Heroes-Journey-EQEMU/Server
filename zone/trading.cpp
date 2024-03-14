@@ -820,7 +820,7 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 									loot_drop_entry.equip_item = 1;
 									loot_drop_entry.item_charges = static_cast<int8>(baginst->GetCharges());
 
-									tradingWith->CastToNPC()->AddLootDrop(
+									tradingWith->CastToNPC()->AddLootDropFixed(
 										bagitem,
 										loot_drop_entry,
 										true
