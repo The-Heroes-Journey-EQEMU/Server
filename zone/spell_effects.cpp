@@ -3477,7 +3477,7 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 	*/
 
 	//This is checked from Mob::SpellEffects and applied to instant spells and runes.
-	if (caster && caster->GetClass() != Class::Bard && caster->HasBaseEffectFocus()) {
+	if (caster && caster->GetClass() != Class::Bard && caster->HasBaseEffectFocus() && !RuleB(Custom, MulticlassingEnabled)) {
 
 		oval = effect_value;
 		int mod = caster->GetFocusEffect(focusFcBaseEffects, spell_id);
@@ -3485,6 +3485,15 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 
 		LogSpells("Instant Effect value [{}] altered with base effects modifier of [{}] to yeild [{}]",
 			oval, mod, effect_value);
+	}
+	else if (caster && caster->HasBaseEffectFocus() && RuleB(Custom, MulticlassingEnabled)) {
+
+		oval = effect_value;
+		int mod = caster->GetFocusEffect(focusFcBaseEffects, spell_id);
+		effect_value += effect_value * mod / 100;
+
+		LogSpells("Instant Effect value [{}] altered with base effects modifier of [{}] to yeild [{}]",
+			oval, mod, effect_value);	
 	}
 	//This is checked from Mob::ApplySpellBonuses, applied to buffs that receive bonuses. See above, must be in 10% intervals to work.
 	else if (caster_id && instrument_mod > 10) {
@@ -6534,7 +6543,7 @@ uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
 
 int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool from_buff_tic)
 {
-	if (IsBardSong(spell_id) && type != focusFcBaseEffects && type != focusSpellDuration && type != focusReduceRecastTime) {
+	if (IsBardSong(spell_id) && type != focusFcBaseEffects && type != focusSpellDuration && type != focusReduceRecastTime && !RuleB(Custom, MulticlassingEnabled)) {
 		return 0;
 	}
 
