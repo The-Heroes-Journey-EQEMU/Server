@@ -4551,11 +4551,19 @@ bool Mob::CanThisClassDualWield(void) const {
 			return false;
 
 		// Dual-Wielding Empty Fists
-		if(!pinst && !sinst)
+		if (!pinst && !sinst && RuleB(Custom, MulticlassingEnabled)) {
+			if (GetClassesBits() & (GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Beastlord))) {
+				return true;
+			}
+		}	
+
+		if (!pinst && !sinst && !RuleB(Custom, MulticlassingEnabled)) {
 			if(class_ != Class::Monk && class_ != Class::MonkGM && class_ != Class::Beastlord && class_ != Class::BeastlordGM)
 				return false;
+		}
 
 		return true;
+		
 	}
 
 	return false;
