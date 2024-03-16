@@ -6534,12 +6534,10 @@ uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
 
 int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool from_buff_tic)
 {
-
 	if (!RuleB(Custom, MulticlassingEnabled)) {
 		if (IsBardSong(spell_id) && type != focusFcBaseEffects && type != focusSpellDuration && type != focusReduceRecastTime) {
 			return 0;
 		}
-
 	}
 	int64 realTotal = 0;
 	int64 realTotal2 = 0;
