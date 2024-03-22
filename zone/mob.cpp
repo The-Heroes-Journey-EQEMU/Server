@@ -4818,16 +4818,15 @@ bool Mob::HateSummon() {
 	} else {
 		if(!timer->Check())
 			return false;
-			if (RuleB(Custom, MulticlassingEnabled)) {
-
-				if (timer && times_summoned >= 1) {
-					++times_summoned;
-					summon_timer_duration += summon_timer_duration * times_summoned;
-				}
-				if (summon_timer_duration >= RuleI(Custom, MaximumSummonTimerMs)) {
-					summon_timer_duration = RuleI(Custom, MaximumSummonTimerMs);
-				}
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			if (timer && times_summoned >= 1) {
+				++times_summoned;
+				summon_timer_duration += summon_timer_duration * times_summoned;
 			}
+			if (summon_timer_duration >= RuleI(Custom, MaximumSummonTimerMs)) {
+				summon_timer_duration = RuleI(Custom, MaximumSummonTimerMs);
+			}
+		}
 		timer->Start(summon_timer_duration);
 	}
 
