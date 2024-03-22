@@ -602,6 +602,7 @@ RULE_REAL(Combat, BashACBonusDivisor, 25.0, "this divides the AC value contribut
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(NPC)
+RULE_INT(NPC, NPCSummonTimer, 6000, "Configurable summon timer")
 RULE_INT(NPC, MinorNPCCorpseDecayTime, 450000, "NPC corpse decay time, if NPC below level 55 (milliseconds)")
 RULE_INT(NPC, MajorNPCCorpseDecayTime, 1500000, "NPC corpse decay time, if NPC equal or greater than level 55 (milliseconds)")
 RULE_INT(NPC, CorpseUnlockTimer, 150000, "Time after which corpses are unlocked for everyone to loot (milliseconds)")
@@ -979,6 +980,7 @@ RULE_BOOL(Custom, TauntTogglesPetTanking, true, "Enable to let pets hold aggro w
 RULE_BOOL(Custom, UseTHJItemMutations, true, "Rename items according to THJ standards and apply other mutations")
 RULE_BOOL(Custom, EatCombatTrades, true, "Don't return items traded to NPCs during combat. Prevents duplication bug.")
 RULE_BOOL(Custom, ClearRestingDetrimentalEffectsEnabled, false, "Remove detrimental spell effects from self and pets when OOC regen engages")
+RULE_INT(Custom, MaximumSummonTimerMs, 30000, "Maximum Summon Timeout for mobs to re-summon a player")
 RULE_CATEGORY_END()
 
 #undef RULE_CATEGORY

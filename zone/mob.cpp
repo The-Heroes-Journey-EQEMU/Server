@@ -4807,22 +4807,27 @@ bool Mob::HateSummon() {
 
 	// now validate the timer
 	int summon_timer_duration = GetSpecialAbilityParam(SPECATK_SUMMON, 0);
-	summon_timer_duration = summon_timer_duration > 6000 ? summon_timer_duration : 6000;
+	summon_timer_duration = summon_timer_duration > 0 ? summon_timer_duration : RuleI(NPC, NPCSummonTimer);
 	Timer *timer = GetSpecialAbilityTimer(SPECATK_SUMMON);
 	if (!timer)
 	{
 		StartSpecialAbilityTimer(SPECATK_SUMMON, summon_timer_duration);
-		++times_summoned;
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			++times_summoned;
+		}
 	} else {
 		if(!timer->Check())
 			return false;
-		if (timer && times_summoned >= 1) {
-			++times_summoned;
-			summon_timer_duration += summon_timer_duration * times_summoned;
-		}
-		if (summon_timer_duration >= 30000) {
-			summon_timer_duration = 30000;
-		}
+			if (RuleB(Custom, MulticlassingEnabled)) {
+
+				if (timer && times_summoned >= 1) {
+					++times_summoned;
+					summon_timer_duration += summon_timer_duration * times_summoned;
+				}
+				if (summon_timer_duration >= RuleI(Custom, MaximumSummonTimerMs)) {
+					summon_timer_duration = RuleI(Custom, MaximumSummonTimerMs);
+				}
+			}
 		timer->Start(summon_timer_duration);
 	}
 
@@ -4842,6 +4847,7 @@ bool Mob::HateSummon() {
 
 			// probably should be like half melee range, but we can't get melee range nicely because reasons :)
 			new_pos = target->TryMoveAlong(new_pos, 5.0f, angle);
+
 				if (zone->CanCastOutdoor() == 1 && new_pos.z >= RuleR(Range, MaxZSummonOffsetOutdoor))
 				{
 					return false;
