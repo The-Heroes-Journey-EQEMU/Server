@@ -4790,6 +4790,7 @@ bool Mob::HateSummon() {
 
 	int summon_level = GetSpecialAbility(SPECATK_SUMMON);
 	int times_summoned;
+	
 	if(summon_level == 1 || summon_level == 2) {
 		if(!GetTarget()) {
 			return false;
@@ -4812,8 +4813,9 @@ bool Mob::HateSummon() {
 	Timer *timer = GetSpecialAbilityTimer(SPECATK_SUMMON);
 	if (!timer)
 	{
-		if (RuleB(NPC, SummonTimerScaling))
-			times_summoned = 1;
+		if (RuleB(NPC, SummonTimerScaling)) {
+			times_summoned++;
+		}
 		StartSpecialAbilityTimer(SPECATK_SUMMON, summon_timer_duration);
 	} else {
 		if(!timer->Check())
@@ -4821,7 +4823,7 @@ bool Mob::HateSummon() {
 
 		if (RuleB(NPC, SummonTimerScaling)) {
 			if (timer && times_summoned >= 1) {
-				++times_summoned;
+				times_summoned++;
 				summon_timer_duration += summon_timer_duration * times_summoned;
 			}
 			if (summon_timer_duration >= RuleI(NPC, MaximumSummonTimerMs)) {
