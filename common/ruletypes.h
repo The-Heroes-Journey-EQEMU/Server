@@ -624,7 +624,7 @@ RULE_INT(NPC, NPCToNPCAggroTimerMin, 500, "Minimum time span after which one NPC
 RULE_INT(NPC, NPCToNPCAggroTimerMax, 6000, "Maximum time span after which one NPC aggro another NPC (milliseconds)")
 RULE_BOOL(NPC, UseClassAsLastName, true, "Uses class archetype as LastName for NPC with none")
 RULE_BOOL(NPC, NewLevelScaling, true, "Better level scaling, use old if new formulas would break your server")
-RULE_REAL(NPC,NPCBackstabMod, 1.9, "Multiplier for NPC Backstab, Higher = Lower backstab amount")
+RULE_REAL(NPC, NPCBackstabMod, 1.9, "Multiplier for NPC Backstab, Higher = Lower backstab amount")
 RULE_INT(NPC, NPCGatePercent, 20, " Percentage at which the NPC Will attempt to gate at")
 RULE_BOOL(NPC, NPCGateNearBind, false, "Will NPC attempt to gate when near bind location?")
 RULE_INT(NPC, NPCGateDistanceBind, 75, "Distance from bind before NPC will attempt to gate")
@@ -686,6 +686,8 @@ RULE_INT(Range, ClientPositionUpdates, 300, "Distance in which the own changed p
 RULE_INT(Range, CriticalDamage, 80, "The packet range in which critical hit messages are sent")
 RULE_INT(Range, MobCloseScanDistance, 600, "Close scan distance")
 RULE_INT(Range, MaxDistanceToClickDoors, 100, "Max distance that a client can click a door from (Client says 'You can't reach that' at roughly 25-50 for most doors)")
+RULE_REAL(Range, MaxZSummonOffsetIndoor, 5, "Maximum Z Axis change on mob Summon indoors")
+RULE_REAL(Range, MaxZSummonOffsetOutdoor, 255, "Maximum Z Axis change on mob Summon indoors")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Bots)
