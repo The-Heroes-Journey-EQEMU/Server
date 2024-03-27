@@ -3641,6 +3641,8 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 	//do not fade buff if from bard pulse, live does not give a fades message.
 	bool from_bard_song_pulse = caster ? caster->IsActiveBardSong(spell_id) : false;
 
+	from_bard_song_pulse = RuleB(Custom, MulticlassingEnabled) ? true : from_bard_song_pulse;
+
 	// at this point we know that this buff will stick, but we have
 	// to remove some other buffs already worn if will_overwrite is true
 	if (will_overwrite && !disable_buff_overwrite) {
