@@ -5472,7 +5472,7 @@ int64 Mob::CalcAAFocus(focusType type, const AA::Rank &rank, uint16 spell_id)
 	return (value * lvlModifier / 100);
 }
 
-uint8 Mob::GetSpellLevel(uint16 spell_id) {
+uint8 Mob::GetSpellLevel(uint16 spell_id) const {
 	uint8 spell_level = 255; // max spell level (invalid)
 	const SPDat_Spell_Struct &spell       = spells[spell_id];
 
