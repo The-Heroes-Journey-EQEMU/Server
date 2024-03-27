@@ -5472,6 +5472,21 @@ int64 Mob::CalcAAFocus(focusType type, const AA::Rank &rank, uint16 spell_id)
 	return (value * lvlModifier / 100);
 }
 
+uint8 Mob::GetSpellLevel(uint16 spell_id) {
+	uint8 spell_level = 255; // max spell level (invalid)
+	const SPDat_Spell_Struct &spell       = spells[spell_id];
+
+	for (const auto& class_bitmask : player_class_bitmasks) {
+		uint8 class_id = class_bitmask.first;
+		uint16 class_bit = class_bitmask.second;
+		if ((caster->GetClassesBits() & class_bit) != 0) {
+			spell_level = std::min(spell.classes[class_id], (uint8)spell_level);
+		}
+	}
+
+	return spell_level;
+}
+
 //given an item/spell's focus ID and the spell being cast, determine the focus ammount, if any
 //assumes that spell_id is not a bard spell and that both ids are valid spell ids
 int64 Mob::CalcFocusEffect(focusType type, uint16 focus_id, uint16 spell_id, bool best_focus, uint16 casterid, Mob *caster)

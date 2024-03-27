@@ -198,7 +198,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int perc
 	else if (
 		!spells[spell_id].no_heal_damage_item_mod &&
 		GetSpellDmg() &&
-		GetSpellLevel(spell_id) >= GetLevel() - 5
+		GetSpellLevel(spell_id, ) >= GetLevel() - 5
 	) {
 		value -= GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
 	}
