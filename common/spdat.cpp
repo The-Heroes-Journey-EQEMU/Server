@@ -812,7 +812,7 @@ uint8 GetSpellLevel(uint16 spell_id, uint8 class_id)
 	return spells[spell_id].classes[class_id - 1];
 }
 
-uint8 Mob::GetSpellLevel(uint16 spell_id) {
+uint8 GetSpellLevel(uint16 spell_id) {
 	uint8 spell_level = 255; // max spell level (invalid)
 	const SPDat_Spell_Struct &spell       = spells[spell_id];
 

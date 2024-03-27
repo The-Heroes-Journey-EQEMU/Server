@@ -169,6 +169,8 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int perc
 	//Non Crtical Hit Calculation pathway
 	value = base_value;
 
+	LogDebug("ActSpellDamage fc: [{}]", GetFocusEffect(focusImprovedDamage, spell_id));
+
 	value += base_value*GetFocusEffect(focusImprovedDamage, spell_id)/100;
 	value += base_value*GetFocusEffect(focusImprovedDamage2, spell_id)/100;
 
