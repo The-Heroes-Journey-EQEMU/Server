@@ -812,6 +812,21 @@ uint8 GetSpellLevel(uint16 spell_id, uint8 class_id)
 	return spells[spell_id].classes[class_id - 1];
 }
 
+uint8 Mob::GetSpellLevel(uint16 spell_id) {
+	uint8 spell_level = 255; // max spell level (invalid)
+	const SPDat_Spell_Struct &spell       = spells[spell_id];
+
+	for (const auto& class_bitmask : player_class_bitmasks) {
+		uint8 class_id = class_bitmask.first;
+		uint16 class_bit = class_bitmask.second;
+		if ((GetClassesBits() & class_bit) != 0) {
+			spell_level = std::min(spell.classes[class_id], (uint8)spell_level);
+		}
+	}
+
+	return spell_level;
+}
+
 // this will find the first occurrence of effect. this is handy
 // for spells like mez and charm, but if the effect appears more than once
 // in a spell this will just give back the first one.
