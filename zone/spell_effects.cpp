@@ -5479,7 +5479,7 @@ uint8 Mob::GetSpellLevel(uint16 spell_id) const {
 	for (const auto& class_bitmask : player_class_bitmasks) {
 		uint8 class_id = class_bitmask.first;
 		uint16 class_bit = class_bitmask.second;
-		if ((caster->GetClassesBits() & class_bit) != 0) {
+		if ((GetClassesBits() & class_bit) != 0) {
 			spell_level = std::min(spell.classes[class_id], (uint8)spell_level);
 		}
 	}
