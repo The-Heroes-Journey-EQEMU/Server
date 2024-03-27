@@ -138,9 +138,50 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
+	if (RuleB(Spells, UseSpellImpliedTargeting) && IsClient()) {
+		if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
+			if (GetPet()) {
+				return GetPetID();
+			}
+		}
+
+		if (spells[spell_id].target_type == ST_Self || IsPBAENukeSpell(spell_id)) {
+			return GetID();
+		}
+
+		if (IsBeneficialSpell(spell_id) && !target_id > 0) {
+			return GetID();
+		}
+
+		//Goal of Spells:UseSpellImpliedTargeting is to replicate the EQ2 feature where spells will 'pass through' invalid targets to target's target to try to find a valid target.
+		if (RuleB(Spells,UseSpellImpliedTargeting) && IsClient()) {
+			Mob* spell_target = entity_list.GetMobID(target_id);
+			if (spell_target) {
+				Mob* targets_target = spell_target->GetTarget();
+				if (targets_target) {
+					// If either this is beneficial and the target is not a player or player's pet or vis versa
+					if ((IsBeneficialSpell(spell_id) && (!(spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient()))))
+						|| (IsDetrimentalSpell(spell_id) && (spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient())))) {
+						//Check if the target's target is a valid target; we can use DoCastingChecksOnTarget() here because we can let it handle the failure as vanilla would
+						if (DoCastingChecksOnTarget(true, spell_id, targets_target)) {
+							target_id = targets_target->GetID();
+						}
+						else {							
+							return target_id;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	LogDebug("Did not find any valid targets in implied target processing.");
+	return target_id;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // functions related to begin/finish casting, fizzling etc
-
 //
 // only CastSpell and DoCastSpell should be setting casting_spell_id.
 // basically casting_spell_id is only set when casting a triggered spell from
@@ -169,6 +210,14 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		send_spellbar_enable = false;
 	}
 
+	target_id = GetSpellImpliedTargetID(spell_id, target_id);
+
+	if (target_id == -1) {
+		StopCastSpell(spell_id, send_spellbar_enable);
+		Message(Chat::SpellFailure, "You cannot find a valid target for this spell.");
+		return false;
+	}
+
 	if (!IsValidSpell(spell_id) ||
 		casting_spell_id ||
 		delaytimer ||
@@ -177,30 +226,7 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 			IsValidSpell(spell_id), casting_spell_id, delaytimer, spellend_timer.Enabled());
 		StopCastSpell(spell_id, send_spellbar_enable);
 		return false;
-	}
-
-	//Goal of Spells:UseSpellImpliedTargeting is to replicate the EQ2 feature where spells will 'pass through' invalid targets to target's target to try to find a valid target.
-	if (RuleB(Spells,UseSpellImpliedTargeting) && IsClient()) {
-		Mob* spell_target = entity_list.GetMobID(target_id);
-		if (spell_target) {
-			Mob* targets_target = spell_target->GetTarget();
-			if (targets_target) {
-				// If either this is beneficial and the target is not a player or player's pet or vis versa
-				if ((IsBeneficialSpell(spell_id) && (!(spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient()))))
-					|| (IsDetrimentalSpell(spell_id) && (spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient())))) {
-					//Check if the target's target is a valid target; we can use DoCastingChecksOnTarget() here because we can let it handle the failure as vanilla would
-					if (DoCastingChecksOnTarget(true, spell_id, targets_target)) {
-						target_id = targets_target->GetID();
-					}
-					else {
-						//Just return false here because we are going to fail the next check block anyway if we reach this point.
-						StopCastSpell(spell_id, send_spellbar_enable);
-						return false;
-					}
-				}
-			}
-		}
-	}
+	}	
 
 	if (!DoCastingChecksOnCaster(spell_id, slot) ||
 		!DoCastingChecksZoneRestrictions(true, spell_id) ||
@@ -391,6 +417,19 @@ bool Mob::DoCastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 
 	SaveSpellLoc();
 	LogSpells("Casting [{}] Started at ({},{},{})", spell_id, m_SpellLocation.x, m_SpellLocation.y, m_SpellLocation.z);
+
+	// Replace missing cast messages for 'Bards'
+	if (RuleB(Custom, MulticlassingEnabled) && IsClient() && GetClass() == Class::Bard) {
+		FilteredMessageString(this, Chat::Spells, (IsBardSong(spell_id) ? FilterBardSongs : FilterPCSpells), 12205, spells[spell_id].name);
+		entity_list.FilteredMessageCloseString(this, 
+											   true, 
+											   RuleI(Range, SpellMessages), 
+											   Chat::Spells, 
+											   (IsBardSong(spell_id) ? FilterBardSongs : FilterPCSpells), 
+											   12206,
+											   0,
+											   GetCleanName());
+	}
 
 	// if this spell doesn't require a target, or if it's an optional target
 	// and a target wasn't provided, then it's us; unless TGB is on and this
@@ -1145,12 +1184,29 @@ bool Client::CheckFizzle(uint16 spell_id)
 	int par_skill;
 	int act_skill;
 
-	par_skill = spells[spell_id].classes[GetClass()-1] * 5 - 10;//IIRC even if you are lagging behind the skill levels you don't fizzle much
+	uint8 spell_level = 255;
+	uint8 spell_class = 0;
+	unsigned int class_bits = GetClassesBits();
+	for (int n = 0; n < sizeof(class_bits) * 8; ++n) { 
+		if (class_bits & (1U << n)) { 
+			int class_id = n + 1;
+			if (spells[spell_id].classes[class_id-1] < no_fizzle_level) {
+				return true;
+			}
+			if (spells[spell_id].classes[class_id-1] < spell_level) {
+				spell_level = spells[spell_id].classes[class_id-1];
+				spell_class = class_id;
+			}
+		}
+	}
+	
+	//IIRC even if you are lagging behind the skill levels you don't fizzle much
+	par_skill = spell_level * 5 - 10; 
 	if (par_skill > 235) {
 		par_skill = 235;
 	}
 
-	par_skill += spells[spell_id].classes[GetClass()-1]; // maximum of 270 for level 65 spell
+	par_skill += spell_level; // maximum of 270 for level 65 spell
 
 	act_skill = GetSkill(spells[spell_id].skill);
 	act_skill += GetLevel(); // maximum of whatever the client can cheat
@@ -1185,7 +1241,7 @@ bool Client::CheckFizzle(uint16 spell_id)
 	float diff = par_skill + static_cast<float>(spells[spell_id].base_difficulty) - act_skill;
 
 	// if you have high int/wis you fizzle less, you fizzle more if you are stupid
-	if (GetClass() == Class::Bard) {
+	if (spell_class == Class::Bard) {
 		diff -= (GetCHA() - 110) / 20.0;
 	} else if (IsIntelligenceCasterClass()) {
 		diff -= (GetINT() - 125) / 20.0;
@@ -1234,6 +1290,8 @@ void Mob::ZeroBardPulseVars()
 	bardsong_target_id = 0;
 	bardsong_slot = CastingSlot::Gem1;
 	bardsong_timer.Disable();
+
+	LogDebug("ZeroBardPulseVars");
 }
 
 void Mob::InterruptSpell(uint16 spellid)
@@ -1463,9 +1521,10 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 	bool bard_song_mode = false;
 	bool regain_conc = false;
 	Mob *spell_target = entity_list.GetMob(target_id);
+
 	// here we do different things if this is a bard casting a bard song from
 	// a spell bar slot
-	if(GetClass() == Class::Bard) // bard's can move when casting any spell...
+	if((GetClass() == Class::Bard && !RuleB(Custom, MulticlassingEnabled) || (IsBardSong(spell_id) && RuleB(Custom, MulticlassingEnabled)))) // bard's can move when casting any spell...
 	{
 		if (IsBardSong(spell_id) && slot < CastingSlot::MaxGems) {
 			if (spells[spell_id].buff_duration == 0xFFFF) {
@@ -1492,7 +1551,8 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 			}
 		}
 	}
-	else // not bard, check movement
+
+	else
 	{
 		// if has been attacked, or moved while casting
 		// check for regain concentration
@@ -1747,7 +1807,9 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 	TryTwincast(this, target, spell_id);
 
-	TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);
+	if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+		TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);
+	}
 
 	if (IsClient() && DeleteChargeFromSlot >= 0) {
 		CastToClient()->DeleteItemInInventory(DeleteChargeFromSlot, 1, true);
@@ -1826,7 +1888,17 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 			if (!IsFromItem) {
 				c->CheckSongSkillIncrease(spell_id);
-			}
+			}			
+
+			
+			if (RuleB(Custom, MulticlassingEnabled)) {				
+				if (IsBeneficialSpell(spell_id)) {
+					c->SendSpellBarEnable(spell_id);
+					c->ZeroBardPulseVars();
+
+					LogDebug("Resetting Bard Song State");
+				}
+			}			
 		}
 		LogSpells("Bard song [{}] should be started", spell_id);
 	}
@@ -1860,7 +1932,12 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 	}
 
 	// there should be no casting going on now
+
 	ZeroCastingVars();
+	if (RuleB(Custom, MulticlassingEnabled) && IsClient() && !IsActiveBardSong(spell_id)) {
+		ZeroBardPulseVars(); // Just in case we are barding too
+	}
+		
 
 	// set the rapid recast timer for next time around
 	// Why do we have this? It mostly just causes issues when things are working correctly
@@ -2402,6 +2479,11 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 	if(!IsValidSpell(spell_id))
 		return false;
 
+	//if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
+	//	auto target_id = GetSpellImpliedTargetID(spell_id, spell_target->GetID());
+	//	spell_target = entity_list.GetMob(target_id);
+	//}
+
 	//Death Touch targets the pet owner instead of the pet when said pet is tanking.
 	if ((RuleB(Spells, CazicTouchTargetsPetOwner) && spell_target && spell_target->HasOwner()) && !spell_target->IsBot() && (spell_id == SPELL_CAZIC_TOUCH || spell_id == SPELL_TOUCH_OF_VINITRAS)) {
 		Mob* owner = spell_target->GetOwner();
@@ -2661,10 +2743,10 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					Group *target_group = entity_list.GetGroupByMob(spell_target);
 					if (target_group) {
 						target_group->CastGroupSpell(this, spell_id);
-						if (GetClass() != Class::Bard) {
+						if (GetClass() != Class::Bard || RuleB(Custom, MulticlassingEnabled)) {
 							SpellOnTarget(spell_id, this);
 						}
-					}
+					} 
 				} else if (spell_target->IsRaidGrouped() && spell_target->IsClient()) {
 					Raid *target_raid = entity_list.GetRaidByClient(spell_target->CastToClient());
 					uint32 gid = 0xFFFFFFFF;
@@ -2684,7 +2766,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 						SpellOnTarget(spell_id, this);
 	#ifdef GROUP_BUFF_PETS
 						//pet too
-						if (spells[spell_id].target_type != ST_GroupNoPets && GetPet() && HasPetAffinity() && !GetPet()->IsCharmed()) {
+						if (spells[spell_id].target_type != ST_GroupNoPets && GetPet() && HasPetAffinity()) {
 							SpellOnTarget(spell_id, GetPet());
 						}
 	#endif
@@ -2693,7 +2775,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					SpellOnTarget(spell_id, spell_target);
 	#ifdef GROUP_BUFF_PETS
 					//pet too
-					if (spells[spell_id].target_type != ST_GroupNoPets && spell_target->GetPet() && spell_target->HasPetAffinity() && !spell_target->GetPet()->IsCharmed()) {
+					if (spells[spell_id].target_type != ST_GroupNoPets && spell_target->GetPet() && spell_target->HasPetAffinity()) {
 						SpellOnTarget(spell_id, spell_target->GetPet());
 					}
 	#endif
@@ -2785,11 +2867,15 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					ExpendAlternateAdvancementCharge(rank->base_ability->id);
 				}
 				//set AA recast timer
-				CastToClient()->SendAlternateAdvancementTimer(rank->spell_type, 0, 0);
+				if (RuleB(Custom, UseDynamicAATimers)) {
+					CastToClient()->SendAlternateAdvancementTimer(CastToClient()->GetDynamicAATimer(rank->base_ability->id), 0, 0);
+				} else {
+					CastToClient()->SendAlternateAdvancementTimer(rank->spell_type, 0, 0);
+				}
 			}
 		}
 		//handle bard AA and Discipline recast timers when singing
-		if (GetClass() == Class::Bard && spell_id != casting_spell_id && timer != 0xFFFFFFFF) {
+		if ((RuleB(Custom, MulticlassingEnabled) ? IsBardSong(spell_id) : GetClass() == Class::Bard) && spell_id != casting_spell_id && timer != 0xFFFFFFFF) {
 			CastToClient()->GetPTimers().Start(timer, timer_duration);
 			LogSpells("Spell [{}]: Setting BARD custom reuse timer [{}] to [{}]", spell_id, casting_spell_timer, casting_spell_timer_duration);
 		}
@@ -2862,6 +2948,20 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 				break;
 			}
 		}
+	}
+
+	if (RuleB(Custom, ExpandedPetAffinity)) {
+		if (IsClient() &&
+			IsBeneficialSpell(spell_id) &&
+			spells[spell_id].buff_duration > 5 &&
+			!spells[spell_id].is_discipline &&
+		    spell_target->IsClient() && 
+			spell_target->HasPet() && 
+			spell_target->GetPet() && 
+			spell_target->HasPetAffinity() &&
+			!spell_target->GetPet()->IsCharmed()) {
+				SpellOnTarget(spell_id, spell_target->GetPet());
+			}
 	}
 
 	return true;
@@ -3413,8 +3513,9 @@ bool Mob::CheckSpellLevelRestriction(Mob *caster, uint16 spell_id)
 	if (check_for_restrictions) {
 		int spell_level = GetSpellMinimumLevel(spell_id);
 
+		// Exclude AA abilities (Frequently level 254)
 		// Only check for beneficial buffs
-		if (IsBuffSpell(spell_id) && IsBeneficialSpell(spell_id)) {
+		if (IsBuffSpell(spell_id) && IsBeneficialSpell(spell_id) && spell_level < 100) {
 			if (spell_level > 65) {
 				if (IsGroupSpell(spell_id) && GetLevel() < 62) {
 					can_cast = false;
@@ -3601,6 +3702,8 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 		strcpy(buffs[emptyslot].caster_name, caster->GetCleanName());
 	else
 		memset(buffs[emptyslot].caster_name, 0, 64);
+
+	LogDebug("Caster was [{}]... [{}]", caster->GetName(), buffs[emptyslot].caster_name);
 	buffs[emptyslot].casterid = caster ? caster->GetID() : 0;
 	buffs[emptyslot].ticsremaining = duration;
 	buffs[emptyslot].counters = CalculateCounters(spell_id);
@@ -4327,11 +4430,33 @@ bool Mob::SpellOnTarget(
 				LogSpells("Spell [{}] was completely resisted by [{}]", spell_id, spelltar->GetName());
 
 				if (spells[spell_id].resist_type == RESIST_PHYSICAL){
-					MessageString(Chat::SpellFailure, PHYSICAL_RESIST_FAIL,spells[spell_id].name);
+					if (IsPet() && GetOwner()) {
+						GetOwner()->Message(Chat::SpellFailure, "%s resisted your pet's %s ability.", spelltar->GetCleanName(), spells[spell_id].name);
+					} else {
+						MessageString(Chat::SpellFailure, PHYSICAL_RESIST_FAIL,spells[spell_id].name);
+					}
 					spelltar->MessageString(Chat::SpellFailure, YOU_RESIST, spells[spell_id].name);
 				} else {
-					MessageString(Chat::SpellFailure, TARGET_RESISTED, spells[spell_id].name);
+					if (IsPet() && GetOwner()) {
+						GetOwner()->Message(Chat::SpellFailure, "%s resisted your pet's %s spell.", spelltar->GetCleanName(), spells[spell_id].name);
+					} else {
+						MessageString(Chat::SpellFailure, TARGET_RESISTED, spells[spell_id].name);
+					}
+					
 					spelltar->MessageString(Chat::SpellFailure, YOU_RESIST, spells[spell_id].name);
+
+					/*
+					if (RuleB(Spells, BroadcastResistMessages)) {
+						entity_list.FilteredMessageClose(
+							this,
+							true,
+							RuleI(Range, SpellMessages),
+							Chat::SpellFailure,
+							IsClient() ? FilterPCSpells : FilterNPCSpells,
+							sprintf("%s resisted %s's %s spell.", spelltar->GetCleanName(), GetCleanName(), spells[spell_id].name)
+						);						
+					}
+					*/				
 				}
 
 				if (spelltar->IsAIControlled()) {
@@ -6198,7 +6323,7 @@ bool Mob::AddProcToWeapon(uint16 spell_id, bool bPerma, uint16 iChance, uint16 b
 	}
 
 	// Special case for Vampiric Embrace. If this is a Shadow Knight, the proc is different.
-	if (spell_id == SPELL_VAMPIRIC_EMBRACE && GetClass() == Class::ShadowKnight) {
+	if (spell_id == SPELL_VAMPIRIC_EMBRACE && (GetClassesBits() & GetPlayerClassBit(Class::ShadowKnight))) {
 		spell_id = SPELL_VAMPIRIC_EMBRACE_OF_SHADOW;
 	}
 
@@ -6254,7 +6379,7 @@ bool Mob::AddProcToWeapon(uint16 spell_id, bool bPerma, uint16 iChance, uint16 b
 
 bool Mob::RemoveProcFromWeapon(uint16 spell_id, bool bAll) {
 	// Special case for Vampiric Embrace. If this is a Shadow Knight, the proc is different.
-	if (spell_id == SPELL_VAMPIRIC_EMBRACE && GetClass() == Class::ShadowKnight) {
+	if (spell_id == SPELL_VAMPIRIC_EMBRACE && (GetClassesBits() & GetPlayerClassBit(Class::ShadowKnight))) {
 		spell_id = SPELL_VAMPIRIC_EMBRACE_OF_SHADOW;
 	}
 
@@ -6362,11 +6487,13 @@ bool Mob::UseBardSpellLogic(uint16 spell_id, int slot)
 
 int Mob::GetCasterLevel(uint16 spell_id) {
 	int level = GetLevel();
-	if (GetClass() == Class::Bard) {
-		// Bards receive effective casting level increases to resists/effect. They don't receive benefit from spells like intellectual superiority, however.
-		level += itembonuses.effective_casting_level + aabonuses.effective_casting_level;
-	} else {
-		level += itembonuses.effective_casting_level + spellbonuses.effective_casting_level + aabonuses.effective_casting_level;
+	if (!RuleB(Custom, MulticlassingEnabled)) {
+		if (GetClass() == Class::Bard) {
+			// Bards receive effective casting level increases to resists/effect. They don't receive benefit from spells like intellectual superiority, however.
+			level += itembonuses.effective_casting_level + aabonuses.effective_casting_level;
+		} else {
+			level += itembonuses.effective_casting_level + spellbonuses.effective_casting_level + aabonuses.effective_casting_level;
+		}
 	}
 	LogSpells("Determined effective casting level [{}]+[{}]+[{}]=[{}]", GetLevel(), spellbonuses.effective_casting_level, itembonuses.effective_casting_level, level);
 	return std::max(1, level);
@@ -7024,7 +7151,7 @@ void Client::SetLinkedSpellReuseTimer(uint32 timer_id, uint32 duration)
 
 bool Client::IsLinkedSpellReuseTimerReady(uint32 timer_id)
 {
-	if (timer_id > 19)
+	if (timer_id > 250)
 		return true;
 	return GetPTimers().Expired(&database, pTimerLinkedSpellReuseStart + timer_id, false);
 }
@@ -7247,8 +7374,8 @@ bool Mob::CheckItemRaceClassDietyRestrictionsOnCast(uint32 inventory_slot) {
 
 	//Added to prevent MQ2 exploitation of equipping normally-unequippable/clickable items with effects and clicking them for benefits.
 	EQ::ItemInstance *itm = CastToClient()->GetInv().GetItem(inventory_slot);
-	int bitmask = 1;
-	bitmask = bitmask << (CastToClient()->GetClass() - 1);
+	int bitmask = (CastToClient()->GetClassesBits());
+	//bitmask = bitmask << (CastToClient()->GetClass() - 1);
 	if (itm && itm->GetItem()->Classes != 65535) {
 		if ((itm->GetItem()->Click.Type == EQ::item::ItemEffectEquipClick) && !(itm->GetItem()->Classes & bitmask)) {
 			if (CastToClient()->ClientVersion() < EQ::versions::ClientVersion::SoF) {
