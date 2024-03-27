@@ -6545,7 +6545,7 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 		}
 	}*/
 
-	LogDebug("GetFocusEffect?");
+	LogDebug("GetFocusEffect? [{}]", type);
 
 
 	int64 realTotal = 0;
@@ -6726,6 +6726,8 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 		if (UsedItem && rand_effectiveness && focus_max_real != 0) {
 			realTotal = CalcFocusEffect(type, UsedFocusID, spell_id);
 		}
+
+		LogDebug("GetFocusEffect 2? [{}], [{}], [{}]", rand_effectiveness, UsedItem, realTotal);
 
 		if ((rand_effectiveness && UsedItem) || (realTotal != 0 && UsedItem)) {
 			// there are a crap ton more of these, I was able to verify these ones though
