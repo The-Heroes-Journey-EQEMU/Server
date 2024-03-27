@@ -138,6 +138,47 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
+int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
+	if (RuleB(Spells, UseSpellImpliedTargeting) && IsClient()) {
+		if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
+			if (GetPet()) {
+				return GetPetID();
+			}
+		}
+
+		if (spells[spell_id].target_type == ST_Self || IsPBAENukeSpell(spell_id)) {
+			return GetID();
+		}
+
+		if (IsBeneficialSpell(spell_id) && !target_id > 0) {
+			return GetID();
+		}
+
+		//Goal of Spells:UseSpellImpliedTargeting is to replicate the EQ2 feature where spells will 'pass through' invalid targets to target's target to try to find a valid target.
+		if (RuleB(Spells,UseSpellImpliedTargeting) && IsClient()) {
+			Mob* spell_target = entity_list.GetMobID(target_id);
+			if (spell_target) {
+				Mob* targets_target = spell_target->GetTarget();
+				if (targets_target) {
+					// If either this is beneficial and the target is not a player or player's pet or vis versa
+					if ((IsBeneficialSpell(spell_id) && (!(spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient()))))
+						|| (IsDetrimentalSpell(spell_id) && (spell_target->IsClient() || (spell_target->HasOwner() && spell_target->GetOwner()->IsClient())))) {
+						//Check if the target's target is a valid target; we can use DoCastingChecksOnTarget() here because we can let it handle the failure as vanilla would
+						if (DoCastingChecksOnTarget(true, spell_id, targets_target)) {
+							target_id = targets_target->GetID();
+						}
+						else {							
+							return target_id;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return target_id;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // functions related to begin/finish casting, fizzling etc
 
