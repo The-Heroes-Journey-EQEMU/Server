@@ -175,7 +175,7 @@ int Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 			}
 		}
 	}
-	
+
 	return target_id;
 }
 
@@ -209,6 +209,8 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 	if ((item_slot != -1 && cast_time == 0) || aa_id) {
 		send_spellbar_enable = false;
 	}
+
+	target_id = GetSpellImpliedTargetID(spell_id, target_id);
 
 	if (!IsValidSpell(spell_id) ||
 		casting_spell_id ||
@@ -432,6 +434,19 @@ bool Mob::DoCastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 
 	SaveSpellLoc();
 	LogSpells("Casting [{}] Started at ({},{},{})", spell_id, m_SpellLocation.x, m_SpellLocation.y, m_SpellLocation.z);
+
+	// Replace missing cast messages for 'Bards'
+	if (RuleB(Custom, MulticlassingEnabled) && IsClient() && !IsBardSong(spell_id)) {
+		FilteredMessageString(this, Chat::Spells, (IsBardSong(spell_id) ? FilterBardSongs : FilterPCSpells), 12205, spells[spell_id].name);
+		entity_list.FilteredMessageCloseString(this, 
+											   true, 
+											   RuleI(Range, SpellMessages), 
+											   Chat::Spells, 
+											   (IsBardSong(spell_id) ? FilterBardSongs : FilterPCSpells), 
+											   12206,
+											   0,
+											   GetCleanName());
+	}
 
 	// if this spell doesn't require a target, or if it's an optional target
 	// and a target wasn't provided, then it's us; unless TGB is on and this
