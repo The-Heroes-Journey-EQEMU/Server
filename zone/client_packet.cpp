@@ -10350,7 +10350,7 @@ void Client::Handle_OP_ManaChange(const EQApplicationPacket *app)
 		// i think thats the sign to stop the songs
 		if (IsBardSong(casting_spell_id) || HasActiveSong()) {
 			auto tt = spells[casting_spell_id].target_type;
-			if (tt == ST_AECaster && tt == ST_Target && tt == ST_AETarget) {
+			if (tt == ST_AECaster || tt == ST_Target || tt == ST_AETarget) {
 				InterruptSpell(SONG_ENDS, 0x121); //Live doesn't send song end message anymore (~Kayen 1/26/22)
 			}
 		}
