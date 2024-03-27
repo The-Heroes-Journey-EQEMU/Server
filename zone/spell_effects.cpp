@@ -3861,7 +3861,10 @@ void Mob::BuffProcess()
 											suspended = true;
 										} else if (caster->FindMemmedSpellBySpellID(spellid) >= 0 && IsBardSong(spellid)) {
 											if (buffs[buffs_i].ticsremaining == 1 && caster == this && caster->IsLinkedSpellReuseTimerReady(spells[spellid].timer_id)) {
-												caster->ApplyBardPulse(spellid, this, (EQ::spells::CastingSlot)caster->FindMemmedSpellBySpellID(spellid));
+												auto tt = spells[spellid].target_type;
+												if (tt != ST_AECaster && tt != ST_Target && tt != ST_AETarget) {
+													caster->ApplyBardPulse(spellid, this, (EQ::spells::CastingSlot)caster->FindMemmedSpellBySpellID(spellid));
+												}
 											}
 										}
 									}
