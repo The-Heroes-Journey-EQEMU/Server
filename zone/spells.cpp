@@ -3649,7 +3649,7 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 		end = overwrite_slots.end();
 		for (; cur != end; ++cur) {
 			// strip spell
-			if (!from_bard_song_pulse || (FindBuffBySlot(*cur) == spell_id)) {
+			if (!from_bard_song_pulse && !(FindBuffBySlot(*cur) == spell_id)) {
 				BuffFadeBySlot(*cur, false);
 			}
 
