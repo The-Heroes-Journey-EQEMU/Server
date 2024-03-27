@@ -1870,6 +1870,11 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		if(IsClient())
 		{
 			Client *c = CastToClient();
+
+			if (RuleB(Custom, MulticlassingEnabled)) {
+				SendSpellBarEnable(spell_id);
+			}
+
 			if((IsFromItem  && RuleB(Character, SkillUpFromItems)) || !IsFromItem) {
 				c->CheckSongSkillIncrease(spell_id);
 			}
@@ -1877,7 +1882,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 				c->SetLinkedSpellReuseTimer(spells[spell_id].timer_id, (spells[spell_id].recast_time / 1000) - (casting_spell_recast_adjust / 1000));
 			}
 			if (RuleB(Spells, EnableBardMelody)) {
-				c->MemorizeSpell(static_cast<uint32>(slot), spell_id, memSpellSpellbar, casting_spell_recast_adjust);
+				c->MemorizeSpell(static_cast<uint32>(slot), spell_id, memSpellSpellbar, casting_spell_recast_adjust);				
 			}
 
 			if (!IsFromItem) {
