@@ -5561,12 +5561,12 @@ int64 Mob::CalcFocusEffect(focusType type, uint16 focus_id, uint16 spell_id, boo
 					break;
 				}				
 
-				int classes_bits = GetClassesBits();
+				auto classes_bits = GetClassesBits();
 				for (const auto& class_bitmask : player_class_bitmasks) {
 					uint8 class_id = class_bitmask.first;
 					uint16 class_bit = class_bitmask.second;
 					if ((classes_bits & class_bit) != 0) {
-						spell_level = std::min(spell.classes[class_id], spell_level);
+						spell_level = std::min(spell.classes[class_id], (uint8)spell_level);
 					}
 				}
 
