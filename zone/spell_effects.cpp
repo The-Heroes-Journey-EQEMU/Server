@@ -6727,7 +6727,7 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 			realTotal = CalcFocusEffect(type, UsedFocusID, spell_id);
 		}
 
-		LogDebug("GetFocusEffect 2? [{}], [{}], [{}]", rand_effectiveness, UsedItem->ID, realTotal);
+		LogDebug("GetFocusEffect 2? [{}], [{}], [{}]", rand_effectiveness, UsedItem ? UsedItem->ID : 0, realTotal);
 
 		if ((rand_effectiveness && UsedItem) || (realTotal != 0 && UsedItem)) {
 			// there are a crap ton more of these, I was able to verify these ones though
