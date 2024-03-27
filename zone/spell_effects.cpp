@@ -5481,8 +5481,9 @@ uint8 Mob::GetSpellLevelForCaster(uint16 spell_id) const {
 		uint16 class_bit = class_bitmask.second;
 		LogDebug("Checking [{}] [{}]", class_id, GetClassesBits());
 		if ((GetClassesBits() & class_bit) != 0) {
-			LogDebug("Found class [{}]", class_bit);
 			spell_level = std::min(spell.classes[class_id], (uint8)spell_level);
+			
+			LogDebug("Found class [{}], [{}], [{}]", class_bit, spell_level, spell.classes[class_id]);
 		}
 	}
 
