@@ -5560,7 +5560,18 @@ int64 Mob::CalcFocusEffect(focusType type, uint16 focus_id, uint16 spell_id, boo
 				if (IsNPC()) {
 					break;
 				}
+				
 				spell_level = spell.classes[(GetClass() % 17) - 1];
+
+				int classes_bits = GetClassesBits();
+				for (const auto& class_bitmask : player_class_bitmasks) {
+					uint8 class_id = class_bitmask.first;
+					uint16 class_bit = class_bitmask.second;
+					if ((classes_bits & class_bit) != 0) {
+						spell_level = spell.classes[class_id];
+					}
+				}
+
 				lvldiff     = spell_level - focus_spell.base_value[i];
 				// every level over cap reduces the effect by focus_spell.base2[i] percent unless from a clicky
 				// when ItemCastsUseFocus is true
