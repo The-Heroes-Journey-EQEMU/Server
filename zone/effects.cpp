@@ -128,7 +128,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int perc
 
 			}
 
-			else if (!spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg && GetSpellLevel(spell_id) >= GetLevel() - 5) {
+			else if (!spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg && GetSpellLevelForCaster(spell_id) >= GetLevel() - 5) {
 				value -= GetExtraSpellAmt(spell_id, itembonuses.SpellDmg, base_value) * ratio / 100;
 			}
 
@@ -198,7 +198,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int perc
 	else if (
 		!spells[spell_id].no_heal_damage_item_mod &&
 		GetSpellDmg() &&
-		GetSpellLevel(spell_id) >= GetLevel() - 5
+		GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
 	) {
 		value -= GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
 	}
@@ -308,7 +308,7 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 			else if (
 				!spells[spell_id].no_heal_damage_item_mod &&
 				GetSpellDmg() &&
-				GetSpellLevel(spell_id) >= GetLevel() - 5
+				GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
 			) {
 				extra_dmg += GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value)*ratio/100;
 			}
@@ -352,7 +352,7 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 			}
 			else if (
 				!spells[spell_id].no_heal_damage_item_mod && GetSpellDmg() &&
-				GetSpellLevel(spell_id) >= GetLevel() - 5
+				GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
 			) {
 				extra_dmg += GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
 			}
@@ -501,7 +501,7 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 		else if (
 			!spells[spell_id].no_heal_damage_item_mod &&
 			GetHealAmt() &&
-			GetSpellLevel(spell_id) >= GetLevel() - 5
+			GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
 		) {
 			value += GetExtraSpellAmt(spell_id, GetHealAmt(), base_value); //Item Heal Amt Add before critical
 		}
@@ -555,7 +555,7 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 			else if (
 				!spells[spell_id].no_heal_damage_item_mod &&
 				GetHealAmt() &&
-				GetSpellLevel(spell_id) >= GetLevel() - 5
+				GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
 			) {
 				extra_heal += GetExtraSpellAmt(spell_id, GetHealAmt(), base_value);
 			}
