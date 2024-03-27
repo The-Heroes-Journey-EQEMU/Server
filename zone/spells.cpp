@@ -1871,8 +1871,12 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		{
 			Client *c = CastToClient();
 
+			// This exists normal bard song looping for the song types which are handled by buff suspending logic
 			if (RuleB(Custom, MulticlassingEnabled)) {
-				SendSpellBarEnable(spell_id);
+				auto tt = spells[spell_id].target_type;
+				if (tt != ST_AECaster && tt != ST_Target && tt != ST_AETarget) {
+					SendSpellBarEnable(spell_id);
+				}				
 			}
 
 			if((IsFromItem  && RuleB(Character, SkillUpFromItems)) || !IsFromItem) {
