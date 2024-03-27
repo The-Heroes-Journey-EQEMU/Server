@@ -174,8 +174,6 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int perc
 	value += base_value*GetFocusEffect(focusFcDamagePctCrit, spell_id)/100;
 	value += base_value*GetFocusEffect(focusFcAmplifyMod, spell_id)/100;
 
-	Message(Chat::FocusEffect, "Your focus effects have increased your damage by %d", value - base_value);
-
 	if (target) {
 		value += base_value*target->GetVulnerability(this, spell_id, 0)/100;
 		value -= target->GetFcDamageAmtIncoming(this, spell_id);
