@@ -277,7 +277,8 @@ bool EQ::InventoryProfile::SwapItem(
 	uint16 race_id,
 	uint8 class_id,
 	uint16 deity_id,
-	uint8 level
+	uint8 level,
+	int classes_bits
 ) {
 	fail_state = swapInvalid;
 
@@ -350,10 +351,12 @@ bool EQ::InventoryProfile::SwapItem(
 				fail_state = swapNullData;
 				return false;
 			}
-			if (race_id && class_id && !source_item->IsEquipable(race_id, class_id)) {
+						
+			if (race_id && class_id && !source_item->IsEquipable(race_id, classes_bits)) {
 				fail_state = swapRaceClass;
 				return false;
-			}
+			}   
+			
 			if (deity_id && source_item->Deity && !(deity::GetDeityBitmask((deity::DeityType)deity_id) & source_item->Deity)) {
 				fail_state = swapDeity;
 				return false;
@@ -656,6 +659,32 @@ int EQ::InventoryProfile::CountItemEquippedByID(uint32 item_id)
 	}
 
 	return quantity;
+}
+
+bool EQ::InventoryProfile::IsClickEffectEquipped(uint32 spellid) {
+
+	bool has_equipped = false;
+	ItemInstance* item = nullptr;
+	ItemInstance* augment = nullptr;
+	EQ::item::ItemEffect_Struct eff;
+
+	for (int slot_id = EQ::invslot::EQUIPMENT_BEGIN; slot_id <= EQ::invslot::EQUIPMENT_END; ++slot_id) {
+		item = GetItem(slot_id);
+		if (!item) { continue; }
+		eff = item->GetItem()->Click;
+		if (eff.Effect == spellid) {
+			return true;
+		}			
+		for (uint8 augment_slot = invaug::SOCKET_BEGIN; augment_slot <= invaug::SOCKET_END; ++augment_slot) {
+			augment = item->GetAugment(augment_slot);
+			if (!augment) { continue; }
+			eff = augment->GetItem()->Click;
+			if (eff.Effect == spellid) {
+				return true;
+			}
+		}			
+	}
+	return false;
 }
 
 //This function has a flaw in that it only returns the last stack that it looked at
@@ -1027,7 +1056,7 @@ int16 EQ::InventoryProfile::CalcSlotId(int16 bagslot_id, uint8 bagidx) {
 
 	int16 slot_id = INVALID_INDEX;
 
-	if (bagslot_id == invslot::slotCursor || bagslot_id == 8000) {
+	if (bagslot_id == invslot::slotCursor) {
 		slot_id = invbag::CURSOR_BAG_BEGIN + bagidx;
 	}
 	else if (bagslot_id >= invslot::GENERAL_BEGIN && bagslot_id <= invslot::GENERAL_END) {
@@ -1479,7 +1508,7 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 		auto inst = iter->second;
 		if (inst == nullptr) { continue; }
 
-		if (inst->GetID() == item_id) {
+		if (inst->GetID() == item_id || inst->GetID() % 1000000 == item_id % 1000000) {
 			quantity_found += (inst->GetCharges() <= 0) ? 1 : inst->GetCharges();
 			if (quantity_found >= quantity)
 				return iter->first;
@@ -1496,14 +1525,14 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 			auto bag_inst = bag_iter->second;
 			if (bag_inst == nullptr) { continue; }
 
-			if (bag_inst->GetID() == item_id) {
+			if (bag_inst->GetID() == item_id || bag_inst->GetID() % 1000000 == item_id) {
 				quantity_found += (bag_inst->GetCharges() <= 0) ? 1 : bag_inst->GetCharges();
 				if (quantity_found >= quantity)
 					return InventoryProfile::CalcSlotId(iter->first, bag_iter->first);
 			}
 
 			for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
-				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1)
+				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1 || bag_inst->GetAugmentItemID(index) % 1000000 == item_id && quantity <= 1)
 					return invslot::SLOT_AUGMENT_GENERIC_RETURN;
 			}
 		}

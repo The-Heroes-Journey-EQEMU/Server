@@ -801,47 +801,92 @@ void Perl_Client_DeleteItemInInventory(Client* self, int16 slot_id, int16 quanti
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id);
+	self->SummonApocItem(item_id);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges);
+	self->SummonApocItem(item_id, charges);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, 0, 0, 0, 0, 0, 0, attune);
+	self->SummonApocItem(item_id, charges, 0, 0, 0, 0, 0, 0, attune);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, aug1, 0, 0, 0, 0, 0, attune);
+	self->SummonApocItem(item_id, charges, aug1, 0, 0, 0, 0, 0, attune);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, aug1, aug2, 0, 0, 0, 0, attune);
+	self->SummonApocItem(item_id, charges, aug1, aug2, 0, 0, 0, 0, attune);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, 0, 0, 0, attune);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, 0, 0, 0, attune);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, 0, 0, attune);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4, 0, 0, attune);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attune);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attune);
 }
 
 void Perl_Client_SummonItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, uint16 slot_id) // @categories Inventory and Items, Script Utility
 {
-	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attune, slot_id);
+	self->SummonApocItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attune, slot_id);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, 0, 0, 0, 0, 0, 0, attune);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, aug1, 0, 0, 0, 0, 0, attune);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, aug1, aug2, 0, 0, 0, 0, attune);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, aug1, aug2, aug3, 0, 0, 0, attune);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, 0, 0, attune);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attune);
+}
+
+void Perl_Client_SummonFixedItem(Client* self, uint32 item_id, int16 charges, bool attune, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, uint16 slot_id) // @categories Inventory and Items, Script Utility
+{
+	self->SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, 0, attune);
 }
 
 void Perl_Client_SetStats(Client* self, uint8 type, uint16 increase_val) // @categories Account and Character, Stats and Attributes
@@ -2010,6 +2055,16 @@ bool Perl_Client_HasDisciplineLearned(Client* self, uint16 spell_id)
 uint32_t Perl_Client_GetClassBitmask(Client* self)
 {
 	return GetPlayerClassBit(self->GetClass());
+}
+
+uint32_t Perl_Client_GetClassesBitmask(Client* self)
+{
+	return self->GetClassesBits();
+}
+
+bool Perl_Client_AddExtraClass(Client* self, int class_id) 
+{
+	return self->AddExtraClass(class_id);
 }
 
 uint32_t Perl_Client_GetRaceBitmask(Client* self) // @categories Stats and Attributes
@@ -3305,6 +3360,8 @@ void perl_register_client()
 	package.add("GetCharacterFactionLevel", &Perl_Client_GetCharacterFactionLevel);
 	package.add("GetClassAbbreviation", &Perl_Client_GetClassAbbreviation);
 	package.add("GetClassBitmask", &Perl_Client_GetClassBitmask);
+	package.add("GetClassesBitmask", &Perl_Client_GetClassesBitmask);
+	package.add("AddExtraClass", (bool(*)(Client*, int))&Perl_Client_AddExtraClass);
 	package.add("GetClientMaxLevel", &Perl_Client_GetClientMaxLevel);
 	package.add("GetClientVersion", &Perl_Client_GetClientVersion);
 	package.add("GetClientVersionBit", &Perl_Client_GetClientVersionBit);
@@ -3663,6 +3720,15 @@ void perl_register_client()
 	package.add("SummonItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32))&Perl_Client_SummonItem);
 	package.add("SummonItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32))&Perl_Client_SummonItem);
 	package.add("SummonItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32, uint16))&Perl_Client_SummonItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32))&Perl_Client_SummonFixedItem);
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32, uint16))&Perl_Client_SummonFixedItem);	
 	package.add("SummonItemIntoInventory", &Perl_Client_SummonItemIntoInventory);
 	package.add("TGB", &Perl_Client_TGB);
 	package.add("TakeMoneyFromPP", (bool(*)(Client*, uint64_t))&Perl_Client_TakeMoneyFromPP);

@@ -898,6 +898,7 @@ Mob *SwarmPet::GetOwner()
 
 //New AA
 void Client::SendAlternateAdvancementTable() {
+	LogDebug("Sending AA Table");
 	for(auto &aa : zone->aa_abilities) {
 		uint32 charges = 0;
 		auto ranks = GetAA(aa.second->first_rank_id, &charges);
@@ -926,18 +927,29 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 		return;
 	}
 
-	if(!(ability->classes & (1 << GetClass()))) {
-		return;
+	int size = sizeof(AARankInfo_Struct) + (sizeof(AARankEffect_Struct) * rank->effects.size()) + (sizeof(AARankPrereq_Struct) * rank->prereqs.size());
+	auto outapp = new EQApplicationPacket(OP_SendAATable, size);
+	AARankInfo_Struct *aai = (AARankInfo_Struct*)outapp->pBuffer;
+
+
+	// Lie to the client about who can use this AA rank if we are multiclassing
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		if ((ability->classes >> 1) & GetClassesBits() || (ability->classes & (1 << GetClass()))) {
+			aai->classes = 0xFFFFFFF;
+		} else {
+			aai->classes = ability->classes;
+		}	
+	} else {
+		if(!(ability->classes & (1 << GetClass()))) {
+			return;
+		}
+		aai->classes = ability->classes;
 	}
 
 	if(!CanUseAlternateAdvancementRank(rank)) {
 		return;
 	}
-
-	int size = sizeof(AARankInfo_Struct) + (sizeof(AARankEffect_Struct) * rank->effects.size()) + (sizeof(AARankPrereq_Struct) * rank->prereqs.size());
-	auto outapp = new EQApplicationPacket(OP_SendAATable, size);
-	AARankInfo_Struct *aai = (AARankInfo_Struct*)outapp->pBuffer;
-
+	
 	aai->id = rank->id;
 	aai->upper_hotkey_sid = rank->upper_hotkey_sid;
 	aai->lower_hotkey_sid = rank->lower_hotkey_sid;
@@ -949,11 +961,11 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->spell = rank->spell;
 	aai->spell_type = rank->spell_type;
 	aai->spell_refresh = rank->recast_time;
-	aai->classes = ability->classes;
 	aai->level_req = rank->level_req;
 	aai->current_level = level;
 	aai->max_level = ability->GetMaxLevel(this);
 	aai->prev_id = rank->prev_id;
+	aai->grant_only = ability->grant_only;
 
 	if((rank->next && !CanUseAlternateAdvancementRank(rank->next)) || ability->charges > 0) {
 		aai->next_id = -1;
@@ -964,9 +976,17 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->expansion = rank->expansion;
 	aai->category = ability->category;
 	aai->charges = ability->charges;
-	aai->grant_only = ability->grant_only;
 	aai->total_effects = rank->effects.size();
 	aai->total_prereqs = rank->prereqs.size();
+
+	if (RuleB(Custom, UseDynamicAATimers)) {
+		if (aai->classes == 0xFFFFFFF && rank->base_ability->first->recast_time > 0 && !rank->base_ability->grant_only) {
+			aai->spell_type = GetDynamicAATimer(rank->base_ability->id);
+			if (aai->spell_type == 0) {
+				aai->spell_type = SetDynamicAATimer(rank->base_ability->id);
+			}
+		}
+	}
 
 	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
 	for(auto &effect : rank->effects) {
@@ -1053,11 +1073,44 @@ void Client::SendAlternateAdvancementTimers() {
 	safe_delete(outapp);
 }
 
+int Client::GetDynamicAATimer(int aa_id) {
+    for (int i = 1; i < 100; i++) {
+        std::string key = "aaTimer_" + std::to_string(i);
+        std::string bucketValue = GetBucket(key);
+        
+        // Check if the bucket has a value before attempting conversion
+        if (!bucketValue.empty()) {
+            int value = std::stoi(bucketValue); // Convert string value to integer
+			// LogDebug("Got TimerID: [{}]", value);
+            if (value == aa_id) {
+				// LogDebug("Returning TimerID: [{}] - [{}]", i, value);
+                return i; // Return the timer ID associated with aa_id
+            }
+        }
+    }
+    return 0; // Return 0 if no associated timer ID is found
+}
+
+int Client::SetDynamicAATimer(int aa_id) {
+    // Iterate through possible timer IDs to find an available one
+    for (int timerID = 1; timerID < (pTimerAAEnd - pTimerAAStart); ++timerID) {
+        std::string key = "aaTimer_" + std::to_string(timerID);
+		auto bucket_value = GetBucket(key);
+        if (bucket_value.empty()) { // If the timer is available
+            // Associate this timer with the given aa_id
+            SetBucket(key, std::to_string(aa_id));
+            return timerID; // Return the assigned timer ID
+        }
+    }
+
+    return 0;
+}
+
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
-	if(rank) {
+	if(rank) {		
 		SendAlternateAdvancementTimer(rank->spell_type, 0, time(0));
-		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);
+		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);		
 	}
 }
 
@@ -1296,6 +1349,12 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		return;
 	}
 
+	int spell_type = rank->spell_type;
+
+	if (RuleB(Custom, UseDynamicAATimers)) {
+		spell_type = GetDynamicAATimer(rank->base_ability->id);
+	}
+
 	bool use_toggle_passive_hotkey = UseTogglePassiveHotkey(*rank);
 
 	//make sure it is not a passive
@@ -1312,8 +1371,8 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		return;
 
 	//check cooldown
-	if (!p_timers.Expired(&database, rank->spell_type + pTimerAAStart, false)) {
-		uint32 aaremain = p_timers.GetRemainingTime(rank->spell_type + pTimerAAStart);
+	if (!p_timers.Expired(&database, spell_type + pTimerAAStart, false)) {
+		uint32 aaremain = p_timers.GetRemainingTime(spell_type + pTimerAAStart);
 		uint32 aaremain_hr = aaremain / (60 * 60);
 		uint32 aaremain_min = (aaremain / 60) % 60;
 		uint32 aaremain_sec = aaremain % 60;
@@ -1362,19 +1421,19 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 		TogglePassiveAlternativeAdvancement(*rank, ability->id);
 	}
 	else {
-		// Bards can cast instant cast AAs while they are casting or channeling item cast.
-		if (GetClass() == Class::Bard && IsCasting() && spells[rank->spell].cast_time == 0) {
+		 //Bards can cast instant cast AAs while they are casting or channeling item cast.
+		if (!RuleB(Custom, MulticlassingEnabled) && GetClass() == Class::Bard && IsCasting() && spells[rank->spell].cast_time == 0) {
 			if (!DoCastingChecksOnCaster(rank->spell, EQ::spells::CastingSlot::AltAbility)) {
 				return;
 			}
 
 			if (!SpellFinished(rank->spell, entity_list.GetMob(target_id), EQ::spells::CastingSlot::AltAbility, spells[rank->spell].mana, -1, spells[rank->spell].resist_difficulty, false, -1,
-				rank->spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
+				spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
 				return;
 			}
-		}
-		else {
-			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, -1, -1, 0, -1, rank->spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
+		} 
+		else { 
+			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, spells[rank->spell].cast_time, 0, 0, -1, spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
 				return;
 			}
 		}
@@ -1599,8 +1658,15 @@ bool Mob::CanUseAlternateAdvancementRank(AA::Rank *rank)
 		return false;
 	}
 
-	if (!(a->classes & (1 << GetClass()))) {
-		return false;
+	// Lie to the client about who can use this AA rank if we are multiclassing
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		if (!(IsClient() && ((a->classes >> 1) & this->CastToClient()->GetClassesBits()))) {
+			return false;
+		}
+	} else {
+		if (!(a->classes & (1 << GetClass()))) {
+			return false;
+		}
 	}
 
 	// Passive and Active Shroud AAs, skip for now

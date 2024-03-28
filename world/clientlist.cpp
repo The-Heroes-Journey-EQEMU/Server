@@ -568,7 +568,7 @@ void ClientList::SendWhoAll(uint32 fromid,const char* to, int16 admin, Who_All_S
 		whomlen = strlen(whom->whom);
 		if(whom->wrace == 0x001A) // 0x001A is the old Froglok race number and is sent by the client for /who all froglok
 			whom->wrace = FROGLOK; // This is what EQEmu uses for the Froglok Race number.
-	}
+	}	
 
 	uint32 totalusers=0;
 	uint32 totallength=0;
@@ -756,6 +756,26 @@ void ClientList::SendWhoAll(uint32 fromid,const char* to, int16 admin, Who_All_S
 	char plname[64]={0};
 	strcpy(plname,cle->name());
 
+
+	// Send different info for multiclass strings. Requires clientside support.
+	if (RuleB(Custom, MulticlassingEnabled)) {      
+		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", cle->CharID());
+		auto results = database.QueryDatabase(query);
+		bool found = false;
+
+		for (auto& row = results.begin(); row != results.end(); ++row) {
+			if (row[0]) { 
+				plclass_ = static_cast<uint32>(Strings::ToInt(row[0]));
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			plclass_ = GetPlayerClassBit(cle->class_());
+		}
+	}
+
 	char placcount[30]={0};
 	if(admin>=cle->Admin() && admin > AccountStatus::Player)
 		strcpy(placcount,cle->AccountName());
@@ -903,7 +923,26 @@ void ClientList::SendFriendsWho(ServerFriendsWho_Struct *FriendsWho, WorldTCPCon
 			}
 
 			char PlayerName[64]={0};
-			strcpy(PlayerName,cle->name());
+			strcpy(PlayerName,cle->name());	
+			
+			// Send different info for multiclass strings. Requires clientside support.
+			if (RuleB(Custom, MulticlassingEnabled)) {      
+				std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", cle->CharID());
+				auto results = database.QueryDatabase(query);
+				bool found = false;
+
+				for (auto& row = results.begin(); row != results.end(); ++row) {
+					if (row[0]) { 
+						PlayerClass = static_cast<uint32>(Strings::ToInt(row[0]));
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					PlayerClass = GetPlayerClassBit(cle->class_());
+				}
+			}
 
 			WhoAllPlayerPart1* WAPP1 = (WhoAllPlayerPart1*)bufptr;
 

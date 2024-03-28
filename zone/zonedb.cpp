@@ -307,7 +307,7 @@ Trader_Struct* ZoneDatabase::LoadTraderItem(uint32 char_id)
 	auto loadti = new Trader_Struct;
 	memset(loadti,0,sizeof(Trader_Struct));
 
-	std::string query = StringFormat("SELECT * FROM trader WHERE char_id = %i ORDER BY slot_id LIMIT 80", char_id);
+	std::string query = StringFormat("SELECT * FROM trader WHERE char_id = %i ORDER BY slot_id LIMIT %i", char_id, EQ::invtype::BAZAAR_SIZE);
 	auto results = QueryDatabase(query);
 	if (!results.Success()) {
 		LogTrading("Failed to load trader information!\n");
@@ -316,7 +316,7 @@ Trader_Struct* ZoneDatabase::LoadTraderItem(uint32 char_id)
 
 	loadti->Code = BazaarTrader_ShowItems;
 	for (auto& row = results.begin(); row != results.end(); ++row) {
-		if (Strings::ToInt(row[5]) >= 80 || Strings::ToInt(row[4]) < 0) {
+		if (atoi(row[5]) >= EQ::invtype::BAZAAR_SIZE || atoi(row[4]) < 0) {
 			LogTrading("Bad Slot number when trying to load trader information!\n");
 			continue;
 		}
@@ -332,7 +332,7 @@ TraderCharges_Struct* ZoneDatabase::LoadTraderItemWithCharges(uint32 char_id)
 	auto loadti = new TraderCharges_Struct;
 	memset(loadti,0,sizeof(TraderCharges_Struct));
 
-	std::string query = StringFormat("SELECT * FROM trader WHERE char_id=%i ORDER BY slot_id LIMIT 80", char_id);
+	std::string query = StringFormat("SELECT * FROM trader WHERE char_id=%i ORDER BY slot_id LIMIT %i", char_id, EQ::invtype::BAZAAR_SIZE);
 	auto results = QueryDatabase(query);
 	if (!results.Success()) {
 		LogTrading("Failed to load trader information!\n");
@@ -340,7 +340,7 @@ TraderCharges_Struct* ZoneDatabase::LoadTraderItemWithCharges(uint32 char_id)
 	}
 
 	for (auto& row = results.begin(); row != results.end(); ++row) {
-		if (Strings::ToInt(row[5]) >= 80 || Strings::ToInt(row[5]) < 0) {
+		if (atoi(row[5]) >= EQ::invtype::BAZAAR_SIZE || atoi(row[5]) < 0) {
 			LogTrading("Bad Slot number when trying to load trader information!\n");
 			continue;
 		}
@@ -355,7 +355,7 @@ TraderCharges_Struct* ZoneDatabase::LoadTraderItemWithCharges(uint32 char_id)
 
 EQ::ItemInstance* ZoneDatabase::LoadSingleTraderItem(uint32 CharID, int SerialNumber) {
 	std::string query = StringFormat("SELECT * FROM trader WHERE char_id = %i AND serialnumber = %i "
-                                    "ORDER BY slot_id LIMIT 80", CharID, SerialNumber);
+                                    "ORDER BY slot_id LIMIT %i", CharID, SerialNumber, EQ::invtype::BAZAAR_SIZE);
     auto results = QueryDatabase(query);
     if (!results.Success())
         return nullptr;
@@ -635,6 +635,24 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 	m_epp->expended_aa           = e.e_expended_aa_spent;
 	m_epp->last_invsnapshot_time = e.e_last_invsnapshot;
 	m_epp->next_invsnapshot_time = m_epp->last_invsnapshot_time + (RuleI(Character, InvSnapshotMinIntervalM) * 60);
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		std::string query = StringFormat("SELECT `value` FROM `data_buckets` WHERE `key` = 'GestaltClasses' AND `character_id` = %d", character_id);
+		auto results = database.QueryDatabase(query);
+		bool found = false;
+
+		for (auto& row = results.begin(); row != results.end(); ++row) {
+			if (row[0]) { 
+				pp->classes = static_cast<uint32>(Strings::ToInt(row[0]));
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			pp->classes = GetPlayerClassBit(pp->class_);
+		}
+	}
 
 	return true;
 }
@@ -3192,6 +3210,7 @@ void ZoneDatabase::SavePetInfo(Client *client)
 			pet_buff.ticsremaining  = p->Buffs[slot_id].duration;
 			pet_buff.counters       = p->Buffs[slot_id].counters;
 			pet_buff.instrument_mod = p->Buffs[slot_id].bard_modifier;
+			pet_buff.castername     = p->Buffs[slot_id].caster_name;			
 
 			pet_buffs.push_back(pet_buff);
 		}
@@ -3374,6 +3393,7 @@ void ZoneDatabase::LoadPetInfo(Client *client)
 			p->Buffs[e.slot].duration      = e.ticsremaining;
 			p->Buffs[e.slot].counters      = e.counters;
 			p->Buffs[e.slot].bard_modifier = e.instrument_mod;
+			strn0cpy(p->Buffs[e.slot].caster_name, e.castername.c_str(), sizeof(p->Buffs[e.slot].caster_name));
 		}
 	}
 

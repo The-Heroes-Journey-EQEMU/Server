@@ -131,7 +131,18 @@ int main(int argc, char **argv)
 
 void ExportSpells(SharedDatabase *db)
 {
-	LogInfo("Exporting Spells");
+	bool implied_targeting = false;
+
+	std::string rule_query = "SELECT rule_value FROM rule_values WHERE rule_name='Spells:UseSpellImpliedTargeting'";
+    auto rule_results = db->QueryDatabase(rule_query);
+    if (rule_results.Success()) {    
+    	if (rule_results.RowCount() > 0) {       
+			auto row = rule_results.begin();
+			implied_targeting = (row[0] && std::string(row[0]) == "true");
+		}
+	}
+
+	LogInfo("Exporting Spells. Implied Targeting Mutations {}", implied_targeting ? "Enabled" : "Disabled");
 
 	std::string file = fmt::format("{}/export/spells_us.txt", path.GetServerPath());
 	FILE *f = fopen(file.c_str(), "w");
@@ -152,15 +163,26 @@ void ExportSpells(SharedDatabase *db)
 					line.push_back('^');
 				}
 
-				if (row[i] != nullptr) {
-					line += row[i];
+				// Convert to std::string for comparison and modification
+				std::string fieldValue = row[i] ? row[i] : "";
+
+				// Check if this is the targettype field
+				if (implied_targeting && i == 98) {
+					// Modify the targettype field value if necessary
+					if (fieldValue == "14" || fieldValue == "38") {
+						fieldValue = "6"; // Change targettype to 6
+					}
 				}
+
+				// Add the (possibly modified) field value to the line
+				line += fieldValue;
 			}
 
 			fprintf(f, "%s\n", line.c_str());
 		}
 	}
 	else {
+		LogError("Query to database failed, unable to export spells.");
 	}
 
 	fclose(f);
@@ -203,7 +225,22 @@ uint32 GetSkill(SharedDatabase* db, int skill_id, int class_id, int level)
 
 void ExportSkillCaps(SharedDatabase* db)
 {
-	LogInfo("Exporting Skill Caps");
+	bool multiclassing = false;
+
+	std::string query = "SELECT rule_value FROM rule_values WHERE rule_name='Custom:MulticlassingEnabled'";
+    auto results = db->QueryDatabase(query);
+    if (results.Success()) {    
+    	if (results.RowCount() > 0) {       
+			auto row = results.begin();
+			multiclassing = (row[0] && std::string(row[0]) == "true");
+		}
+	}
+
+	LogInfo("Exporting Skill Caps. Multiclassing Mutations {}", multiclassing ? "Enabled" : "Disabled");
+
+	const int MAX_SKILLS = 78; // Adjust if necessary, assuming 0-77 inclusive
+    const int MAX_LEVELS = 100;
+    int skills_array[MAX_SKILLS][MAX_LEVELS] = {0}; // Initialize all to 0
 
 	std::ofstream file(fmt::format("{}/export/SkillCaps.txt", path.GetServerPath()));
 	if (!file || !file.is_open()) {
@@ -217,12 +254,29 @@ void ExportSkillCaps(SharedDatabase* db)
 		RuleI(Character, MaxLevel)
 	);
 
+	if (multiclassing) {
+        for (int skill = 0; skill < MAX_SKILLS; ++skill) {
+            for (int level = 1; level <= MAX_LEVELS; ++level) {
+                int highest_cap = 0;
+                for (int cl = 1; cl <= 16; ++cl) {
+                    if (SkillUsable(db, skill, cl)) {
+                        int cap = GetSkill(db, skill, cl, level);
+                        if (cap > highest_cap) {
+                            highest_cap = cap;
+                        }
+                    }
+                }
+                skills_array[skill][level-1] = highest_cap; // Store the highest cap for this skill and level
+            }
+        }
+    }
+
 	for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
 		for (uint8 skill_id = EQ::skills::Skill1HBlunt; skill_id <= EQ::skills::Skill2HPiercing; skill_id++) {
 			if (SkillUsable(db, skill_id, class_id)) {
 				uint32 previous_cap = 0;
 				for (uint8 level = 1; level <= skill_cap_max_level; level++) {
-					uint32 cap = GetSkill(db, skill_id, class_id, level);
+					int cap = multiclassing ? skills_array[skill_id][level-1] : GetSkill(db, skill_id, class_id, level);
 					if (cap < previous_cap) {
 						cap = previous_cap;
 					}
@@ -234,6 +288,7 @@ void ExportSkillCaps(SharedDatabase* db)
 			}
 		}
 	}
+	
 
 	file.close();
 }

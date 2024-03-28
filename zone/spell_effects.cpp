@@ -286,6 +286,13 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 							dmg = caster->GetActReflectedSpellDamage(spell_id, (int64)(spells[spell_id].base_value[i] * partial / 100), reflect_effectiveness);
 						}
 						else {
+							//maybe allowing pets to cast spells as if the owner cast them by a % number.
+							if (RuleI(Spells, PetsScaleWithOwnerPercent) > 0 && caster->GetOwner() && caster->GetOwner()->IsClient() && !IsCharmed())
+							{	
+								//share stats
+								Client* owner = caster->GetOwner()->CastToClient();
+								dmg = owner->GetActSpellDamage(spell_id, dmg, this, RuleI(Spells, PetsScaleWithOwnerPercent));								
+							}
 							dmg = caster->GetActSpellDamage(spell_id, dmg, this);
 						}
 						caster->ResourceTap(-dmg, spell_id);
@@ -453,7 +460,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			case SE_CurrentMana:
 			{
 				// Bards don't get mana from effects, good or bad.
-				if(GetClass() == Class::Bard)
+				if(GetClass() == Class::Bard && !RuleB(Custom, MulticlassingEnabled))
 					break;
 				if(IsManaTapSpell(spell_id)) {
 					if (!IsPureMeleeClass()) {
@@ -490,7 +497,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			case SE_CurrentManaOnce:
 			{
 				// Bards don't get mana from effects, good or bad.
-				if(GetClass() == Class::Bard)
+				if(GetClass() == Class::Bard && !RuleB(Custom, MulticlassingEnabled))
 					break;
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Current Mana Once: %+i", effect_value);
@@ -791,7 +798,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					CastToNPC()->SaveGuardSpotCharm();
 				}
 				InterruptSpell();
-				entity_list.RemoveDebuffs(this);
+				//entity_list.RemoveDebuffs(this);
 				entity_list.RemoveFromHateLists(this);
 				WipeHateList();
 
@@ -1205,17 +1212,22 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 
 			case SE_SummonItem:
 			{
-				const EQ::ItemData *item = database.GetItem(spell.base_value[i]);
+				int item_id = spell.base_value[i];
+				if (RuleB(Custom, DoItemUpgrades)) {
+					item_id = GetMaxItemUpgrade(item_id);
+				}
+
+				const EQ::ItemData *item = database.GetItem(item_id);
 #ifdef SPELL_EFFECT_SPAM
 				const char *itemname = item ? item->Name : "*Unknown Item*";
 				snprintf(effect_desc, _EDLEN, "Summon Item: %s (id %d)", itemname, spell.base_value[i]);
 #endif
 				if (!item) {
-					Message(Chat::Red, "Unable to summon item %d. Item not found.", spell.base_value[i]);
+					Message(Chat::Red, "Unable to summon item %d. Item not found.", item_id);
 				} else if (IsClient()) {
 					Client *c = CastToClient();
 					if (c->CheckLoreConflict(item)) {
-						c->DuplicateLoreMessage(spell.base_value[i]);
+						c->DuplicateLoreMessage(item_id);
 					} else {
 						int charges;
 						if (item->Stackable)
@@ -1233,7 +1245,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 							c->SendItemPacket(EQ::invslot::slotCursor, SummonedItem, ItemPacketLimbo);
 							safe_delete(SummonedItem);
 						}
-						SummonedItem = database.CreateItem(spell.base_value[i], charges);
+						SummonedItem = database.CreateItem(item_id, charges);
 					}
 				}
 
@@ -1241,7 +1253,12 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			}
 			case SE_SummonItemIntoBag:
 			{
-				const EQ::ItemData *item = database.GetItem(spell.base_value[i]);
+				int item_id = spell.base_value[i];
+				if (RuleB(Custom, DoItemUpgrades)) {
+					item_id = GetMaxItemUpgrade(item_id);
+				}
+
+				const EQ::ItemData *item = database.GetItem(item_id);
 #ifdef SPELL_EFFECT_SPAM
 				const char *itemname = item ? item->Name : "*Unknown Item*";
 				snprintf(effect_desc, _EDLEN, "Summon Item In Bag: %s (id %d)", itemname, spell.base_value[i]);
@@ -1256,7 +1273,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 						caster->Message(Chat::Red, "SE_SummonItemIntoBag but no room in summoned bag!");
 				} else if (IsClient()) {
 					if (CastToClient()->CheckLoreConflict(item)) {
-						CastToClient()->DuplicateLoreMessage(spell.base_value[i]);
+						CastToClient()->DuplicateLoreMessage(item_id);
 					} else {
 						int charges;
 
@@ -1270,7 +1287,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 						if (charges < 1)
 							charges = 1;
 
-						EQ::ItemInstance *SubItem = database.CreateItem(spell.base_value[i], charges);
+						EQ::ItemInstance *SubItem = database.CreateItem(item_id, charges);
 						if (SubItem != nullptr) {
 							SummonedItem->PutItem(slot, *SubItem);
 							safe_delete(SubItem);
@@ -1901,7 +1918,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				snprintf(effect_desc, _EDLEN, "Weapon Proc: %s (id %d)", spells[effect_value].name, procid);
 #endif
 				// Special case for Vampiric Embrace. If this is a Shadow Knight, the proc is different.
-				if (proc_id == SPELL_VAMPIRIC_EMBRACE && GetClass() == Class::ShadowKnight) {
+				if (proc_id == SPELL_VAMPIRIC_EMBRACE && (GetClassesBits() & GetPlayerClassBit(Class::ShadowKnight))) {
 					proc_id = SPELL_VAMPIRIC_EMBRACE_OF_SHADOW;
 				}
 
@@ -3460,7 +3477,7 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 	*/
 
 	//This is checked from Mob::SpellEffects and applied to instant spells and runes.
-	if (caster && caster->GetClass() != Class::Bard && caster->HasBaseEffectFocus()) {
+	if (caster && caster->GetClassesBits() != GetPlayerClassBit(Class::Bard) && caster->HasBaseEffectFocus()) {
 
 		oval = effect_value;
 		int mod = caster->GetFocusEffect(focusFcBaseEffects, spell_id);
@@ -3473,7 +3490,7 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 	else if (caster_id && instrument_mod > 10) {
 
 		Mob* buff_caster = entity_list.GetMob(caster_id);//If targeted bard song needed to confirm caster is not bard.
-		if (buff_caster && buff_caster->GetClass() != Class::Bard) {
+		if (buff_caster && buff_caster->GetClassesBits() != GetPlayerClassBit(Class::Bard)) {
 			oval = effect_value;
 			effect_value = effect_value * static_cast<int>(instrument_mod) / 10;
 
@@ -3827,11 +3844,45 @@ void Mob::BuffProcess()
 				buffs[buffs_i].ticsremaining != PERMANENT_BUFF_DURATION) {
 				if(!zone->BuffTimersSuspended() || !IsSuspendableSpell(buffs[buffs_i].spellid))
 				{
-					--buffs[buffs_i].ticsremaining;
+					bool suspended = false;
+
+					if (RuleB(Custom, SuspendGroupBuffs) && IsBeneficialSpell(buffs[buffs_i].spellid)) {						
+						uint32 spellid = buffs[buffs_i].spellid;
+						if (IsClient() || (IsPetOwnerClient()) && buffs[buffs_i].caster_name) {
+							Client* caster = entity_list.GetClientByName(buffs[buffs_i].caster_name);
+							Client* client = GetOwnerOrSelf()->CastToClient();
+
+							if (caster && client) {
+								if (caster == client || (client->GetGroup() && client->GetGroup()->IsGroupMember(client))) {
+									if (GetSpellEffectIndex(spellid, SE_DivineAura) == -1) {
+										if (caster->GetInv().IsClickEffectEquipped(spellid)) {
+											suspended = true;
+										} else if (caster->FindSpellBookSlotBySpellID(spellid) >= 0 && !spells[spellid].short_buff_box && !IsBardSong(spellid)) {
+											suspended = true;
+										} else if (caster->FindMemmedSpellBySpellID(spellid) >= 0 && IsBardSong(spellid)) {
+											if (buffs[buffs_i].ticsremaining == 1 && caster == this && caster->IsLinkedSpellReuseTimerReady(spells[spellid].timer_id)) {
+												caster->ApplyBardPulse(spellid, this, (EQ::spells::CastingSlot)caster->FindMemmedSpellBySpellID(spellid));
+											}
+										}
+									}
+								}							
+							}
+
+							if (IsPet() && GetOwner()) {
+								SendPetBuffsToClient();
+							}
+						}
+					}
+
+					if (!suspended || !RuleB(Custom, SuspendGroupBuffs)) {
+						--buffs[buffs_i].ticsremaining;
+					} else {
+						buffs[buffs_i].UpdateClient = true;
+					}
 
 					if (buffs[buffs_i].ticsremaining < 0) {
 						LogSpells("Buff [{}] in slot [{}] has expired. Fading", buffs[buffs_i].spellid, buffs_i);
-						BuffFadeBySlot(buffs_i);
+						BuffFadeBySlot(buffs_i);						
 					}
 					else
 					{
@@ -3844,19 +3895,17 @@ void Mob::BuffProcess()
 				}
 			}
 
-			if(IsClient())
-			{
-				if(buffs[buffs_i].UpdateClient == true)
-				{
-					CastToClient()->SendBuffDurationPacket(buffs[buffs_i], buffs_i);
-					// Hack to get UF to play nicer, RoF seems fine without it
-					if (CastToClient()->ClientVersion() == EQ::versions::ClientVersion::UF && buffs[buffs_i].hit_number > 0)
-						CastToClient()->SendBuffNumHitPacket(buffs[buffs_i], buffs_i);
-					buffs[buffs_i].UpdateClient = false;
-				}
-			}
+            if(IsClient())
+            {
+                if(buffs[buffs_i].UpdateClient == true)
+                {
+                    CastToClient()->SendBuffDurationPacket(buffs[buffs_i], buffs_i);
+                    CastToClient()->SendBuffNumHitPacket(buffs[buffs_i], buffs_i);
+                    buffs[buffs_i].UpdateClient = false;                    
+                }
+            }
 		}
-	}
+	}	
 }
 
 void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
@@ -4277,7 +4326,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 				uint16 proc_id = GetProcID(buffs[slot].spellid, i);
 
 				// Special case for Vampiric Embrace. If this is a Shadow Knight, the proc is different.
-				if (proc_id == SPELL_VAMPIRIC_EMBRACE && GetClass() == Class::ShadowKnight) {
+				if (proc_id == SPELL_VAMPIRIC_EMBRACE && (GetClassesBits() & GetPlayerClassBit(Class::ShadowKnight))) {
 					proc_id = SPELL_VAMPIRIC_EMBRACE_OF_SHADOW;
 				}
 
@@ -6345,6 +6394,9 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 	if (IsValidSpell(proc_spellid) && spell_id != focusspellid && spell_id != proc_spellid) {
 		Mob* proc_target = GetTarget();
 		if (proc_target) {
+
+			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID()));
+
 			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
 			return true;
 		}
@@ -6358,9 +6410,10 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 }
 
 uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
-
-	if (IsBardSong(spell_id))
+	
+	if (!RuleB(Custom, MulticlassingEnabled) && IsBardSong(spell_id)) {
 		return 0;
+	}
 
 	uint16 proc_spellid = 0;
 	float ProcChance = 0.0f;
@@ -6482,10 +6535,11 @@ uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
 
 int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool from_buff_tic)
 {
-	if (IsBardSong(spell_id) && type != focusFcBaseEffects && type != focusSpellDuration && type != focusReduceRecastTime) {
-		return 0;
+	if (!RuleB(Custom, MulticlassingEnabled)) {
+		if (IsBardSong(spell_id) && type != focusFcBaseEffects && type != focusSpellDuration && type != focusReduceRecastTime) {
+			return 0;
+		}
 	}
-
 	int64 realTotal = 0;
 	int64 realTotal2 = 0;
 	int64 realTotal3 = 0;
@@ -7653,7 +7707,7 @@ bool Mob::PassCastRestriction(int value)
 			break;
 
 		case IS_CLASS_PURE_MELEE:
-			if (GetClass() == Class::Rogue || GetClass() == Class::Warrior || GetClass() == Class::Berserker || GetClass() == Class::Monk)
+			if (GetClassesBits() & (GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Rogue) | GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Berserker)))
 				return true;
 			break;
 

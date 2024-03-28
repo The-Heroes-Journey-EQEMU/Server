@@ -978,94 +978,180 @@ int64 Mob::GetSpellHPBonuses() {
 	return spell_hp;
 }
 
-bool Mob::IsIntelligenceCasterClass() const
+bool Mob::IsIntelligenceCasterClass(uint8 class_id) const
 {
-	switch (GetClass()) {
-		case Class::ShadowKnight:
-		case Class::Bard:
-		case Class::Necromancer:
-		case Class::Wizard:
-		case Class::Magician:
-		case Class::Enchanter:
-		case Class::ShadowKnightGM:
-		case Class::BardGM:
-		case Class::NecromancerGM:
-		case Class::WizardGM:
-		case Class::MagicianGM:
-		case Class::EnchanterGM:
-			return true;
-	}
+	if (IsClient() && class_id < Class::Warrior) {
+		int classes_bits = CastToClient()->GetClassesBits();
 
-	return false;
+		std::vector<uint16> classes = {
+			Class::ShadowKnight, 
+			Class::Bard, 
+			Class::Necromancer, 
+			Class::Wizard,
+			Class::Enchanter,
+			Class::Magician,
+		};
+
+		for (const auto& classid : classes) {
+			if (classes_bits & (1 << (classid - 1))) {
+				return true;
+			}
+		}
+
+		return false;
+	} else {
+		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
+
+		switch (effective_class_id) {
+			case Class::ShadowKnight:
+			case Class::Bard:
+			case Class::Necromancer:
+			case Class::Wizard:
+			case Class::Magician:
+			case Class::Enchanter:
+			case Class::ShadowKnightGM:
+			case Class::BardGM:
+			case Class::NecromancerGM:
+			case Class::WizardGM:
+			case Class::MagicianGM:
+			case Class::EnchanterGM:
+				return true;
+		}
+    }
 }
 
-bool Mob::IsPureMeleeClass() const
+bool Mob::IsPureMeleeClass(uint8 class_id) const
 {
-	switch (GetClass()) {
-		case Class::Warrior:
-		case Class::Monk:
-		case Class::Rogue:
-		case Class::Berserker:
-		case Class::WarriorGM:
-		case Class::MonkGM:
-		case Class::RogueGM:
-		case Class::BerserkerGM:
-			return true;
-		default:
-			break;
-	}
+	if (IsClient() && class_id < Class::Warrior) {
+		int classes_bits = CastToClient()->GetClassesBits();
 
-	return false;
+		std::vector<uint16> classes = {
+			Class::Warrior, 
+			Class::Rogue, 
+			Class::Monk, 
+			Class::Berserker,
+		};
+
+		for (const auto& classid : classes) {
+			if (classes_bits & (1 << (classid - 1))) {
+				return true;
+			}
+		}
+
+		return false;
+	} else {
+		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
+
+        switch(effective_class_id) {
+			case Class::Warrior:
+			case Class::Monk:
+			case Class::Rogue:
+			case Class::Berserker:
+			case Class::WarriorGM:
+			case Class::MonkGM:
+			case Class::RogueGM:
+			case Class::BerserkerGM:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 
-bool Mob::IsWarriorClass() const
-{
-	switch (GetClass()) {
-		case Class::Warrior:
-		case Class::Paladin:
-		case Class::Ranger:
-		case Class::ShadowKnight:
-		case Class::Monk:
-		case Class::Bard:
-		case Class::Rogue:
-		case Class::Beastlord:
-		case Class::Berserker:
-		case Class::WarriorGM:
-		case Class::PaladinGM:
-		case Class::RangerGM:
-		case Class::ShadowKnightGM:
-		case Class::MonkGM:
-		case Class::BardGM:
-		case Class::RogueGM:
-		case Class::BeastlordGM:
-		case Class::BerserkerGM:
-			return true;
-		default:
-			break;
-	}
+bool Mob::IsWarriorClass(uint8 class_id) const { 
+	if (IsClient() && class_id < Class::Warrior) {
+		int classes_bits = CastToClient()->GetClassesBits();
 
-	return false;
+		std::vector<uint16> classes = {
+			Class::Warrior, 
+			Class::Rogue, 
+			Class::Monk, 
+			Class::Paladin,
+			Class::ShadowKnight, 
+			Class::Ranger, 
+			Class::Beastlord, 
+			Class::Berserker, 
+			Class::Bard,
+		};
+
+		for (const auto& classid : classes) {
+			if (classes_bits & (1 << (classid - 1))) {
+				return true;
+			}
+		}
+
+		return false;
+	} else {
+		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
+
+        switch(effective_class_id) {
+            case Class::Warrior:
+            case Class::WarriorGM:
+            case Class::Rogue:
+            case Class::RogueGM:
+            case Class::Monk:
+            case Class::MonkGM:
+            case Class::Paladin:
+            case Class::PaladinGM:
+            case Class::ShadowKnight:
+            case Class::ShadowKnightGM:
+            case Class::Ranger:
+            case Class::RangerGM:
+            case Class::Beastlord:
+            case Class::BeastlordGM:
+            case Class::Berserker:
+            case Class::BerserkerGM:
+            case Class::Bard:
+            case Class::BardGM:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 
-bool Mob::IsWisdomCasterClass() const
+bool Mob::IsWisdomCasterClass(uint8 class_id) const
 {
-	switch (GetClass()) {
-		case Class::Cleric:
-		case Class::Paladin:
-		case Class::Ranger:
-		case Class::Druid:
-		case Class::Shaman:
-		case Class::Beastlord:
-		case Class::ClericGM:
-		case Class::PaladinGM:
-		case Class::RangerGM:
-		case Class::DruidGM:
-		case Class::ShamanGM:
-		case Class::BeastlordGM:
-			return true;
-	}
+	if (IsClient() && class_id < Class::Warrior) {
+		int classes_bits = CastToClient()->GetClassesBits();
 
-	return false;
+		std::vector<uint16> classes = {
+			Class::Cleric, 
+			Class::Paladin, 
+			Class::Ranger, 
+			Class::Druid,
+			Class::Shaman,
+			Class::Beastlord, 
+		};
+
+		for (const auto& class_id : classes) {
+			if (classes_bits & (1 << (class_id - 1))) {
+				return true;
+			}
+		}
+
+		return false;
+	} else {
+		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
+
+        switch(effective_class_id) {
+			case Class::Cleric:
+			case Class::Paladin:
+			case Class::Ranger:
+			case Class::Druid:
+			case Class::Shaman:
+			case Class::Beastlord:
+			case Class::ClericGM:
+			case Class::PaladinGM:
+			case Class::RangerGM:
+			case Class::DruidGM:
+			case Class::ShamanGM:
+			case Class::BeastlordGM:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 
 uint8 Mob::GetArchetype() const
@@ -1515,6 +1601,10 @@ void Mob::SendHPUpdate(bool force_update_all)
 			safe_delete(client_packet);
 
 			ResetHPUpdateTimer();
+
+			if (RuleB(Custom, ServerAuthStats)) {
+				CastToClient()->SendEdgeHPStats();
+			}
 
 			// Used to check if HP has changed to update self next round
 			last_hp = current_hp;
@@ -4605,11 +4695,12 @@ bool Mob::CanThisClassDualWield(void) const {
 			return false;
 
 		// Dual-Wielding Empty Fists
-		if(!pinst && !sinst)
-			if(class_ != Class::Monk && class_ != Class::MonkGM && class_ != Class::Beastlord && class_ != Class::BeastlordGM)
-				return false;
+		if (!pinst && !sinst && GetClassesBits() & (GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Beastlord))) {			
+			return true;			
+		}
 
 		return true;
+
 	}
 
 	return false;
@@ -4644,6 +4735,19 @@ bool Mob::CanThisClassTripleAttack() const
 			);
 		} else {
 			return CastToClient()->HasSkill(EQ::skills::SkillTripleAttack);
+		}
+	}
+}
+
+uint32 Mob::GetClassesBits() const
+{
+	if (IsClient()) {
+		return CastToClient()->GetClassesBits();
+	} else {
+		if (IsPlayerClass(GetClass())) {
+			return GetPlayerClassBit(GetClass());
+		} else {
+			return 0;
 		}
 	}
 }
@@ -4784,6 +4888,8 @@ bool Mob::HateSummon() {
 		return false;
 
 	int summon_level = GetSpecialAbility(SPECATK_SUMMON);
+	int times_summoned;
+	
 	if(summon_level == 1 || summon_level == 2) {
 		if(!GetTarget()) {
 			return false;
@@ -4802,24 +4908,35 @@ bool Mob::HateSummon() {
 
 	// now validate the timer
 	int summon_timer_duration = GetSpecialAbilityParam(SPECATK_SUMMON, 0);
-	summon_timer_duration = summon_timer_duration > 0 ? summon_timer_duration : 6000;
+	summon_timer_duration = summon_timer_duration > RuleI(NPC, NPCSummonTimer) ? summon_timer_duration : RuleI(NPC, NPCSummonTimer);
 	Timer *timer = GetSpecialAbilityTimer(SPECATK_SUMMON);
 	if (!timer)
 	{
+		if (RuleB(NPC, SummonTimerScaling)) {
+			times_summoned++;
+		}
 		StartSpecialAbilityTimer(SPECATK_SUMMON, summon_timer_duration);
 	} else {
 		if(!timer->Check())
 			return false;
 
+		if (RuleB(NPC, SummonTimerScaling)) {
+			if (timer && times_summoned >= 1) {
+				times_summoned++;
+				summon_timer_duration += summon_timer_duration * times_summoned;
+			}
+			if (summon_timer_duration >= RuleI(NPC, MaximumSummonTimerMs)) {
+				summon_timer_duration = RuleI(NPC, MaximumSummonTimerMs);
+			}
+		}
 		timer->Start(summon_timer_duration);
 	}
-
+		
 	// get summon target
 	SetTarget(GetHateTop());
 	if(target)
 	{
 		if(summon_level == 1) {
-			entity_list.MessageClose(this, true, 500, Chat::Say, "%s says 'You will not evade me, %s!' ", GetCleanName(), target->GetCleanName() );
 
 			float summoner_zoff = GetZOffset();
 			float summoned_zoff = target->GetZOffset();
@@ -4830,8 +4947,15 @@ bool Mob::HateSummon() {
 
 			// probably should be like half melee range, but we can't get melee range nicely because reasons :)
 			new_pos = target->TryMoveAlong(new_pos, 5.0f, angle);
-
+			if (zone->CanCastOutdoor() == 1 && new_pos.z > RuleR(Range, MaxZSummonOffsetOutdoor))
+			{
+				return false;
+			}
+			if (zone->CanCastOutdoor() == 0 && new_pos.z > RuleR(Range, MaxZSummonOffsetIndoor)) {
+				return false;
+			}
 			if (target->IsClient()) {
+				entity_list.MessageClose(this, true, 500, Chat::Say, "%s says 'You will not evade me, %s!' ", GetCleanName(), target->GetCleanName());
 				target->CastToClient()->MovePC(
 					zone->GetZoneID(),
 					zone->GetInstanceID(),
@@ -4848,7 +4972,7 @@ bool Mob::HateSummon() {
 					target->IsPetOwnerClient()
 				);
 				bool set_new_guard_spot = !(IsNPC() && target_is_client_pet);
-
+				entity_list.MessageClose(this, true, 500, Chat::Say, "%s says 'You will not evade me, %s!' ", GetCleanName(), target->GetCleanName());
 				target->GMMove(
 					new_pos.x,
 					new_pos.y,
@@ -5219,11 +5343,11 @@ int32 Mob::GetActSpellCasttime(uint16 spell_id, int32 casttime)
 	int32 cast_reducer_no_limit = GetFocusEffect(focusFcCastTimeMod2, spell_id);
 
 	if (level > 50 && casttime >= 3000 && !spells[spell_id].good_effect &&
-	    (GetClass() == Class::Ranger || GetClass() == Class::ShadowKnight || GetClass() == Class::Paladin || GetClass() == Class::Beastlord)) {
+		(GetClassesBits() & (GetPlayerClassBit(Class::Ranger) | GetPlayerClassBit(Class::ShadowKnight) | GetPlayerClassBit(Class::Paladin) | GetPlayerClassBit(Class::Beastlord)))) {
 		int level_mod = std::min(15, GetLevel() - 50);
 		cast_reducer += level_mod * 3;
 	}
-
+	
 	cast_reducer = std::min(cast_reducer, 50);  //Max cast time with focusSpellHaste and level reducer is 50% of cast time.
 	cast_reducer += cast_reducer_no_limit;
 	casttime = casttime * (100 - cast_reducer) / 100;
@@ -5235,17 +5359,28 @@ int32 Mob::GetActSpellCasttime(uint16 spell_id, int32 casttime)
 
 void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on, int level_override)
 {
+	LogSpells("Entered ExecWeaponProc");
 	// Changed proc targets to look up based on the spells goodEffect flag.
 	// This should work for the majority of weapons.
 	if (!on) {
 		return;
 	}
 
+	LogSpells("Entered ExecWeaponProc 2");
 	if (!IsValidSpell(spell_id) || on->GetSpecialAbility(NO_HARM_FROM_CLIENT)) {
 		//This is so 65535 doesn't get passed to the client message and to logs because it is not relavant information for debugging.
 		return;
 	}
 
+	LogSpells("Entered ExecWeaponProc 3");
+	if (IsClient()) {
+		Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, on->GetID()));
+		if (new_target) {
+			on = new_target;
+		}
+	}
+
+	LogSpells("Entered ExecWeaponProc 4");
 	if (IsBot() && on->GetSpecialAbility(IMMUNE_DAMAGE_BOT)) {
 		return;
 	}
@@ -5258,10 +5393,12 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 		return;
 	}
 
+	LogSpells("Entered ExecWeaponProc 5");
 	if (IsNoCast()) {
 		return;
 	}
 
+	LogSpells("Entered ExecWeaponProc 6");
 	if (!IsValidSpell(spell_id)) { // Check for a valid spell otherwise it will crash through the function
 		if (IsClient()) {
 			Message(
@@ -5272,6 +5409,8 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 				).c_str()
 			);
 			LogSpells("Player [{}] Weapon Procced invalid spell [{}]", GetName(), spell_id);
+		} else {
+			LogSpells("NPC [{}] Weapon Procced invalid spell [{}]", GetName(), spell_id);
 		}
 
 		return;
@@ -5287,6 +5426,7 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 		return;
 	}
 
+	LogSpells("Entered ExecWeaponProc 7");
 	if (inst && IsClient()) {
 		//const cast is dirty but it would require redoing a ton of interfaces at this point
 		//It should be safe as we don't have any truly const EQ::ItemInstance floating around anywhere.
@@ -5318,6 +5458,7 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 		twin_proc = true;
 	}
 
+	LogSpells("Entered ExecWeaponProc 8");
 	if (
 		IsBeneficialSpell(spell_id) &&
 		(
@@ -5329,6 +5470,7 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 		) &&
 		spells[spell_id].target_type != ST_TargetsTarget
 	) { // NPC innate procs don't take this path ever
+		LogSpellsDetail("Entering SpellFinished from ExecWeaponProc (Branch A). Target: [{}], Spell: [{}]", this->GetName(), spell_id);
 		SpellFinished(
 			spell_id,
 			this,
@@ -5353,6 +5495,7 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 			);
 		}
 	} else if (!(on->IsClient() && on->CastToClient()->dead)) { //dont proc on dead clients
+		LogSpellsDetail("Entering SpellFinished from ExecWeaponProc (Branch B). Target: [{}], Spell: [{}]", on->GetName(), spell_id);
 		SpellFinished(
 			spell_id,
 			on,
@@ -6225,6 +6368,12 @@ void Mob::TrySympatheticProc(Mob* target, uint32 spell_id)
 
 	if (!IsValidSpell(focus_spell)) {
 		return;
+	}
+
+	Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, target->GetID()));
+
+	if (new_target) {
+		target = new_target;
 	}
 
 	const uint16 focus_trigger = GetSympatheticSpellProcID(focus_spell);

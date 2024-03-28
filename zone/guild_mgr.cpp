@@ -806,7 +806,7 @@ void GuildBankManager::SendGuildBank(Client *c)
 					outapp->WriteUInt32(1);
 					outapp->WriteUInt8(0);
 				}
-				outapp->WriteUInt8(Item->IsEquipable(c->GetBaseRace(), c->GetBaseClass()) ? 1 : 0);
+				outapp->WriteUInt8(Item->IsEquipable(c->GetBaseRace(), c->GetClassesBits()) ? 1 : 0);
 				outapp->WriteString(Item->Name);
 			} else {
 				outapp->WriteUInt8(0); // empty
@@ -830,7 +830,7 @@ void GuildBankManager::SendGuildBank(Client *c)
 					outapp->WriteUInt32(1);
 					outapp->WriteUInt8(0);
 				}
-				outapp->WriteUInt8(Item->IsEquipable(c->GetBaseRace(), c->GetBaseClass()) ? 1 : 0);
+				outapp->WriteUInt8(Item->IsEquipable(c->GetBaseRace(), c->GetClassesBits()) ? 1 : 0);
 				outapp->WriteString(Item->Name);
 			} else {
 				outapp->WriteUInt8(0); // empty
@@ -887,7 +887,7 @@ void GuildBankManager::SendGuildBank(Client *c)
 			if(!Item)
 				continue;
 
-			bool Useable = Item->IsEquipable(c->GetBaseRace(), c->GetBaseClass());
+			bool Useable = Item->IsEquipable(c->GetBaseRace(), c->GetClassesBits());
 
 			auto outapp = new EQApplicationPacket(OP_GuildBank, sizeof(GuildBankItemUpdate_Struct));
 

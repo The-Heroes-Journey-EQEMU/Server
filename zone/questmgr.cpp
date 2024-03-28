@@ -203,6 +203,13 @@ void QuestManager::me(const char *str) {
 }
 
 void QuestManager::summonitem(uint32 itemid, int16 charges) {
+ 	QuestManagerCurrentQuestVars();
+    if(!initiator)
+        return;
+	initiator->SummonApocItem(itemid, charges);
+}
+
+void QuestManager::summonfixeditem(uint32 itemid, int16 charges) {	
 	QuestManagerCurrentQuestVars();
 	if(!initiator)
 		return;
@@ -2335,10 +2342,6 @@ void QuestManager::set_proximity_range(float x_range, float y_range, float z_ran
 	n->proximity->max_z         = n->GetZ() + z_range;
 	n->proximity->say           = enable_say;
 	n->proximity->proximity_set = true;
-
-	if (enable_say) {
-		HaveProximitySays = enable_say;
-	}
 }
 
 void QuestManager::set_proximity(float min_x, float max_x, float min_y, float max_y, float min_z, float max_z, bool enable_say)
@@ -2360,10 +2363,6 @@ void QuestManager::set_proximity(float min_x, float max_x, float min_y, float ma
 	n->proximity->max_z         = max_z;
 	n->proximity->say           = enable_say;
 	n->proximity->proximity_set = true;
-
-	if (enable_say) {
-		HaveProximitySays = enable_say;
-	}
 }
 
 void QuestManager::clear_proximity() {

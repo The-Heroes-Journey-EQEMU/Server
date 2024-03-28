@@ -510,7 +510,7 @@ bool Client::HandleSendLoginInfoPacket(const EQApplicationPacket *app)
 			join->lsaccount_id = GetLSID();
 			loginserverlist.SendPacket(pack);
 			safe_delete(pack);
-		}
+		}		
 
 		if (!is_player_zoning)
 			SendGuildList();
@@ -667,9 +667,20 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
+	int account_progression = 0;
+	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
+		std::string query = StringFormat("SELECT value FROM data_buckets WHERE data_buckets.key = '%d-account-progression'", GetAccountID());
+		auto results = database.QueryDatabase(query);
+		if (results.Success() && results.RowCount() > 0) {
+			auto row = results.begin();
+			account_progression = Strings::ToInt(row[0]);
+		}
+	}
+
 	// New OpCode in SoF
 	uint32 allocs = character_create_allocations.size();
 	uint32 combos = character_create_race_class_combos.size();
+
 	uint32 len = sizeof(RaceClassAllocation) * allocs;
 	len += sizeof(RaceClassCombos) * combos;
 	len += sizeof(uint8);
@@ -698,14 +709,35 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	*((uint32*)ptr) = combos;
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
-		RaceClassCombos *cmb = (RaceClassCombos*)ptr;
-		cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
-		cmb->Race = character_create_race_class_combos[i].Race;
-		cmb->Class = character_create_race_class_combos[i].Class;
-		cmb->Deity = character_create_race_class_combos[i].Deity;
-		cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
-		cmb->Zone = character_create_race_class_combos[i].Zone;
-		ptr += sizeof(RaceClassCombos);
+		bool entry_enabled = true;
+
+		if (RuleB(Custom, BlockRaceOnAccountProgression)) {
+			if (account_progression < 1 && character_create_race_class_combos[i].Race == 128) {
+				entry_enabled = false;
+			}
+			if (account_progression < 3 && character_create_race_class_combos[i].Race == 130) {
+				entry_enabled = false;
+			}
+		}
+		if (RuleB(Custom, BlockClassOnAccountProgression)) {
+			if (account_progression < 3 && character_create_race_class_combos[i].Class == 15) {
+				entry_enabled = false;
+			}
+			if (account_progression < 5 && character_create_race_class_combos[i].Class == 16) {
+				entry_enabled = false;
+			}
+		}
+		
+		if (entry_enabled) {
+			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
+			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
+			cmb->Race = character_create_race_class_combos[i].Race;
+			cmb->Class = character_create_race_class_combos[i].Class;
+			cmb->Deity = character_create_race_class_combos[i].Deity;
+			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
+			cmb->Zone = character_create_race_class_combos[i].Zone;
+			ptr += sizeof(RaceClassCombos);
+		}
 	}
 
 	QueuePacket(outapp);
@@ -1710,7 +1742,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	strn0cpy(pp.name, name, sizeof(pp.name));
 
 	pp.race             = cc->race;
-	pp.class_           = cc->class_;
+	pp.class_           = RuleB(Custom, MulticlassingEnabled) ? Class::Bard : cc->class_;
 	pp.gender           = cc->gender;
 	pp.deity            = cc->deity;
 	pp.STR              = cc->STR;
@@ -1737,6 +1769,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	pp.cur_hp           = 1000;
 	pp.hunger_level     = 6000;
 	pp.thirst_level     = 6000;
+	pp.classes          = GetPlayerClassBit(cc->class_);
 
 	/* Set default skills for everybody */
 	pp.skills[EQ::skills::SkillSwimming]     = RuleI(Skills, SwimmingStartValue);
@@ -1850,7 +1883,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 		);
 	}
 
-	content_db.SetStartingItems(&pp, &inv, pp.race, pp.class_, pp.deity, pp.zone_id, pp.name, GetAdmin());
+	content_db.SetStartingItems(&pp, &inv, pp.race, cc->class_, pp.deity, pp.zone_id, pp.name, GetAdmin());
 
 	const bool success = StoreCharacter(GetAccountID(), &pp, &inv);
 

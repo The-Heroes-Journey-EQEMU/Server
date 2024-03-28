@@ -350,7 +350,7 @@ public:
 	void NegateSpellEffectBonuses(uint16 spell_id);
 	bool NegateSpellEffect(uint16 spell_id, int effect_id);
 	float GetActSpellRange(uint16 spell_id, float range);
-	int64 GetActSpellDamage(uint16 spell_id, int64 value, Mob* target = nullptr);
+	int64 GetActSpellDamage(uint16 spell_id, int64 value, Mob* target = nullptr, int percent_modifier = 0);
 	int64 GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_buff_tic = true);
 	int64 GetActSpellHealing(uint16 spell_id, int64 value, Mob* target = nullptr, bool from_buff_tic = false);
 	int32 GetActSpellCost(uint16 spell_id, int32 cost);
@@ -368,6 +368,7 @@ public:
 	void SendSpellBarDisable();
 	void SendSpellBarEnable(uint16 spellid);
 	void ZeroCastingVars();
+	int GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id);
 	virtual void SpellProcess();
 	virtual bool CastSpell(uint16 spell_id, uint16 target_id, EQ::spells::CastingSlot slot = EQ::spells::CastingSlot::Item, int32 casttime = -1,
 		int32 mana_cost = -1, uint32* oSpellWillFinish = 0, uint32 item_slot = 0xFFFFFFFF,
@@ -509,6 +510,11 @@ public:
 	void ApplySpellBuff(int spell_id, int duration = 0, int level_override = -1);
 	int GetBuffStatValueBySpell(int32 spell_id, const char* stat_identifier);
 	int GetBuffStatValueBySlot(uint8 slot, const char* stat_identifier);
+	
+	void ClearRestingDetrimentalEffects();
+
+	uint32 GetApocItemUpgrade(uint32 item_id);
+	uint32 GetMaxItemUpgrade(uint32 item_id);
 
 	//Basic Stats/Inventory
 	virtual void SetLevel(uint8 in_level, bool command = false) { level = in_level; }
@@ -837,10 +843,10 @@ public:
 	uint8 GetItemTypeBySkill(EQ::skills::SkillType skill);
 	virtual void MakePet(uint16 spell_id, const char* pettype, const char *petname = nullptr);
 	virtual void MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower, const char *petname = nullptr, float in_size = 0.0f);
-	bool IsWarriorClass() const;
-	bool IsIntelligenceCasterClass() const;
-	bool IsPureMeleeClass() const;
-	bool IsWisdomCasterClass() const;
+	bool IsWarriorClass(uint8 class_id = 0) const;
+	bool IsIntelligenceCasterClass(uint8 class_id = 0) const;
+	bool IsPureMeleeClass(uint8 class_id = 0) const;
+	bool IsWisdomCasterClass(uint8 class_id = 0) const;
 	uint8 GetArchetype() const;
 	const std::string GetArchetypeName();
 	void SetZone(uint32 zone_id, uint32 instance_id);
@@ -1299,6 +1305,8 @@ public:
 
 	Trade* trade;
 
+	uint32 GetClassesBits() const;
+
 	bool ShieldAbility(uint32 target_id, int shielder_max_distance = 15, int shield_duration = 12000, int shield_target_mitigation = 50, int shielder_mitigation = 75, bool use_aa = false, bool can_shield_npc = true);
 	void DoShieldDamageOnShielder(Mob *shield_target, int64 hit_damage_done, EQ::skills::SkillType skillInUse);
 	void ShieldAbilityFinish();
@@ -1752,6 +1760,8 @@ protected:
 
 public:
 	const CombatRecord &GetCombatRecord() const;
+
+	virtual EQ::InventoryProfile& GetInvPublic() { return m_inv; }
 
 public:
 	bool GetWasSpawnedInWater() const;

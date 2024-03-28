@@ -146,7 +146,7 @@ struct CharSelectEquip : EQ::textures::Texture_Struct, EQ::textures::Tint_Struct
 struct CharacterSelectEntry_Struct
 {
 	char Name[64];
-	uint8 Class;
+	uint32 Class;
 	uint32 Race;
 	uint8 Level;
 	uint8 ShroudClass;
@@ -539,7 +539,7 @@ struct SpellBuff_Struct
 /*024*/	float	y;				// referenced by SPA 441
 /*028*/	float	x;				// unsure if all buffs get them
 /*032*/	float	z;				// as valid data
-/*036*/
+/*036*/ char    caster_name[64];
 };
 
 struct SpellBuffPacket_Struct {
@@ -1116,6 +1116,7 @@ struct PlayerProfile_Struct
 /*19558*/	uint8				guildAutoconsent;	// 0=off, 1=on
 /*19559*/	uint8				unknown19595[5];	// ***Placeholder (6/29/2005)
 /*19564*/	uint32				RestTimer;
+			uint32				classes;			// bitfield for multiclass data
 /*19568*/
 
 	// All player profile packets are translated and this overhead is ignored in out-bound packets
@@ -1336,6 +1337,55 @@ struct CombatDamage_Struct
 /* 15 */	float hit_heading;	// see above notes in Action_Struct
 /* 19 */	float hit_pitch;
 /* 23 */	uint32 special; // 2 = Rampage, 1 = Wild Rampage
+};
+
+enum eStatEntry
+{
+	eStatClassesBitmask = 1,
+	eStatCurHP,
+	eStatCurMana,
+	eStatCurEndur,
+	eStatMaxHP,
+	eStatMaxMana,
+	eStatMaxEndur,
+	eStatMitigation,
+	eStatEvasion,
+	eStatSTR,
+	eStatSTA,
+	eStatDEX,
+	eStatAGI,
+	eStatINT,
+	eStatWIS,
+	eStatCHA,
+	eStatMR,
+	eStatFR,
+	eStatCR,
+	eStatDR,
+	eStatPR,
+	eStatHPRegen,
+	eStatManaRegen,
+	eStatEndurRegen,
+	eStatATK,
+	eStatHaste,
+	eStatDummyValue,
+	eStatMax
+};
+
+struct EdgeStatEntry_Struct {
+	uint32_t statKey;
+	uint64_t statValue;
+};
+
+struct SimpleChecksum_Struct {
+	uint16_t opcode;
+	uint64_t checksum;
+	uint8_t  data[3];
+};
+
+struct EdgeStat_Struct
+{
+	uint32_t count;
+	EdgeStatEntry_Struct entries[0];
 };
 
 /*
@@ -3281,21 +3331,21 @@ struct WhoAllReturnStruct {
 struct Trader_Struct {
 /*000*/	uint32	Code;
 /*004*/	uint32	Unknown004;
-/*008*/	uint64	Items[80];
-/*648*/	uint32	ItemCost[80];
+/*008*/	uint64	Items[EQ::invtype::BAZAAR_SIZE];
+/*648*/	uint32	ItemCost[EQ::invtype::BAZAAR_SIZE];
 };
 
 struct ClickTrader_Struct {
 /*000*/	uint32	Code;
 /*004*/	uint32	Unknown004;
-/*008*/	int64	SerialNumber[80];
-/*648*/	uint32	ItemCost[80];
+/*008*/	int64	SerialNumber[EQ::invtype::BAZAAR_SIZE];
+/*648*/	uint32	ItemCost[EQ::invtype::BAZAAR_SIZE];
 };
 
 struct GetItems_Struct{
-	uint32	Items[80];
-	int32	SerialNumber[80];
-	int32	Charges[80];
+	uint32	Items[EQ::invtype::BAZAAR_SIZE];
+	int32	SerialNumber[EQ::invtype::BAZAAR_SIZE];
+	int32	Charges[EQ::invtype::BAZAAR_SIZE];
 };
 
 struct BecomeTrader_Struct

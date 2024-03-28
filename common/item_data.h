@@ -538,7 +538,7 @@ namespace EQ
 		char	ScrollName[65] {};
 		//BardName
 
-		bool IsEquipable(uint16 Race, uint16 Class) const;
+		bool IsEquipable(uint16 Race, uint16 class_bits) const;
 		bool IsClassEquipable(uint16 Class) const;
 		bool IsRaceEquipable(uint16 Race) const;
 		bool IsClassCommon() const;
@@ -548,6 +548,8 @@ namespace EQ
 		bool IsType2HWeapon() const;
 		bool IsTypeShield() const;
 		bool IsQuestItem() const;
+
+		const char* GetActualCharmFile() const;
 
 		static bool CheckLoreConflict(const ItemData* l_item, const ItemData* r_item);
 		bool CheckLoreConflict(const ItemData* item) const { return CheckLoreConflict(this, item); }

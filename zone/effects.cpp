@@ -39,7 +39,7 @@ float Mob::GetActSpellRange(uint16 spell_id, float range)
 	return (range * extrange) / 100;
 }
 
-int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
+int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int percent_modifier) {
 	if (spells[spell_id].target_type == ST_Self) {
 		return value;
 	}
@@ -66,8 +66,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 	chance += itembonuses.FrenziedDevastation + spellbonuses.FrenziedDevastation + aabonuses.FrenziedDevastation;
 
 	//Crtical Hit Calculation pathway
-	if (chance > 0 || (IsOfClientBot() && GetClass() == Class::Wizard && GetLevel() >= RuleI(Spells, WizCritLevel))) {
-
+	if (chance > 0 || (IsOfClientBot() && (GetClassesBits() & GetPlayerClassBit(Class::Wizard)) && GetLevel() >= RuleI(Spells, WizCritLevel))) {
 		 int32 ratio = RuleI(Spells, BaseCritRatio); //Critical modifier is applied from spell effects only. Keep at 100 for live like criticals.
 
 		//Improved Harm Touch is a guaranteed crit if you have at least one level of SCF.
@@ -83,7 +82,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 			ratio += itembonuses.SpellCritDmgIncNoStack + spellbonuses.SpellCritDmgIncNoStack + aabonuses.SpellCritDmgIncNoStack;
 		}
 
-		else if ((IsOfClientBot() && GetClass() == Class::Wizard) || (IsMerc() && GetClass() == CASTERDPS)) {
+		else if ((IsOfClientBot() && (GetClassesBits() & GetPlayerClassBit(Class::Wizard))) || (IsMerc() && GetClass() == CASTERDPS)) {
 			if ((GetLevel() >= RuleI(Spells, WizCritLevel)) && zone->random.Roll(RuleI(Spells, WizCritChance))){
 				//Wizard innate critical chance is calculated seperately from spell effect and is not a set ratio. (20-70 is parse confirmed)
 				ratio += zone->random.Int(RuleI(Spells, WizardCritMinimumRandomRatio), RuleI(Spells, WizardCritMaximumRandomRatio));
@@ -91,7 +90,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 			}
 		}
 
-		if (IsOfClientBot() && GetClass() == Class::Wizard) {
+		if (IsOfClientBot() && (GetClassesBits() & GetPlayerClassBit(Class::Wizard))) {
 			ratio += RuleI(Spells, WizCritRatio); //Default is zero
 		}
 
@@ -158,6 +157,12 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 				value -= GetAA(aaUnholyTouch) * 450; //Unholy Touch
 			}
 
+			if (percent_modifier > 0) {
+				int addedValue = value - base_value;
+				addedValue = (addedValue * percent_modifier) / 100;
+				value = base_value + addedValue;
+			}
+
 			return value;
 		}
 	}
@@ -201,6 +206,12 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 		if (value < -legacy_manaburn_cap) {
 			value = -legacy_manaburn_cap;
 		}
+	}
+
+	if (percent_modifier > 0) {
+		int addedValue = value - base_value;
+		addedValue = (addedValue * percent_modifier) / 100;
+		value = base_value + addedValue;
 	}
 
 	return value;
@@ -333,14 +344,12 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 		if (RuleB(Spells, DOTsScaleWithSpellDmg)) {
 			if (
 				RuleB(Spells, IgnoreSpellDmgLvlRestriction) &&
-				!spells[spell_id].no_heal_damage_item_mod &&
-				GetSpellDmg()
+				!spells[spell_id].no_heal_damage_item_mod && GetSpellDmg()
 			) {
 				extra_dmg += GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
 			}
 			else if (
-				!spells[spell_id].no_heal_damage_item_mod &&
-				GetSpellDmg() &&
+				!spells[spell_id].no_heal_damage_item_mod && GetSpellDmg() &&
 				spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5
 			) {
 				extra_dmg += GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
@@ -351,8 +360,15 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 			extra_dmg += GetSkillDmgAmt(spells[spell_id].skill);
 		}
 
-		if (RuleB(Spells, DOTBonusDamageSplitOverDuration)) {
-			if (extra_dmg) {
+		if (extra_dmg) {
+			if (RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent) > 0) {
+				const int value = RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent);
+				if (value != 0) {
+					extra_dmg = (extra_dmg * value) / 100;
+				}				
+			}
+
+			if (RuleB(Spells, DOTBonusDamageSplitOverDuration)) {
 				const int duration = CalcBuffDuration(this, target, spell_id);
 				if (duration > 0) {
 					extra_dmg /= duration;
@@ -452,7 +468,7 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 		}
 	}
 
-	if (GetClass() == Class::Cleric) {
+	if ((GetClassesBits() & GetPlayerClassBit(Class::Cleric))) {
 		value += int64(base_value*RuleI(Spells, ClericInnateHealFocus) / 100);  //confirmed on live parsing clerics get an innate 5 pct heal focus
 	}
 	value += int64(base_value*GetFocusEffect(focusImprovedHeal, spell_id, nullptr, from_buff_tic) / 100);
@@ -544,16 +560,22 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 		}
 
 		if (extra_heal) {
+			if (RuleI(Spells, HOTsScaleWithHealAmtPerTickPercent) > 0) {
+				const int value = RuleI(Spells, HOTsScaleWithHealAmtPerTickPercent);
+				if (value > 0) {
+					extra_heal = (extra_heal * value) / 100;
+				}
+			}
+
 			if (RuleB(Spells, HOTBonusHealingSplitOverDuration)) {
 				const int duration = CalcBuffDuration(this, target, spell_id);
 				if (duration > 0) {
 					extra_heal /= duration;
 				}
 			}
-
-			value += extra_heal;
 		}
 
+		value += extra_heal;		
 		value *= critical_modifier;
 	}
 
@@ -686,7 +708,7 @@ bool Client::TrainDiscipline(uint32 itemid) {
 
 	//make sure we can train this...
 	//can we use the item?
-	const auto class_bit = static_cast<uint32>(1 << (player_class - 1));
+	const auto class_bit = GetClassesBits();
 	if (!(item->Classes & class_bit)) {
 		Message(Chat::Red, "Your class cannot learn from this tome.");
 		//summon them the item back...
@@ -700,21 +722,45 @@ bool Client::TrainDiscipline(uint32 itemid) {
 		return false;
 	}
 
-	//can we use the spell?
-	const auto& spell = spells[spell_id];
-	const auto level_to_use = spell.classes[player_class - 1];
-	if (level_to_use == 255) {
-		Message(Chat::Red, "Your class cannot learn from this tome.");
-		//summon them the item back...
-		SummonItem(itemid);
-		return false;
-	}
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		const auto& spell = spells[spell_id];
 
-	if (level_to_use > GetLevel()) {
-		Message(Chat::Red, fmt::format("You must be at least level {} to learn this discipline.", level_to_use).c_str());
-		//summon them the item back...
-		SummonItem(itemid);
-		return false;
+		bool canLearn = false;
+		for (int class_index = 0; class_index < 16; ++class_index) {
+			if (class_bit & (1 << class_index)) {
+				// Check if the player's class level is sufficient to use the spell
+				const auto level_required = spell.classes[class_index];
+				
+				if (level_required != 255 && GetLevel() >= level_required) {
+					canLearn = true;
+					break; // Stop checking once we find a class that can learn the spell
+				}
+			}
+		}
+
+		if (!canLearn) {
+			Message(Chat::Red, "None of your classes can learn from this tome.");
+			SummonItem(itemid); // Summon the item back to the player
+			return false;
+		}
+	} else {
+		// loop over the bitmask class_bit and compare each one (0-index) to the spells[i] array (1-index)
+		//can we use the spell?
+		const auto& spell = spells[spell_id];
+		const auto level_to_use = spell.classes[player_class - 1];
+		if (level_to_use == 255) {
+			Message(Chat::Red, "Your class cannot learn from this tome.");
+			//summon them the item back...
+			SummonItem(itemid);
+			return false;
+		}
+
+		if (level_to_use > GetLevel()) {
+			Message(Chat::Red, fmt::format("You must be at least level {} to learn this discipline.", level_to_use).c_str());
+			//summon them the item back...
+			SummonItem(itemid);
+			return false;
+		}
 	}
 
 	//add it to PP.
@@ -886,18 +932,23 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 		return false;
 	}
 
-	//can we use the spell?
+	uint16_t class_bits = GetClassesBits();
 	const SPDat_Spell_Struct &spell = spells[spell_id];
-	uint8 level_to_use = spell.classes[GetClass() - 1];
-	if(level_to_use == 255) {
-		Message(Chat::Red, "Your class cannot learn from this tome.");
-		//should summon them a new one...
-		return false;
+	bool canLearn = false;
+
+	for (int i = 0; i < 16; ++i) {
+		if (class_bits & (1 << i)) {
+			uint8 level_to_use = spell.classes[i];
+			
+			if (level_to_use <= GetLevel()) {
+				canLearn = true;
+				break; // Stop checking once we find a class that can learn the spell
+			}
+		}
 	}
 
-	if(level_to_use > GetLevel()) {
+	if (!canLearn) {
 		MessageString(Chat::Red, DISC_LEVEL_USE_ERROR);
-		//should summon them a new one...
 		return false;
 	}
 
@@ -1365,7 +1416,7 @@ void EntityList::AEAttack(
 			) {
 
 			for (int i = 0; i < attack_rounds; i++) {
-				if (!attacker->IsClient() || attacker->GetClass() == Class::Monk || attacker->GetClass() == Class::Ranger) {
+				if (!attacker->IsClient() || (attacker->GetClassesBits() & (GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Ranger)))) {
 					attacker->Attack(current_mob, Hand, false, false, is_from_spell);
 				} else {
 					attacker->CastToClient()->DoAttackRounds(current_mob, Hand, is_from_spell);

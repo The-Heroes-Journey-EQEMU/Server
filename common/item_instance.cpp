@@ -222,13 +222,13 @@ bool EQ::ItemInstance::IsCharged() const
 }
 
 // Can item be equipped?
-bool EQ::ItemInstance::IsEquipable(uint16 race, uint16 class_) const
+bool EQ::ItemInstance::IsEquipable(uint16 race, uint16 class_bits) const
 {
 	if (!m_item || !m_item->Slots) {
 		return false;
 	}
 
-	return m_item->IsEquipable(race, class_);
+	return m_item->IsEquipable(race, class_bits);
 }
 
 // Can item be equipped by Class?
@@ -626,10 +626,10 @@ bool EQ::ItemInstance::UpdateOrnamentationInfo()
 bool EQ::ItemInstance::CanTransform(const ItemData *ItemToTry, const ItemData *Container, bool AllowAll) {
 	if (!ItemToTry || !Container) return false;
 
-	if (ItemToTry->ItemType == item::ItemTypeArrow || strnlen(Container->CharmFile, 30) == 0)
+	if (ItemToTry->ItemType == item::ItemTypeArrow || strnlen(Container->GetActualCharmFile(), 30) == 0)
 		return false;
 
-	if (AllowAll && strncasecmp(Container->CharmFile, "ITEMTRANSFIGSHIELD", 18) && strncasecmp(Container->CharmFile, "ITEMTransfigBow", 15)) {
+	if (AllowAll && strncasecmp(Container->GetActualCharmFile(), "ITEMTRANSFIGSHIELD", 18) && strncasecmp(Container->GetActualCharmFile(), "ITEMTransfigBow", 15)) {
 		switch (ItemToTry->ItemType) {
 			case 0:
 			case 1:
@@ -655,7 +655,7 @@ bool EQ::ItemInstance::CanTransform(const ItemData *ItemToTry, const ItemData *C
 	types["itemtransfigshield"] = 8;
 	types["itemtransfigslashing"] = 0;
 
-	auto i = types.find(MakeLowerString(Container->CharmFile));
+	auto i = types.find(MakeLowerString(Container->GetActualCharmFile()));
 	if (i != types.end() && i->second == ItemToTry->ItemType)
 		return true;
 
@@ -663,7 +663,7 @@ bool EQ::ItemInstance::CanTransform(const ItemData *ItemToTry, const ItemData *C
 	typestwo["itemtransfigblunt"] = 4;
 	typestwo["itemtransfigslashing"] = 1;
 
-	i = typestwo.find(MakeLowerString(Container->CharmFile));
+	i = typestwo.find(MakeLowerString(Container->GetActualCharmFile()));
 	if (i != typestwo.end() && i->second == ItemToTry->ItemType)
 		return true;
 

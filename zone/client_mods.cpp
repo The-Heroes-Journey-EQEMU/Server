@@ -478,7 +478,29 @@ uint32 Mob::GetClassLevelFactor()
 	return multiplier;
 }
 
-int64 Client::CalcBaseHP()
+int64 Client::CalcBaseHP() {
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        int classes_bits = GetClassesBits();
+        int64 highest_base_hp = 0; // Start with zero to ensure we only keep higher values
+
+        for (const auto& class_bitmask : player_class_bitmasks) {
+            uint8 class_id = class_bitmask.first;
+            uint16 class_bit = class_bitmask.second;
+            if ((classes_bits & class_bit) != 0) {
+                int64 class_base_hp = _CalcBaseHP(class_id);
+                if (class_base_hp > highest_base_hp) {
+                    highest_base_hp = class_base_hp; // Keep the highest HP value found
+                }
+            }
+        }
+
+        return highest_base_hp > 0 ? highest_base_hp : 5; // Ensure at least a minimal HP value is returned
+    } else {
+        return _CalcBaseHP(GetClass());
+    }
+}
+
+int64 Client::_CalcBaseHP(int class_id)
 {
 	if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
 		int stats = GetSTA();
@@ -487,7 +509,7 @@ int64 Client::CalcBaseHP()
 			stats += 255;
 		}
 		base_hp = 5;
-		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		auto base_data = zone->GetBaseData(GetLevel(), class_id);
 		if (base_data.level == GetLevel()) {
 			base_hp += base_data.hp + (base_data.hp_fac * stats);
 			base_hp += itembonuses.heroic_max_hp;
@@ -555,7 +577,26 @@ int64 Client::CalcMaxMana()
 	return max_mana;
 }
 
-int64 Client::CalcBaseMana()
+int64 Client::CalcBaseMana() {    
+	int classes_bits = GetClassesBits();
+	int64 highest_base_mana = 0;
+
+	for (const auto& class_bitmask : player_class_bitmasks) {
+		uint8 class_id = class_bitmask.first;
+		uint16 class_bit = class_bitmask.second;
+		if ((classes_bits & class_bit) != 0) {
+			LogSpells("Checking Class ID [{}], bit [{}]", class_id, class_bit);
+			int64 class_base_mana = _CalcBaseMana(class_id);
+			if (class_base_mana > highest_base_mana) {
+				highest_base_mana = class_base_mana; 
+			}
+		}
+	}
+
+	return highest_base_mana;
+}
+
+int64 Client::_CalcBaseMana(uint8 class_id)
 {
 	int   ConvertedWisInt = 0;
 	int   MindLesserFactor, MindFactor;
@@ -564,7 +605,7 @@ int64 Client::CalcBaseMana()
 	int   wisint_mana     = 0;
 	int64 max_m           = 0;
 
-	if (IsIntelligenceCasterClass()) {
+	if (IsIntelligenceCasterClass(class_id)) {
 		WisInt = GetINT();
 
 		if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
@@ -597,7 +638,7 @@ int64 Client::CalcBaseMana()
 				max_m = (((5 * (MindFactor + 200)) / 2) * 3 * GetLevel() / 100);
 			}
 		}
-	} else if (IsWisdomCasterClass()) {
+	} else if (IsWisdomCasterClass(class_id)) {
 		WisInt = GetWIS();
 
 		if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
@@ -657,7 +698,7 @@ int64 Client::CalcBaseManaRegen()
 
 int64 Client::CalcManaRegen(bool bCombat)
 {
-	int64 regen = 0;
+	int64 regen = 1;
 	auto level = GetLevel();
 	// so the new formulas break down with older skill caps where you don't have the skill until 4 or 8
 	// so for servers that want to use the old skill progression they can set this rule so they
@@ -668,7 +709,7 @@ int64 Client::CalcManaRegen(bool bCombat)
 		if (IsSitting() || CanMedOnHorse()) {
 			// kind of weird to do it here w/e
 			// client does some base medding regen for shrouds here
-			if (GetClass() != Class::Bard) {
+			if (GetClass() != Class::Bard || RuleB(Custom, MulticlassingEnabled)) {
 				auto skill = GetSkill(EQ::skills::SkillMeditate);
 				if (skill > 0) {
 					regen++;
@@ -1068,7 +1109,7 @@ int32	Client::CalcMR()
 			MR = 20;
 	}
 	MR += itembonuses.MR + spellbonuses.MR + aabonuses.MR;
-	if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+	if (GetClassesBits() & (GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Berserker))) {
 		MR += GetLevel() / 2;
 	}
 	if (MR < 1) {
@@ -1446,7 +1487,7 @@ int32 Client::CalcATK()
 
 uint32 Mob::GetInstrumentMod(uint16 spell_id)
 {
-	if (GetClass() != Class::Bard || spells[spell_id].is_discipline || spell_id == SPELL_AMPLIFICATION) {
+	if (!IsBardSong(spell_id) || spells[spell_id].is_discipline || spell_id == SPELL_AMPLIFICATION) {
 		//Other classes can get a base effects mod using SPA 413
 		if (HasBaseEffectFocus()) {
 			return (10 + (GetFocusEffect(focusFcBaseEffects, spell_id) / 10));//TODO: change action->instrument mod to float to support < 10% focus values
@@ -1618,7 +1659,29 @@ void Client::CalcMaxEndurance()
 	}
 }
 
-int64 Client::CalcBaseEndurance()
+int64 Client::CalcBaseEndurance() {
+    if (RuleB(Custom, MulticlassingEnabled)) {
+        int classes_bits = GetClassesBits();
+        int64 highest_base_endur = 0; 
+
+        for (const auto& class_bitmask : player_class_bitmasks) {
+            uint8 class_id = class_bitmask.first;
+            uint16 class_bit = class_bitmask.second;
+            if ((classes_bits & class_bit) != 0) {
+                int64 class_base_endur = _CalcBaseEndurance(class_id);
+                if (class_base_endur > highest_base_endur) {
+                    highest_base_endur = class_base_endur; 
+                }
+            }
+        }
+
+        return highest_base_endur > 0 ? highest_base_endur : 5; 
+    } else {
+        return _CalcBaseEndurance(GetClass());
+    }
+}
+
+int64 Client::_CalcBaseEndurance(int class_id)
 {
 	int64 base_end = 0;
 	if (ClientVersion() >= EQ::versions::ClientVersion::SoF && RuleB(Character, SoDClientUseSoDHPManaEnd)) {
@@ -1630,7 +1693,7 @@ int64 Client::CalcBaseEndurance()
 		else if (stats > 100.0f) {
 			stats = 2.5f * (stats - 100.0f) + 100.0f;
 		}
-		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+		auto base_data = zone->GetBaseData(GetLevel(), class_id);
 		if (base_data.level == GetLevel()) {
 			base_end = base_data.end + itembonuses.heroic_max_end + (base_data.end_fac * static_cast<int>(stats));
 		}
@@ -1680,7 +1743,7 @@ int64 Client::CalcEnduranceRegen(bool bCombat)
 
 	int weight_limit = GetSTR();
 	auto level = GetLevel();
-	if (GetClass() == Class::Monk) {
+	if (GetClass() == Class::Monk && !RuleB(Custom, MulticlassingEnabled)) {
 		if (level > 99)
 			weight_limit = 58;
 		else if (level > 94)

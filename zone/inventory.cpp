@@ -165,6 +165,66 @@ uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
 	return x;
 }
 
+uint32 Mob::GetApocItemUpgrade(uint32 item_id) {
+	if (RuleB(Custom, DoItemUpgrades)) {
+
+		LogDebug("Attempting Upgrade for: [{}]", item_id);
+
+		uint32 new_item_id = item_id;
+
+		if (item_id < 1000000) { // this is a normal item
+			int roll = zone->random.Int(1, 100);
+
+			LogDebug("Upgrade Rolled: [{}]", roll);
+
+			if (roll <= RuleI(Item, RoseColoredQuestWeightDrop)) {
+				new_item_id += 1000000;
+			} else {
+				new_item_id += 2000000;
+			}
+
+			if (new_item_id != item_id) {
+				const EQ::ItemData* item = database.GetItem(new_item_id);
+				if (item != nullptr) {
+					item_id = new_item_id;
+					LogDebug("Found eligible upgrade for [{}] is [{}]", item_id, new_item_id);
+				} else {
+					LogDebug("Unable to find a valid upgrade for [{}]", item_id);
+				}
+			}
+		}
+	}
+	return item_id;
+}
+
+uint32 Mob::GetMaxItemUpgrade(uint32 item_id) {
+	if (RuleB(Custom, DoItemUpgrades)) {
+		uint32 new_item_id = item_id;
+		if (item_id < 1000000) { // this is a normal item		
+			new_item_id += 2000000;
+
+			if (new_item_id != item_id) {
+				const EQ::ItemData* item = database.GetItem(new_item_id);
+				if (item != nullptr) {
+					item_id = new_item_id;
+					LogDebug("Found eligible upgrade for [{}] is [{}]", item_id, new_item_id);
+				} else {
+					LogDebug("Unable to find a valid upgrade for [{}]", item_id);
+				}
+			}
+		}
+	}
+	
+	return item_id;
+}
+
+
+bool Client::SummonApocItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, uint32 aug6, bool attuned, uint16 to_slot, uint32 ornament_icon, uint32 ornament_idfile, uint32 ornament_hero_model) {
+	item_id = GetApocItemUpgrade(item_id);
+
+	return SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, aug6, attuned, to_slot, ornament_icon, ornament_idfile, ornament_hero_model);
+}
+
 
 bool Client::CheckLoreConflict(const EQ::ItemData* item)
 {
@@ -1300,7 +1360,7 @@ bool Client::TryStacking(EQ::ItemInstance* item, uint8 type, bool try_worn, bool
 bool Client::AutoPutLootInInventory(EQ::ItemInstance& inst, bool try_worn, bool try_cursor, LootItem** bag_item_data)
 {
 	// #1: Try to auto equip
-	if (try_worn && inst.IsEquipable(GetBaseRace(), GetClass()) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
+	if (try_worn && inst.IsEquipable(GetBaseRace(), GetClassesBits()) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
 		for (int16 i = EQ::invslot::EQUIPMENT_BEGIN; i <= EQ::invslot::EQUIPMENT_END; i++) {
 			if ((((uint64)1 << i) & GetInv().GetLookup()->PossessionsBitmask) == 0)
 				continue;
@@ -1871,12 +1931,12 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		uint32 dstbagid = 0;
 
 		if (src_slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN && src_slot_id <= EQ::invbag::GENERAL_BAGS_END) {
-			srcbag = m_inv.GetItem(((int)(src_slot_id / 10)) - 3);
+			srcbag = m_inv.GetItem(((int)(src_slot_id / EQ::invbag::SLOT_COUNT)) - 3);
 			if (srcbag)
 				srcbagid = srcbag->GetItem()->ID;
 		}
 		if (dst_slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN && dst_slot_id <= EQ::invbag::GENERAL_BAGS_END) {
-			dstbag = m_inv.GetItem(((int)(dst_slot_id / 10)) - 3);
+			dstbag = m_inv.GetItem(((int)(dst_slot_id / EQ::invbag::SLOT_COUNT)) - 3);
 			if (dstbag)
 				dstbagid = dstbag->GetItem()->ID;
 		}
@@ -1904,43 +1964,55 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 
 		return false;
 	}
+
+	// This is so buggy and I don't know why.
+	/*
 	//verify shared bank transactions in the database
-	if (src_inst && src_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && src_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END) {
-		if(!database.VerifyInventory(account_id, src_slot_id, src_inst)) {
+	if (src_inst &&
+		(src_slot_id >= EQ::invslot::SHARED_BANK_BEGIN) && (src_slot_id <= EQ::invslot::SHARED_BANK_END) ||
+		(src_slot_id >= EQ::invbag::SHARED_BANK_BAGS_BEGIN) && (src_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END)) {
+		if (!database.VerifyInventory(account_id, src_slot_id, src_inst)) {
 			LogError("Player [{}] on account [{}] was found exploiting the shared bank.\n", GetName(), account_name);
 			DeleteItemInInventory(dst_slot_id,0,true);
 			return(false);
 		}
-		if (src_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && src_slot_id <= EQ::invslot::SHARED_BANK_END && src_inst->IsClassBag()){
+		if ((src_slot_id >= EQ::invslot::SHARED_BANK_BEGIN) &&
+			(src_slot_id <= EQ::invslot::SHARED_BANK_END) &&
+			src_inst->IsClassBag())
+		{
 			for (uint8 idx = EQ::invbag::SLOT_BEGIN; idx <= EQ::invbag::SLOT_END; idx++) {
 				const EQ::ItemInstance* baginst = src_inst->GetItem(idx);
-				if (baginst && !database.VerifyInventory(account_id, EQ::InventoryProfile::CalcSlotId(src_slot_id, idx), baginst)){
+				if (baginst && !database.VerifyInventory(account_id, EQ::InventoryProfile::CalcSlotId(src_slot_id, idx), baginst)) {
 					DeleteItemInInventory(EQ::InventoryProfile::CalcSlotId(src_slot_id, idx), 0, false);
 				}
 			}
 		}
 	}
-	if (dst_inst && dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END) {
-		if(!database.VerifyInventory(account_id, dst_slot_id, dst_inst)) {
+	
+	if (dst_inst &&
+		(dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN) && (dst_slot_id <= EQ::invslot::SHARED_BANK_END) ||
+		(dst_slot_id >= EQ::invbag::SHARED_BANK_BAGS_BEGIN) && (dst_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END)) {
+		if (!database.VerifyInventory(account_id, dst_slot_id, dst_inst)) {
 			LogError("Player [{}] on account [{}] was found exploting the shared bank.\n", GetName(), account_name);
 			DeleteItemInInventory(src_slot_id,0,true);
 			return(false);
 		}
-		if (dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_id <= EQ::invslot::SHARED_BANK_END && dst_inst->IsClassBag()){
+		if (dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_id <= EQ::invslot::SHARED_BANK_END && dst_inst->IsClassBag()) {
 			for (uint8 idx = EQ::invbag::SLOT_BEGIN; idx <= EQ::invbag::SLOT_END; idx++) {
 				const EQ::ItemInstance* baginst = dst_inst->GetItem(idx);
-				if (baginst && !database.VerifyInventory(account_id, EQ::InventoryProfile::CalcSlotId(dst_slot_id, idx), baginst)){
+				if (baginst && !database.VerifyInventory(account_id, EQ::InventoryProfile::CalcSlotId(dst_slot_id, idx), baginst)) {
 					DeleteItemInInventory(EQ::InventoryProfile::CalcSlotId(dst_slot_id, idx), 0, false);
 				}
 			}
 		}
 	}
+	*/
 
 
 	// Check for No Drop Hacks
 	Mob* with = trade->With();
 	if (((with && with->IsClient() && !with->CastToClient()->IsBecomeNPC() && dst_slot_id >= EQ::invslot::TRADE_BEGIN && dst_slot_id <= EQ::invslot::TRADE_END) ||
-		(dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END))
+		(dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_id <= EQ::invslot::SHARED_BANK_END) || (dst_slot_id >= EQ::invbag::SHARED_BANK_BAGS_BEGIN) && (dst_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END))
 	&& GetInv().CheckNoDrop(src_slot_id)
 	&& !CanTradeFVNoDropItem()) {
 		auto ndh_inst = m_inv[src_slot_id];
@@ -2166,13 +2238,12 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		}
 
 		EQ::InventoryProfile::SwapItemFailState fail_state = EQ::InventoryProfile::swapInvalid;
-		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), GetBaseClass(), GetDeity(), GetLevel())) {
+		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), GetBaseClass(), GetDeity(), GetLevel(), GetClassesBits())) {
 			const char* fail_message = "The selected slot was invalid.";
 			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity)
 				fail_message = "Your class, deity and/or race may not equip that item.";
 			else if (fail_state == EQ::InventoryProfile::swapLevel)
 				fail_message = "You are not sufficient level to use this item.";
-
 			if (fail_message)
 				Message(Chat::Red, "%s", fail_message);
 
@@ -2289,7 +2360,12 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 
 	// Step 8: Re-calc stats
 	CalcBonuses();
-	ApplyWeaponsStance();
+
+	if (RuleB(Custom, ServerAuthStats)) {
+		SendEdgeStatBulkUpdate();
+	}
+
+	ApplyWeaponsStance();	
 	return true;
 }
 
@@ -3137,6 +3213,184 @@ uint32 Client::GetEquippedItemFromTextureSlot(uint8 material_slot) const
 	return 0;
 }
 
+int64_t Client::GetStatValueEdgeType(eStatEntry eLabel)
+{
+	switch (eLabel)
+	{
+		case eStatMaxHP:
+		{	
+			CalcMaxHP();
+			return GetMaxHP();
+		}
+		case eStatMaxMana:
+		{
+			CalcMaxMana();
+			return GetMaxMana();
+		}
+		case eStatMaxEndur:
+		{
+			CalcMaxEndurance();
+			return GetMaxEndurance();
+		}
+		case eStatCurHP:
+		{
+			return GetHP();
+		}
+		case eStatCurMana:
+		{
+			return GetMana();
+		}
+		case eStatCurEndur:
+		{
+			return GetEndurance();
+		}
+		case eStatClassesBitmask:
+		{
+			return GetClassesBits();
+		}
+		case eStatMitigation:
+		{
+			CalcAC();
+			return GetMitigationAC();
+		}
+		case eStatEvasion:
+		{
+			return GetTotalDefense();
+		}
+		case eStatSTR:
+		{
+			return GetSTR();
+		}
+		case eStatSTA:
+		{
+			return GetSTA();
+		}
+		case eStatAGI:
+		{
+			return GetAGI();
+		}
+		case eStatDEX:
+		{
+			return GetDEX();
+		}
+		case eStatINT:
+		{
+			return GetINT();
+		}
+		case eStatWIS:
+		{
+			return GetWIS();
+		}
+		case eStatCHA:
+		{
+			return GetCHA();
+		}
+		case eStatHPRegen:
+		{
+			return GetHPRegen();
+		}
+		case eStatManaRegen:
+		{
+			return GetManaRegen();
+		}
+		case eStatEndurRegen:
+		{
+			return GetEnduranceRegen();
+		}
+		case eStatHaste:
+		{
+			return GetHaste();
+		}
+		case eStatATK:
+		{
+			return GetTotalATK();
+		}
+		default:
+		{
+			return 0;
+		}
+	}
+	return 0;
+}
+
+void Client::SendEdgeStatBulkUpdate()
+{
+	EmuOpcode opcode = OP_Unknown;
+	EQApplicationPacket* outapp = nullptr;
+	EdgeStat_Struct* itempacket = nullptr;
+
+	// Construct packet
+	opcode = OP_EdgeStats;
+	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * ((int)(eStatEntry::eStatMax) - 1)));
+	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
+	itempacket->count = (int)(eStatMax) - 1;
+	for(int guava = 0; guava < eStatEntry::eStatMax - 1; guava++)
+	{
+		//LogDebug("EdgePacket packing [{}] value [{}]", (eStatEntry)guava, GetStatValueEdgeType((eStatEntry)guava));
+		itempacket->entries[guava].statKey = (eStatEntry)guava;
+		itempacket->entries[guava].statValue = GetStatValueEdgeType((eStatEntry)guava);
+	}
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+void Client::SendEdgeHPStats()
+{
+	EmuOpcode opcode = OP_Unknown;
+	EQApplicationPacket* outapp = nullptr;
+	EdgeStat_Struct* itempacket = nullptr;
+
+	// Construct packet
+	opcode = OP_EdgeStats;
+	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * 2));
+	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
+	itempacket->count = 2;
+	itempacket->entries[0].statKey = eStatCurHP;
+	itempacket->entries[0].statValue = GetStatValueEdgeType(eStatCurHP);
+	itempacket->entries[1].statKey = eStatMaxHP;
+	itempacket->entries[1].statValue = GetStatValueEdgeType(eStatMaxHP);
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+void Client::SendEdgeManaStats()
+{
+	EmuOpcode opcode = OP_Unknown;
+	EQApplicationPacket* outapp = nullptr;
+	EdgeStat_Struct* itempacket = nullptr;
+
+	// Construct packet
+	opcode = OP_EdgeStats;
+	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * 2));
+	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
+	itempacket->count = 2;
+	itempacket->entries[0].statKey = eStatCurMana;
+	itempacket->entries[0].statValue = GetStatValueEdgeType(eStatCurMana);
+	itempacket->entries[1].statKey = eStatMaxMana;
+	itempacket->entries[1].statValue = GetStatValueEdgeType(eStatMaxMana);
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+void Client::SendEdgeEnduranceStats()
+{
+	EmuOpcode opcode = OP_Unknown;
+	EQApplicationPacket* outapp = nullptr;
+	EdgeStat_Struct* itempacket = nullptr;
+
+	// Construct packet
+	opcode = OP_EdgeStats;
+	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * 2));
+	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
+	itempacket->count = 2;
+	itempacket->entries[0].statKey = eStatCurEndur;
+	itempacket->entries[0].statValue = GetStatValueEdgeType(eStatCurEndur);
+	itempacket->entries[1].statKey = eStatMaxEndur;
+	itempacket->entries[1].statValue = GetStatValueEdgeType(eStatMaxEndur);
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
 uint32 Client::GetEquipmentColor(uint8 material_slot) const
 {
 	if (material_slot > EQ::textures::LastTexture)
@@ -3615,7 +3869,7 @@ bool Client::InterrogateInventory(Client* requester, bool log, bool silent, bool
 		if (cursor_itr == m_inv.cursor_cbegin())
 			continue;
 
-		instmap[8000 + limbo] = *cursor_itr;
+		instmap[EQ::invbag::CURSOR_BAG_BEGIN + limbo] = *cursor_itr;
 	}
 
 	// call InterrogateInventory_ for error check
@@ -3722,7 +3976,7 @@ bool Client::InterrogateInventory_error(int16 head, int16 index, const EQ::ItemI
 		(head >= EQ::invslot::TRIBUTE_BEGIN && head <= EQ::invslot::TRIBUTE_END) ||
 		(head >= EQ::invslot::GUILD_TRIBUTE_BEGIN && head <= EQ::invslot::GUILD_TRIBUTE_END) ||
 		(head >= EQ::invslot::WORLD_BEGIN && head <= EQ::invslot::WORLD_END) ||
-		(head >= 8000 && head <= 8101)) {
+		(head >= EQ::invbag::CURSOR_BAG_BEGIN && head <= EQ::invbag::CURSOR_BAG_END)) {
 		switch (depth)
 		{
 		case 0: // requirement: inst is extant
@@ -4784,7 +5038,7 @@ void Client::SummonItemIntoInventory(
 		is_arrow
 	);
 
-	SummonItem(
+	SummonApocItem(
 		item_id,
 		charges,
 		aug1,

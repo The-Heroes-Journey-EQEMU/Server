@@ -167,18 +167,18 @@ uint8 EQ::item::ConvertAugTypeBitToAugType(uint32 aug_type_bit)
 	}
 }
 
-bool EQ::ItemData::IsEquipable(uint16 race_id, uint16 class_id) const
-{
-	if (!(Races & GetPlayerRaceBit(race_id))) {
-		return false;
-	}
+bool EQ::ItemData::IsEquipable(uint16 race_id, uint16 class_bits) const {    
+    if (!(Races & GetPlayerRaceBit(race_id))) {
+        return false;
+    }
 
-	if (!(Classes & GetPlayerClassBit(GetPlayerClassValue(class_id)))) {
-		return false;
-	}
+    if (!(Classes & class_bits)) {
+        return false;
+    }
 
-	return true;
+    return true;
 }
+
 
 bool EQ::ItemData::IsClassEquipable(uint16 class_id) const
 {
@@ -250,4 +250,10 @@ bool EQ::ItemData::CheckLoreConflict(const ItemData* l_item, const ItemData* r_i
 	}
 
 	return false;
+}
+
+const char* EQ::ItemData::GetActualCharmFile() const {
+    const char* delimiterPos = strchr(CharmFile, '#');
+
+    return delimiterPos ? delimiterPos + 1 : CharmFile;
 }

@@ -2126,6 +2126,9 @@ void Client::SendManaUpdate()
 	mana_update->spawn_id = GetID();
 	QueuePacket(mana_app);
 	safe_delete(mana_app);
+	if (RuleB(Custom, ServerAuthStats)) {
+		CastToClient()->SendEdgeManaStats();
+	}
 }
 
 // sends endurance update to self
@@ -2138,6 +2141,9 @@ void Client::SendEnduranceUpdate()
 	endurance_update->spawn_id = GetID();
 	QueuePacket(end_app);
 	safe_delete(end_app);
+	if (RuleB(Custom, ServerAuthStats)) {
+		CastToClient()->SendEdgeEnduranceStats();
+	}
 }
 
 void Client::FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho)
@@ -2277,22 +2283,59 @@ void Client::SetGM(bool toggle) {
 }
 
 void Client::ReadBook(BookRequest_Struct *book) {
-	int16 book_language=0;
-	char *txtfile = book->txtfile;
+    int16 book_language = 0;    
+    char *txtfile = book->txtfile;
+    std::string txtfileString = txtfile;
+    uint32 itemID = 0; // itemID from custom data rider
+    std::string bookString; // Store the original charmfileID
 
-	if(txtfile[0] == '0' && txtfile[1] == '\0') {
-		//invalid book... coming up on non-book items.
-		return;
+    // Check if # exists in the txtfile.
+    size_t hashPosition = txtfileString.find('#');
+    if (hashPosition != std::string::npos) {
+        try {
+            itemID = static_cast<uint32>(std::stoul(txtfileString.substr(0, hashPosition)));
+            bookString = txtfileString.substr(hashPosition + 1);
+        } catch (const std::exception& e) {
+            // Failed to convert to uint, capture everything after the #
+            bookString = txtfileString.substr(hashPosition + 1);
+        }
+    } else {
+        // No # found, try to interpret as uint first.
+        try {
+            itemID = static_cast<uint32>(std::stoul(txtfileString));
+        } catch (const std::exception& e) {
+            // Failed to convert to uint, treat the entire txtfile as a string.
+            bookString = txtfileString;
+        }
+    }
+
+    std::string booktxt2;
+
+	if (!bookString.empty()) {
+		booktxt2 = content_db.GetBook(bookString.c_str(), &book_language);
 	}
 
-	std::string booktxt2 = content_db.GetBook(txtfile, &book_language);
-	int length = booktxt2.length();
+	if (RuleB(Custom, UseDynamicItemDiscoveryTags) && book->type == 2 && itemID > 0) {
+		if (itemID > 999999) {			
+			auto discover_charname = GetDiscoverer(itemID);
+
+			if (!discover_charname.empty()) {
+				// Append the discovery information to booktxt2
+				booktxt2 += "<br>Discovered by: " + discover_charname;
+			}
+		} else {
+			const auto* item_data = database.GetItem(itemID);			
+			if (item_data) {
+				std::string item_name = item_data->Name;
+				if (item_name.find("Fine Steel") == 0) {
+					booktxt2 += "<br>Discovered by: Enchanted Loom";
+				}
+			}
+		}
+	}
 
 	if (booktxt2[0] != '\0') {
-#if EQDEBUG >= 6
-		LogInfo("Client::ReadBook() textfile:[{}] Text:[{}]", txtfile, booktxt2.c_str());
-#endif
-		auto outapp = new EQApplicationPacket(OP_ReadBook, length + sizeof(BookText_Struct));
+		auto outapp = new EQApplicationPacket(OP_ReadBook, booktxt2.length() + sizeof(BookText_Struct));
 
 		BookText_Struct *out = (BookText_Struct *) outapp->pBuffer;
 		out->window = book->window;
@@ -2314,11 +2357,13 @@ void Client::ReadBook(BookRequest_Struct *book) {
 			}
 		}
 
-		memcpy(out->booktext, booktxt2.c_str(), length);
+		memcpy(out->booktext, booktxt2.c_str(), booktxt2.length());
 
 		if (EQ::ValueWithin(book_language, Language::CommonTongue, Language::Unknown27)) {
+			LogDebug("book_language: [{}], skill: [{}], [{}]", book_language, m_pp.languages[book_language], booktxt2);
 			if (m_pp.languages[book_language] < Language::MaxValue) {
-				GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
+				LogDebug("[{}] < [{}] fucking how?", m_pp.languages[book_language], Language::MaxValue);
+				//GarbleMessage(out->booktext, (Language::MaxValue - m_pp.languages[book_language]));
 			}
 		}
 
@@ -2772,10 +2817,50 @@ bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 		skill_id = EQ::skills::Skill2HPiercing;
 	}
 
-	return skill_caps.GetSkillCap(GetClass(), skill_id, RuleI(Character, MaxLevel)).cap > 0;
+	unsigned int classes_bits = GetClassesBits();
+
+	for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+		if (classes_bits & (1 << i)) {
+			int classID = i + 1;
+
+			if (skill_caps.GetSkillCap(classID, skill_id, RuleI(Character, MaxLevel)).cap > 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
-uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 level) const
+uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint16 class_id, uint8 level) const
+{	
+	if (
+		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
+		class_id == Class::Berserker &&
+		skill_id == EQ::skills::Skill1HPiercing
+	) {
+		skill_id = EQ::skills::Skill2HPiercing;
+	}
+
+	unsigned int classes_bits = GetClassesBits();
+	uint16 maxSkill = 0;
+
+	for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+		if (classes_bits & (1 << i)) {
+			uint16 classID = i + 1;
+
+			auto skillCap = skill_caps.GetSkillCap(classID, skill_id, level);
+			
+			if (skillCap.cap > maxSkill) {
+				maxSkill = skillCap.cap;
+			}
+		}
+	}
+
+	return maxSkill;
+}
+
+uint16 Client::MaxSkillOriginal(EQ::skills::SkillType skill_id, uint16 class_id, uint16 level) const 
 {
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
@@ -2788,7 +2873,7 @@ uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 le
 	return skill_caps.GetSkillCap(class_id, skill_id, level).cap;
 }
 
-uint8 Client::SkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id)
+uint8 Client::SkillTrainLevel(EQ::skills::SkillType skill_id, uint16 class_id)
 {
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
@@ -3131,7 +3216,7 @@ bool Client::BindWound(Mob *bindmob, bool start, bool fail)
 
 						int max_percent = 50 + maxHPBonus;
 
-						if (GetClass() == Class::Monk && GetSkill(EQ::skills::SkillBindWound) > 200) {
+						if ((GetClassesBits() & GetPlayerClassBit(Class::Monk)) && GetSkill(EQ::skills::SkillBindWound) > 200) {
 							max_percent = 70 + maxHPBonus;
 						}
 
@@ -3180,9 +3265,9 @@ bool Client::BindWound(Mob *bindmob, bool start, bool fail)
 					else {
 						int percent_base = 50;
 						if (GetRawSkill(EQ::skills::SkillBindWound) > 200) {
-							if ((GetClass() == Class::Monk) || (GetClass() == Class::Beastlord))
+							if ((GetClassesBits() & (GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Beastlord))))
 								percent_base = 70;
-							else if ((GetLevel() > 50) && ((GetClass() == Class::Warrior) || (GetClass() == Class::Rogue) || (GetClass() == Class::Cleric)))
+							else if ((GetLevel() > 50) && (GetClassesBits() & (GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Rogue) | GetPlayerClassBit(Class::Cleric))))
 								percent_base = 70;
 						}
 
@@ -3203,9 +3288,9 @@ bool Client::BindWound(Mob *bindmob, bool start, bool fail)
 						if (bindmob->GetHP() < bindmob->GetMaxHP() && bindmob->GetHP() < max_hp) {
 							int bindhps = 3; // base bind hp
 							if (percent_base >= 70)
-								bindhps = (GetSkill(EQ::skills::SkillBindWound) * 4) / 10; // 8:5 skill-to-hp ratio
+								bindhps = (GetSkill(EQ::skills::SkillBindWound) * 4); // 1:4 skill-to-hp ratio
 							else if (GetSkill(EQ::skills::SkillBindWound) >= 12)
-								bindhps = GetSkill(EQ::skills::SkillBindWound) / 4; // 4:1 skill-to-hp ratio
+								bindhps = GetSkill(EQ::skills::SkillBindWound); // 1:1 skill-to-hp ratio
 
 							int bonus_hp_percent = 0;
 							if (percent_base >= 70)
@@ -4292,6 +4377,20 @@ bool Client::IsDiscovered(uint32 item_id) {
 	}
 
 	return true;
+}
+
+std::string Client::GetDiscoverer(uint32 item_id) {
+	const auto& l = DiscoveredItemsRepository::GetWhere(
+		database,
+		fmt::format(
+			"item_id = {}",
+			item_id
+		)
+	);
+	
+	if (l.empty()) { return ""; }
+
+	return l[0].char_name;
 }
 
 void Client::DiscoverItem(uint32 item_id) {
@@ -10170,12 +10269,38 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
-			continue;
-		}
+        if (RuleB(Custom, MulticlassingEnabled)) {
+            unsigned int classes_bits = GetClassesBits();
+            bool any_class_usable = false;
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
-			continue;
+            for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+                if (classes_bits & (1 << i)) {
+                    uint16 classID = i + 1; // Adjust if class index calculation is different
+
+					if (max_level && spells[spell_id].classes[classID - 1] > max_level) {
+						continue;
+					}
+
+					if (min_level > 1 && spells[spell_id].classes[classID - 1] < min_level) {
+						continue;
+					}
+
+                    any_class_usable = true;
+                    break; // Stop checking if any class is usable
+                }
+            }
+
+            if (!any_class_usable) {
+                continue;
+            }
+        } else {
+			if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
+				continue;
+			}
+
+			if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+				continue;
+			}
 		}
 
 		if (spells[spell_id].skill == EQ::skills::SkillTigerClaw) {
@@ -11792,18 +11917,46 @@ std::string Client::GetGuildPublicNote()
 
 void Client::MaxSkills()
 {
-	for (const auto &s : EQ::skills::GetSkillTypeMap()) {
-		auto current_skill_value = (
-			EQ::skills::IsSpecializedSkill(s.first) ?
-			MAX_SPECIALIZED_SKILL :
-			skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
-		);
+    for (const auto &s : EQ::skills::GetSkillTypeMap()) {
+        uint16 highestSkillCap = 0;
 
-		if (GetSkill(s.first) < current_skill_value) {
-			SetSkill(s.first, current_skill_value);
+        if (RuleB(Custom, MulticlassingEnabled)) {
+            unsigned int classes_bits = GetClassesBits();
+
+            // Loop through each bit in classes_bits
+            for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
+                // Check if the ith bit is set
+                if (classes_bits & (1 << i)) {
+                    // Compute the class ID from the bit position
+                    uint16 classID = i + 1;
+
+                    uint16 classSkillCap = (
+                        EQ::skills::IsSpecializedSkill(s.first) ?
+						MAX_SPECIALIZED_SKILL :
+						skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
+					);
+
+                    // Update highestSkillCap if this class has a higher skill cap
+                    if (classSkillCap > highestSkillCap) {
+                        highestSkillCap = classSkillCap;
+                    }
+                }
+            }
+        } else {
+            highestSkillCap = (
+                EQ::skills::IsSpecializedSkill(s.first) ?
+				MAX_SPECIALIZED_SKILL :
+				skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
+			);
+        }
+
+		// Set skill to the highest cap found across all classes
+		if (GetSkill(s.first) < highestSkillCap) {
+			SetSkill(s.first, highestSkillCap);
 		}
-	}
+    }
 }
+
 
 void Client::SendPath(Mob* target)
 {
@@ -12372,4 +12525,43 @@ std::vector<Mob*> Client::GetRaidOrGroupOrSelf(bool clients_only)
 	}
 
 	return v;
+}
+
+uint32 Client::GetClassesBits() const
+{
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		return m_pp.classes;
+	} else {
+		return GetPlayerClassBit(m_pp.class_);
+	}
+}
+
+bool Client::AddExtraClass(int class_id) {
+	if (RuleB(Custom, MulticlassingEnabled) && class_id >= Class::Warrior && class_id <= Class::Berserker) {
+		int classes_bits = GetClassesBits();
+
+		// Manual popcount implementation
+		int value = classes_bits;
+		int class_count = 0;
+		while (value) {
+			class_count += value & 1;
+			value >>= 1;
+		}
+
+		int n_class_bit = GetPlayerClassBit(class_id);
+
+		if (class_count > 2 || (classes_bits & n_class_bit)) {
+			return false;
+		}
+		else {
+			SetBucket("GestaltClasses", std::to_string(classes_bits | n_class_bit));
+			m_pp.classes = classes_bits | n_class_bit;
+			CalcBonuses();
+			SendEdgeStatBulkUpdate();
+			SendAlternateAdvancementTable();
+		}
+
+		return true;
+	}
+	return false;
 }

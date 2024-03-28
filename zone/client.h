@@ -441,8 +441,12 @@ public:
 	inline uint32 GetBindInstanceID(uint32 index = 0) const { return m_pp.binds[index].instance_id; }
 	int64 CalcMaxMana();
 	int64 CalcBaseMana();
+	int64 _CalcBaseMana(uint8 class_id);
 	const int64& SetMana(int64 amount);
 	int64 CalcManaRegenCap() final;
+
+	uint32 GetClassesBits() const;
+	bool   AddExtraClass(int class_id);
 
 	// guild pool regen shit. Sends a SpawnAppearance with a value that regens to value * 0.001
 	void EnableAreaHPRegen(int value);
@@ -587,6 +591,7 @@ public:
 	/*Endurance and such*/
 	void CalcMaxEndurance(); //This calculates the maximum endurance we can have
 	int64 CalcBaseEndurance(); //Calculates Base End
+	int64 _CalcBaseEndurance(int class_id); //Calculates Base End
 	int64 CalcEnduranceRegen(bool bCombat = false); //Calculates endurance regen used in DoEnduranceRegen()
 	int64 GetEndurance() const {return current_endurance;} //This gets our current endurance
 	int64 GetMaxEndurance() const {return max_end;} //This gets our endurance from the last CalcMaxEndurance() call
@@ -791,6 +796,7 @@ public:
 
 	bool IsDiscovered(uint32 itemid);
 	void DiscoverItem(uint32 itemid);
+	std::string GetDiscoverer(uint32 itemid);
 
 	bool TGB() const { return tgb; }
 
@@ -815,9 +821,10 @@ public:
 	void SetHoTT(uint32 mobid);
 	void ShowSkillsWindow();
 
-	uint16 MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 level) const;
+	uint16 MaxSkill(EQ::skills::SkillType skill_id, uint16 class_id, uint8 level) const;
+	uint16 MaxSkillOriginal(EQ::skills::SkillType skill_id, uint16 class_id, uint16 level) const;
 	inline uint16 MaxSkill(EQ::skills::SkillType skill_id) const { return MaxSkill(skill_id, GetClass(), GetLevel()); }
-	uint8 SkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id);
+	uint8 SkillTrainLevel(EQ::skills::SkillType skill_id, uint16 class_id);
 	void MaxSkills();
 
 	void SendTradeskillSearchResults(const std::string &query, unsigned long objtype, unsigned long someid);
@@ -921,6 +928,10 @@ public:
 
 	inline PTimerList &GetPTimers() { return(p_timers); }
 
+	//Dynamic AA timer stuff
+	int GetDynamicAATimer(int aa_id);	
+	int SetDynamicAATimer(int aa_id);
+
 	//New AA Methods
 	void SendAlternateAdvancementRank(int aa_id, int level);
 	void SendAlternateAdvancementTable();
@@ -1018,6 +1029,7 @@ public:
 	void QSSwapItemAuditor(MoveItem_Struct* move_in, bool postaction_call = false);
 	void PutLootInInventory(int16 slot_id, const EQ::ItemInstance &inst, LootItem** bag_item_data = 0);
 	bool AutoPutLootInInventory(EQ::ItemInstance& inst, bool try_worn = false, bool try_cursor = true, LootItem** bag_item_data = 0);
+	bool SummonApocItem(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool attuned = false, uint16 to_slot = EQ::invslot::slotCursor, uint32 ornament_icon = 0, uint32 ornament_idfile = 0, uint32 ornament_hero_model = 0);
 	bool SummonItem(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool attuned = false, uint16 to_slot = EQ::invslot::slotCursor, uint32 ornament_icon = 0, uint32 ornament_idfile = 0, uint32 ornament_hero_model = 0);
 	void SummonItemIntoInventory(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool is_attuned = false);
 	void SummonBaggedItems(uint32 bag_item_id, const std::vector<LootItem>& bag_items);
@@ -1036,6 +1048,12 @@ public:
 	void SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPacketType packet_type);
 	bool IsValidSlot(uint32 slot);
 	bool IsBankSlot(uint32 slot);
+
+	void SendEdgeStatBulkUpdate();
+	void SendEdgeHPStats();
+	void SendEdgeManaStats();
+	void SendEdgeEnduranceStats();
+	int64_t GetStatValueEdgeType(eStatEntry eLabel);
 
 	inline bool IsTrader() const { return(Trader); }
 	inline bool IsBuyer() const { return(Buyer); }
@@ -1787,6 +1805,7 @@ private:
 	int32 CalcCorrup();
 	int64 CalcMaxHP();
 	int64 CalcBaseHP();
+	int64 _CalcBaseHP(int class_id);
 	int64 CalcHPRegen(bool bCombat = false);
 	int64 CalcManaRegen(bool bCombat = false);
 	int64 CalcBaseManaRegen();
@@ -2072,7 +2091,6 @@ private:
 	glm::vec3 m_quest_compass;
 	bool m_has_quest_compass = false;
 	std::vector<uint32_t> m_dynamic_zone_ids;
-
 
 public:
 	enum BotOwnerOption : size_t {
