@@ -274,6 +274,15 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 
 				// for offensive spells check if we have a spell rune on
 				int64 dmg = effect_value;
+				if (RuleB(Custom,CustomSpellProcHandling)) {
+					try {
+						dmg = std::stoll(caster->GetEntityVariable(std::to_string(spell_id) + "_damage_override"));
+					} catch (const std::exception& e) {
+						LogError("Error reading damage_override");
+					}
+					caster->DeleteEntityVariable(std::to_string(spell_id) + "_damage_override");
+				}
+
 				if(dmg < 0)
 				{
 
@@ -6412,16 +6421,61 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 	// We confirm spell_id and focuspellid are valid before passing into this.
 	if (IsValidSpell(proc_spellid) && spell_id != focusspellid && spell_id != proc_spellid) {
 		Mob* proc_target = GetTarget();
-		if (proc_target) {
+		uint64 damage_override = 0;
 
-			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID()));
+		if (RuleB(Custom, CustomSpellProcHandling) && strncmp(spells[focusspellid].name, "Sympathetic", 11) == 0) {
+			auto romanToInt = [](const std::string& name) -> int {
+				std::map<char, int> romanValues = {{'I', 1}, {'V', 5}, {'X', 10}, {'L', 50},
+												{'C', 100}, {'D', 500}, {'M', 1000}};
+				int result = 0;
+				int prevValue = 0;
+				for (int i = name.size() - 1; i >= 0; --i) {
+					if (romanValues.count(name[i]) == 0) break;
+					int currentValue = romanValues[name[i]];
+					if (currentValue < prevValue)
+						result -= currentValue;
+					else
+						result += currentValue;
+					prevValue = currentValue;
+				}
+				return result;
+			};
 
-			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
+			uint32 cast_time_factor = spells[spell_id].cast_time / 1000;
+			uint32 mana_cost_factor = spells[spell_id].mana / 10;
+			uint32 rank_factor 		= romanToInt(spells[spell_id].name);
+			double scaling_factor 	= RuleR(Custom, CustomSpellProcScalingFactor);
+			
+			damage_override = rank_factor * mana_cost_factor * cast_time_factor * scaling_factor;
+
+			if (IsBeneficialSpell(proc_spellid)) {
+				damage_override = std::abs(damage_override);
+			} else {
+				damage_override = -std::abs(damage_override);
+			}
+
+			// I hate myself
+			SetEntityVariable(std::to_string(proc_spellid) + "_damage_override", damage_override);
+		}
+		
+		// Edge cases where proc spell does not require a target such as PBAE, allows proc to still occur even if target potentially dead. Live spells exist with PBAE procs.
+		if (!IsTargetRequiredForSpell(proc_spellid)) {
+			SpellFinished(proc_spellid, this, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
 			return true;
 		}
-		// Edge cases where proc spell does not require a target such as PBAE, allows proc to still occur even if target potentially dead. Live spells exist with PBAE procs.
-		else if (!IsTargetRequiredForSpell(proc_spellid)) {
-			SpellFinished(proc_spellid, this, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
+
+		if (proc_target) {
+			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID()));
+			
+			if ((proc_target->IsClient() || proc_target->IsPetOwnerClient()) && IsDetrimentalSpell(proc_spellid)) {
+				return false; // Cancel this if, after implied targeting, we are still trying to proc a detrimental ability on a client or client pet
+			}
+
+			if ((proc_target->IsNPC() && !proc_target->IsPetOwnerClient()) && IsBeneficialSpell(proc_spellid)) {
+				return false; // Cancel this proc if, after implied targeting, we are still trying to proc a beneficial ability on an NPC who isn't a client's pet
+			}
+
+			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
 			return true;
 		}
 	}
