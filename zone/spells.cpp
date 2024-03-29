@@ -1201,12 +1201,29 @@ bool Client::CheckFizzle(uint16 spell_id)
 	int par_skill;
 	int act_skill;
 
-	par_skill = spells[spell_id].classes[GetClass()-1] * 5 - 10;//IIRC even if you are lagging behind the skill levels you don't fizzle much
+	uint8 spell_level = 255;
+	uint8 spell_class = 0;
+	unsigned int class_bits = GetClassesBits();
+	for (int n = 0; n < sizeof(class_bits) * 8; ++n) { 
+		if (class_bits & (1U << n)) { 
+			int class_id = n + 1;
+			if (spells[spell_id].classes[class_id-1] < no_fizzle_level) {
+				return true;
+			}
+			if (spells[spell_id].classes[class_id-1] < spell_level) {
+				spell_level = spells[spell_id].classes[class_id-1];
+				spell_class = class_id;
+			}
+		}
+	}
+	
+	//IIRC even if you are lagging behind the skill levels you don't fizzle much
+	par_skill = spell_level * 5 - 10; 
 	if (par_skill > 235) {
 		par_skill = 235;
 	}
 
-	par_skill += spells[spell_id].classes[GetClass()-1]; // maximum of 270 for level 65 spell
+	par_skill += spell_level; // maximum of 270 for level 65 spell
 
 	act_skill = GetSkill(spells[spell_id].skill);
 	act_skill += GetLevel(); // maximum of whatever the client can cheat
@@ -1241,7 +1258,7 @@ bool Client::CheckFizzle(uint16 spell_id)
 	float diff = par_skill + static_cast<float>(spells[spell_id].base_difficulty) - act_skill;
 
 	// if you have high int/wis you fizzle less, you fizzle more if you are stupid
-	if (GetClass() == Class::Bard) {
+	if (spell_class == Class::Bard) {
 		diff -= (GetCHA() - 110) / 20.0;
 	} else if (IsIntelligenceCasterClass()) {
 		diff -= (GetINT() - 125) / 20.0;
