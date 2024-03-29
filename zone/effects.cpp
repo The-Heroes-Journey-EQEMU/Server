@@ -416,7 +416,7 @@ int64 Mob::GetExtraSpellAmt(uint16 spell_id, int64 extra_spell_amt, int64 base_s
 	}
 
 	if (RuleR(Custom, ItemExtraSpellAmtMaximumPercentage)) {
-		extra_spell_amt = std::min(static_cast<int64>std::floor(base_spell_dmg * RuleR(Custom, ItemExtraSpellAmtMaximumPercentage)), extra_spell_amt);
+		extra_spell_amt = std::min(static_cast<int64>(std::floor(base_spell_dmg * RuleR(Custom, ItemExtraSpellAmtMaximumPercentage))), extra_spell_amt);
 	}
 
 	return extra_spell_amt;
