@@ -6455,7 +6455,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			}
 
 			// I hate myself
-			SetEntityVariable(std::to_string(proc_spellid) + "_damage_override", damage_override);
+			SetEntityVariable(std::to_string(proc_spellid) + "_damage_override", std::to_string(damage_override));
 		}
 		
 		// Edge cases where proc spell does not require a target such as PBAE, allows proc to still occur even if target potentially dead. Live spells exist with PBAE procs.
