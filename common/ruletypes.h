@@ -986,6 +986,7 @@ RULE_BOOL(Custom, EatCombatTrades, true, "Don't return items traded to NPCs duri
 RULE_BOOL(Custom, ClearRestingDetrimentalEffectsEnabled, false, "Remove detrimental spell effects from self and pets when OOC regen engages")
 RULE_BOOL(Custom, CustomSpellProcHandling, true, "Override the effect of sympathetic procs")
 RULE_REAL(Custom, CustomSpellProcScalingFactor, 1.0, "Scale overridden sympathetic procs by this amount")
+RULE_REAL(Custom, ItemExtraSpellAmtMaximumPercentage, 0.0, "Set the maximum percentage of base effect that spell damage and heal amount can add")
 RULE_CATEGORY_END()
 
 #undef RULE_CATEGORY
