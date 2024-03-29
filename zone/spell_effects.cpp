@@ -6476,7 +6476,8 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			}
 
 			if ((proc_target->IsNPC() && !proc_target->IsPetOwnerClient()) && IsBeneficialSpell(proc_spellid)) {
-				return false; // Cancel this proc if, after implied targeting, we are still trying to proc a beneficial ability on an NPC who isn't a client's pet
+				proc_target = this;
+				return true;
 			}
 
 			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
