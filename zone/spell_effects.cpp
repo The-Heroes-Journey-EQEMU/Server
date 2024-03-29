@@ -6418,12 +6418,12 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 
 bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc_spellid)
 {
+	LogDebug("Focus Effect: [{}]", focusspellid);
 	// We confirm spell_id and focuspellid are valid before passing into this.
 	if (IsValidSpell(proc_spellid) && spell_id != focusspellid && spell_id != proc_spellid) {
 		Mob* proc_target = GetTarget();
 		uint64 damage_override = 0;
-
-		LogDebug("Focus Effect: [{}]", focusspellid);
+		
 		if (RuleB(Custom, CustomSpellProcHandling) && strncmp(spells[focusspellid].name, "Sympathetic", 11) == 0) {
 			auto romanToInt = [](const std::string& name) -> int {
 				std::map<char, int> romanValues = {{'I', 1}, {'V', 5}, {'X', 10}, {'L', 50},
