@@ -6449,9 +6449,9 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			damage_override = rank_factor * mana_cost_factor * cast_time_factor * scaling_factor;
 
 			if (IsBeneficialSpell(proc_spellid)) {
-				damage_override = std::abs(damage_override);
+				damage_override = std::llabs(damage_override);
 			} else {
-				damage_override = -std::abs(damage_override);
+				damage_override = -std::llabs(damage_override);
 			}
 
 			// I hate myself
