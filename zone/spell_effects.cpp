@@ -6422,7 +6422,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 	// We confirm spell_id and focuspellid are valid before passing into this.
 	if (IsValidSpell(proc_spellid) && spell_id != focusspellid && spell_id != proc_spellid) {
 		Mob* proc_target = GetTarget();
-		uint64 damage_override = 0;
+		int64 damage_override = 0;
 		
 		if (RuleB(Custom, CustomSpellProcHandling) && strncmp(spells[focusspellid].name, "Sympathetic", 11) == 0) {
 			auto romanToInt = [](const std::string& name) -> int {
