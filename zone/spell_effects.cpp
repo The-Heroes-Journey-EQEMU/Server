@@ -6447,6 +6447,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			uint32 rank_factor 		= romanToInt(spells[spell_id].name);
 			double scaling_factor 	= RuleR(Custom, CustomSpellProcScalingFactor);
 			
+			LogDebug("rank_factor: [{}], cost_factor: [{}], time_factor: [{}], scaling_factor: [{}]", rank_factor, mana_cost_factor, cast_time_factor, scaling_factor);
 			damage_override = rank_factor * mana_cost_factor * cast_time_factor * scaling_factor;
 
 			if (IsBeneficialSpell(proc_spellid)) {
