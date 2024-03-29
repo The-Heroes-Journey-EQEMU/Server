@@ -6444,7 +6444,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 
 			uint32 cast_time_factor = spells[spell_id].cast_time / 1000;
 			uint32 mana_cost_factor = spells[spell_id].mana / 10;
-			uint32 rank_factor 		= romanToInt(spells[spell_id].name);
+			uint32 rank_factor 		= romanToInt(spells[focusspellid].name);
 			double scaling_factor 	= RuleR(Custom, CustomSpellProcScalingFactor);
 			
 			LogDebug("rank_factor: [{}], cost_factor: [{}], time_factor: [{}], scaling_factor: [{}]", rank_factor, mana_cost_factor, cast_time_factor, scaling_factor);
