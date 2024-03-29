@@ -274,7 +274,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 
 				// for offensive spells check if we have a spell rune on
 				int64 dmg = effect_value;
-				if (RuleB(Custom,CustomSpellProcHandling)) {
+				if (RuleB(Custom,CustomSpellProcHandling) && caster->EntityVariableExists(std::to_string(spell_id) + "_damage_override")) {
 					try {
 						dmg = std::stoll(caster->GetEntityVariable(std::to_string(spell_id) + "_damage_override"));
 					} catch (const std::exception& e) {
