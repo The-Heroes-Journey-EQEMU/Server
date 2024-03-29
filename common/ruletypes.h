@@ -984,7 +984,7 @@ RULE_BOOL(Custom, TauntTogglesPetTanking, true, "Enable to let pets hold aggro w
 RULE_BOOL(Custom, UseTHJItemMutations, true, "Rename items according to THJ standards and apply other mutations")
 RULE_BOOL(Custom, EatCombatTrades, true, "Don't return items traded to NPCs during combat. Prevents duplication bug.")
 RULE_BOOL(Custom, ClearRestingDetrimentalEffectsEnabled, false, "Remove detrimental spell effects from self and pets when OOC regen engages")
-RULE_BOOL(Custom, CustomSpellProcHandling, true "Override the effect of sympathetic procs")
+RULE_BOOL(Custom, CustomSpellProcHandling, true, "Override the effect of sympathetic procs")
 RULE_REAL(Custom, CustomSpellProcScalingFactor, 1.0, "Scale overridden sympathetic procs by this amount")
 RULE_CATEGORY_END()
 
