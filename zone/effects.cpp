@@ -125,7 +125,6 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target, int perc
 
 			if (RuleB(Spells, IgnoreSpellDmgLvlRestriction) && !spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg) {
 				value -= GetExtraSpellAmt(spell_id, itembonuses.SpellDmg, base_value) * ratio / 100;
-
 			}
 
 			else if (!spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg && GetSpellLevelForCaster(spell_id) >= GetLevel() - 5) {
@@ -383,7 +382,6 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 
 int64 Mob::GetExtraSpellAmt(uint16 spell_id, int64 extra_spell_amt, int64 base_spell_dmg)
 {
-
 	if (RuleB(Spells, FlatItemExtraSpellAmt)) {
 		if (RuleB(Spells, ItemExtraSpellAmtCalcAsPercent)) {
 			return std::abs(base_spell_dmg) * extra_spell_amt / 100;
@@ -415,6 +413,10 @@ int64 Mob::GetExtraSpellAmt(uint16 spell_id, int64 extra_spell_amt, int64 base_s
 
 	if (RuleB(Spells, ItemExtraSpellAmtCalcAsPercent)) {
 		return std::abs(base_spell_dmg) * extra_spell_amt / 100;
+	}
+
+	if (RuleR(Custom, ItemExtraSpellAmtMaximumPercentage)) {
+		extra_spell_amt = std::min(base_spell_dmg * RuleR(Custom, ItemExtraSpellAmtMaximumPercentage), extra_spell_amt);
 	}
 
 	return extra_spell_amt;
