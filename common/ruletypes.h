@@ -974,7 +974,7 @@ RULE_BOOL(Custom, SuspendGroupBuffs, true, "Enable this to cause self buffs and 
 RULE_BOOL(Custom, FadeNPCDebuffsOutofCombat, true, "Enable to to cause NPCs to lose all buffs automatically when combat ends")
 RULE_BOOL(Custom, BlockRaceOnAccountProgression, true, "Enable to block races out of era for Ret-style account Progression: Key is 'AccountID'-Account-Expansion")
 RULE_BOOL(Custom, BlockClassOnAccountProgression, true, "Enable to block classes out of era for Ret-style account Progression: Key is 'AccountID'-Account-Expansion")
-RULE_BOOL(Custom, UseDynamicItemDiscoveryTags, true, "Enable appending Discovered By: items using the charmfile method")
+RULE_BOOL(Custom, UseDynamicItemDiscoveryTags, true, "Enable appfending Discovered By: items using the charmfile method")
 RULE_BOOL(Custom, UseDynamicAATimers, true, "Enable using dynamic AA timers")
 RULE_BOOL(Custom, ExpandedPetAffinity, true, "Allows Pet Affinity to force buffs to pet, even if they aren't group buffs, so long as that they aren't self-only")
 RULE_BOOL(Custom, DoItemUpgrades, true, "Retribution item upgrades")
@@ -986,7 +986,7 @@ RULE_BOOL(Custom, EatCombatTrades, true, "Don't return items traded to NPCs duri
 RULE_BOOL(Custom, ClearRestingDetrimentalEffectsEnabled, false, "Remove detrimental spell effects from self and pets when OOC regen engages")
 RULE_BOOL(Custom, CustomSpellProcHandling, true, "Override the effect of sympathetic procs")
 RULE_REAL(Custom, CustomSpellProcScalingFactor, 1.0, "Scale overridden sympathetic procs by this amount")
-RULE_REAL(Custom, ItemExtraSpellAmtMaximumPercentage, 0.0, "Set the maximum percentage of base effect that spell damage and heal amount can add")
+RULE_REAL(Custom, ItemExtraSpellAmtMaximumPercentage, 0.0, "Adjust the maximum effectiveness of Spell Damage and Heal Amount. 0.0 to Disable, 1.0 to allow adding up to the base effect value, 2.0 to allow double effect value, etc.")
 RULE_CATEGORY_END()
 
 #undef RULE_CATEGORY
