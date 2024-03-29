@@ -6423,6 +6423,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 		Mob* proc_target = GetTarget();
 		uint64 damage_override = 0;
 
+		LogDebug("Focus Effect: [{}]", focusspellid);
 		if (RuleB(Custom, CustomSpellProcHandling) && strncmp(spells[focusspellid].name, "Sympathetic", 11) == 0) {
 			auto romanToInt = [](const std::string& name) -> int {
 				std::map<char, int> romanValues = {{'I', 1}, {'V', 5}, {'X', 10}, {'L', 50},
@@ -6453,6 +6454,8 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			} else {
 				damage_override = -std::llabs(damage_override);
 			}
+
+			LogDebug("Setting damage_override to [{}]", damage_override);
 
 			// I hate myself
 			SetEntityVariable(std::to_string(proc_spellid) + "_damage_override", std::to_string(damage_override));
@@ -6619,8 +6622,6 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 			return 0;
 		}
 	}*/
-
-	LogDebug("GetFocusEffect? [{}]", type);
 
 
 	int64 realTotal = 0;
