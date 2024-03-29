@@ -6478,6 +6478,11 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
 			return true;
 		}
+
+		if (EntityVariableExists(std::to_string(spell_id) + "_damage_override"))
+		{
+			DeleteEntityVariable(std::to_string(spell_id) + "_damage_override");
+		}
 	}
 	return false;
 }
