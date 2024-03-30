@@ -3531,7 +3531,7 @@ int64 Mob::ReduceDamage(int64 damage)
 	if (spellbonuses.NegateAttacks[SBIndex::NEGATE_ATK_EXISTS]) {
 		slot = spellbonuses.NegateAttacks[SBIndex::NEGATE_ATK_BUFFSLOT];
 		if (slot >= 0) {
-			if (--buffs[slot].hit_number == 0) {
+			if (--buffs[slot].hit_number == 0 && !IsBardSong(buffs[slot].spellid)) {
 
 				if (!TryFadeEffect(slot))
 					BuffFadeBySlot(slot, true);
@@ -3556,7 +3556,7 @@ int64 Mob::ReduceDamage(int64 damage)
 			{
 				LogSpellsDetail("SE_MeleeThresholdGuard [{}] damage negated, [{}] damage remaining, fading buff", damage_to_reduce, buffs[slot].melee_rune);
 				damage -= buffs[slot].melee_rune;
-				if (!TryFadeEffect(slot))
+				if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 					BuffFadeBySlot(slot);
 			}
 			else
@@ -3581,7 +3581,7 @@ int64 Mob::ReduceDamage(int64 damage)
 			{
 				LogSpellsDetail("SE_MitigateMeleeDamage [{}] damage negated, [{}] damage remaining, fading buff", damage_to_reduce, buffs[slot].melee_rune);
 				damage -= buffs[slot].melee_rune;
-				if (!TryFadeEffect(slot))
+				if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 					BuffFadeBySlot(slot);
 			}
 			else
@@ -3622,7 +3622,7 @@ int64 Mob::AffectMagicalDamage(int64 damage, uint16 spell_id, const bool iBuffTi
 		if (slot >= 0) {
 			if (--buffs[slot].hit_number == 0) {
 
-				if (!TryFadeEffect(slot))
+				if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 					BuffFadeBySlot(slot, true);
 			}
 
@@ -3650,7 +3650,7 @@ int64 Mob::AffectMagicalDamage(int64 damage, uint16 spell_id, const bool iBuffTi
 				if (spellbonuses.MitigateDotRune[SBIndex::MITIGATION_RUNE_MAX_HP_AMT] && (damage_to_reduce >= buffs[slot].dot_rune))
 				{
 					damage -= buffs[slot].dot_rune;
-					if (!TryFadeEffect(slot))
+					if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 						BuffFadeBySlot(slot);
 				}
 				else
@@ -3682,7 +3682,7 @@ int64 Mob::AffectMagicalDamage(int64 damage, uint16 spell_id, const bool iBuffTi
 				if (damage_to_reduce >= buffs[slot].magic_rune)
 				{
 					damage -= buffs[slot].magic_rune;
-					if (!TryFadeEffect(slot))
+					if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 						BuffFadeBySlot(slot);
 				}
 				else
@@ -3707,7 +3707,7 @@ int64 Mob::AffectMagicalDamage(int64 damage, uint16 spell_id, const bool iBuffTi
 				{
 					LogSpellsDetail("SE_MitigateSpellDamage [{}] damage negated, [{}] damage remaining, fading buff", damage_to_reduce, buffs[slot].magic_rune);
 					damage -= buffs[slot].magic_rune;
-					if (!TryFadeEffect(slot))
+					if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 						BuffFadeBySlot(slot);
 				}
 				else
@@ -6166,7 +6166,7 @@ int32 Mob::RuneAbsorb(int64 damage, uint16 type)
 					if (melee_rune_left > 0)
 						damage -= melee_rune_left;
 
-					if (!TryFadeEffect(slot))
+					if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 						BuffFadeBySlot(slot);
 				}
 			}
@@ -6189,7 +6189,7 @@ int32 Mob::RuneAbsorb(int64 damage, uint16 type)
 					if (magic_rune_left > 0)
 						damage -= magic_rune_left;
 
-					if (!TryFadeEffect(slot))
+					if (!TryFadeEffect(slot) && !IsBardSong(buffs[slot].spellid))
 						BuffFadeBySlot(slot);
 				}
 			}
