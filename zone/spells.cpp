@@ -1743,10 +1743,17 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		TrySympatheticProc(target, spell_id);
 	}
 
+<<<<<<< Updated upstream
 	TryTwincast(this, target, spell_id);
 
 	if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
 		TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);
+=======
+		// Moved this to inside SpellFinished
+		// TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);	
+
+		TryTwincast(this, target, spell_id);
+>>>>>>> Stashed changes
 	}
 
 	if (IsClient() && DeleteChargeFromSlot >= 0) {
@@ -2585,13 +2592,24 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 				SpellOnTarget(spell_id, spell_target, 0, true, resist_adjust, true, level_override);
 			} else {
 				if (spells[spell_id].target_type == ST_TargetOptional){
-					if (!TrySpellProjectile(spell_target, spell_id))
+					if (!TrySpellProjectile(spell_target, spell_id)) {
 						return false;
+					} else {
+						if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+							TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, spell_target);
+						}
+					}						
 				}
 
-				else if(!SpellOnTarget(spell_id, spell_target, 0, true, resist_adjust, false, level_override)) {
-					if(IsBuffSpell(spell_id) && IsBeneficialSpell(spell_id)) {
-						return false;
+				else {
+					if(!SpellOnTarget(spell_id, spell_target, 0, true, resist_adjust, false, level_override)) {
+						if(IsBuffSpell(spell_id) && IsBeneficialSpell(spell_id)) {
+							return false;
+						}
+					} else {
+						if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+							TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, spell_target);
+						}
 					}
 				}
 			}

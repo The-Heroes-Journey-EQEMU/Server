@@ -6315,7 +6315,7 @@ int64 Mob::CalcFocusEffect(focusType type, uint16 focus_id, uint16 spell_id, boo
 	return (value * lvlModifier / 100);
 }
 
-void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
+void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, Mob *spell_target)
 {
 	if (IsBardSong(spell_id)) {
 		return;
@@ -6345,7 +6345,7 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 					continue;
 				}
 
-				proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
+				proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id, spell_target);
 				if (proc_spellid) {
 					TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid);
 				}
@@ -6364,7 +6364,7 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 
 						proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 						if (proc_spellid) {
-							TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid);
+							TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid, spell_target);
 						}
 					}
 				}
@@ -6387,7 +6387,7 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 
 			proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 			if (proc_spellid) {
-				TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid);
+				TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid, spell_target);
 				CheckNumHitsRemaining(NumHit::MatchingSpells, buff_slot);
 			}
 		}
@@ -6410,13 +6410,13 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 
 			proc_spellid = CalcAAFocus(type, *rank, spell_id);
 			if (proc_spellid) {
-				TryTriggerOnCastProc(0, spell_id, proc_spellid);
+				TryTriggerOnCastProc(0, spell_id, proc_spellid, spell_target);
 			}
 		}
 	}
 }
 
-bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc_spellid)
+bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc_spellid, Mob *spell_target)
 {
 	// We confirm spell_id and focuspellid are valid before passing into this.
 	if (IsValidSpell(proc_spellid) && spell_id != focusspellid && spell_id != proc_spellid) {
@@ -6463,7 +6463,8 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 		
 		// Edge cases where proc spell does not require a target such as PBAE, allows proc to still occur even if target potentially dead. Live spells exist with PBAE procs.
 		if (!IsTargetRequiredForSpell(proc_spellid)) {
-			SpellFinished(proc_spellid, this, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
+			//SpellFinished(proc_spellid, this, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
+			SpellOnTarget(proc_spellid, spell_target, 0, true, spells[proc_spellid].resist_difficulty, true);
 			return true;
 		}
 
@@ -6479,7 +6480,8 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 				return true;
 			}
 
-			SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
+			//SpellFinished(proc_spellid, proc_target, EQ::spells::CastingSlot::Item, 0, -1, spells[proc_spellid].resist_difficulty);
+			SpellOnTarget(proc_spellid, spell_target, 0, true, spells[proc_spellid].resist_difficulty, true);
 			return true;
 		}
 

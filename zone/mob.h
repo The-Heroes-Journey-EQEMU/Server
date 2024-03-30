@@ -943,8 +943,8 @@ public:
 	bool PassCharismaCheck(Mob* caster, uint16 spell_id);
 	bool TryDeathSave();
 	bool TryDivineSave();
-	void TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id);
-	bool TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc_spellid);
+	void TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, Mob *spell_target);
+	bool TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc_spellid, Mob *spell_target);
 	bool TrySpellTrigger(Mob *target, uint32 spell_id, int effect);
 	void TryTriggerOnCastRequirement();
 	void TryTwincast(Mob *caster, Mob *target, uint32 spell_id);
