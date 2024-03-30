@@ -6345,9 +6345,9 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, Mob *spel
 					continue;
 				}
 
-				proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id, spell_target);
+				proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 				if (proc_spellid) {
-					TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid);
+					TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid, spell_target);
 				}
 			}
 
