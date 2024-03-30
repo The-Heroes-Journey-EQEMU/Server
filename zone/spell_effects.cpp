@@ -3503,8 +3503,8 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 			oval = effect_value;
 			effect_value = effect_value * static_cast<int>(instrument_mod) / 10;
 
-			LogSpells("Bonus Effect value [{}] altered with base effects modifier of [{}] to yeild [{}]",
-				oval, instrument_mod, effect_value);
+			LogSpells("Effect ID [{}] with base value [{}] altered with base effects modifier of [{}] to yeild [{}]",
+				spells[spell_id].effect_id[effect_id], oval, instrument_mod, effect_value);
 		}
 	}
 
