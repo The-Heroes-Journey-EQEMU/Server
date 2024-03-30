@@ -1739,9 +1739,8 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		return;
 	}
 
-	if(IsOfClientBotMerc()) {
+	if(IsOfClientBotMerc() && slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
 		TrySympatheticProc(target, spell_id);
-	}
 
 		// Moved this to inside SpellFinished
 		// TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);	
