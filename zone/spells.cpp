@@ -1716,14 +1716,13 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		return;
 	}
 
-	if(IsOfClientBotMerc()) {
-		TrySympatheticProc(target, spell_id);
-	}
-
-	TryTwincast(this, target, spell_id);
-
 	if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
-		TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, target_id);
+		if(IsOfClientBotMerc()) {
+			TrySympatheticProc(target, spell_id);
+		}
+
+		TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);
+		TryTwincast(this, target, spell_id);
 	}
 
 	if (IsClient() && DeleteChargeFromSlot >= 0) {
