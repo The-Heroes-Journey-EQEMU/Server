@@ -2855,7 +2855,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 
 	if (RuleB(Custom, ExpandedPetAffinity)) {
 		if (IsClient() &&
-			IsBeneficialSpell(spell_id)
+			IsBeneficialSpell(spell_id) &&
 			!spells[spell_id].is_discipline &&
 		    spell_target->IsClient() && 
 			spell_target->HasPet() && 
