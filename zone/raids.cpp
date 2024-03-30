@@ -670,9 +670,15 @@ void Raid::CastGroupSpell(Mob* caster, uint16 spellid, uint32 gid)
 	for (const auto& m : members) {
 		if (m.member == caster) {
 			caster->SpellOnTarget(spellid, caster);
+			if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+				caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, caster);
+			}
 #ifdef GROUP_BUFF_PETS
 			if (spells[spellid].target_type != ST_GroupNoPets && caster->GetPet() && caster->HasPetAffinity() && !caster->GetPet()->IsCharmed()) {
 				caster->SpellOnTarget(spellid, caster->GetPet());
+				if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+					caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, caster->GetPet());
+				}
 			}
 #endif
 		}
@@ -680,11 +686,17 @@ void Raid::CastGroupSpell(Mob* caster, uint16 spellid, uint32 gid)
 			distance = DistanceSquared(caster->GetPosition(), m.member->GetPosition());
 			if (distance <= range2) {
 				caster->SpellOnTarget(spellid, m.member);
+				if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+					caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, m.member);
+				}
 
 #ifdef GROUP_BUFF_PETS
 				if (spells[spellid].target_type != ST_GroupNoPets && m.member->GetPet() && m.member->HasPetAffinity() &&
 					!m.member->GetPet()->IsCharmed()) {
 					caster->SpellOnTarget(spellid, m.member->GetPet());
+					if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+						caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, m.member->GetPet());
+					}
 				}
 #endif
 			}

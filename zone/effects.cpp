@@ -1298,7 +1298,7 @@ void EntityList::AESpell(
 
 		current_mob->CalcSpellPowerDistanceMod(spell_id, distance_to_target);
 		caster_mob->SpellOnTarget(spell_id, current_mob, 0, true, resist_adjust);
-
+		
 		/**
 		 * Increment hit count if max targets
 		 */

@@ -813,9 +813,15 @@ void Group::CastGroupSpell(Mob* caster, uint16 spell_id) {
 	{
 		if(members[z] == caster) {
 			caster->SpellOnTarget(spell_id, caster);
+			if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+				caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, caster);
+			}
 #ifdef GROUP_BUFF_PETS
 			if(spells[spell_id].target_type != ST_GroupNoPets && caster->GetPet() && caster->HasPetAffinity() && !caster->GetPet()->IsCharmed())
 				caster->SpellOnTarget(spell_id, caster->GetPet());
+				if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+					caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, caster->GetPet());
+				}
 #endif
 		}
 		else if(members[z] != nullptr)
@@ -824,9 +830,15 @@ void Group::CastGroupSpell(Mob* caster, uint16 spell_id) {
 			if(distance <= range2 && distance >= min_range2) {
 				members[z]->CalcSpellPowerDistanceMod(spell_id, distance);
 				caster->SpellOnTarget(spell_id, members[z]);
+				if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+					caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, members[z]);
+				}
 #ifdef GROUP_BUFF_PETS
 				if(spells[spell_id].target_type != ST_GroupNoPets && members[z]->GetPet() && members[z]->HasPetAffinity() && !members[z]->GetPet()->IsCharmed())
 					caster->SpellOnTarget(spell_id, members[z]->GetPet());
+					if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
+						caster->TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, members[z]->GetPet());
+					}
 #endif
 			} else
 				LogSpells("Group spell: [{}] is out of range [{}] at distance [{}] from [{}]", members[z]->GetName(), range, distance, caster->GetName());
