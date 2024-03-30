@@ -1834,12 +1834,14 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 			// skills
 			if (EQ::skills::IsCastingSkill(spells[spell_id].skill) && ((IsFromItem  && RuleB(Character, SkillUpFromItems)) || !IsFromItem)) {
-				c->CheckIncreaseSkill(spells[spell_id].skill, nullptr);
+				if (slot >= CastingSlot::Gem1 && slot <= CastingSlot::Gem12) {
+					c->CheckIncreaseSkill(spells[spell_id].skill, nullptr);
 
-				// increased chance of gaining channel skill if you regained concentration
-				c->CheckIncreaseSkill(EQ::skills::SkillChanneling, nullptr, regain_conc ? 5 : 0);
+					// increased chance of gaining channel skill if you regained concentration
+					c->CheckIncreaseSkill(EQ::skills::SkillChanneling, nullptr, regain_conc ? 5 : 0);
 
-				c->CheckSpecializeIncrease(spell_id);
+					c->CheckSpecializeIncrease(spell_id);
+				}
 			}
 		}
 	}
