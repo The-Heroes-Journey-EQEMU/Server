@@ -3066,7 +3066,7 @@ int Mob::CheckStackConflict(uint16 spellid1, int caster_level1, uint16 spellid2,
 
 	LogSpells("Check Stacking on old [{}] ([{}]) @ lvl [{}] (by [{}]) vs. new [{}] ([{}]) @ lvl [{}] (by [{}])", sp1.name, spellid1, caster_level1, (caster1==nullptr)?"Nobody":caster1->GetName(), sp2.name, spellid2, caster_level2, (caster2==nullptr)?"Nobody":caster2->GetName());
 
-	if ((sp1.short_buff_box != sp2.short_buff_box) && (IsDetrimentalSpell(spellid1) != IsDetrimentalSpell(spellid2))) {
+	if (RuleB(Custom, LessStrictSpellStacking) && (sp1.short_buff_box != sp2.short_buff_box) && (IsDetrimentalSpell(spellid1) != IsDetrimentalSpell(spellid2))) {
 		return 0;
 	}
 
