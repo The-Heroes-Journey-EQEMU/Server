@@ -3495,11 +3495,12 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 		LogSpells("Instant Effect value [{}] altered with base effects modifier of [{}] to yeild [{}]",
 			oval, mod, effect_value);
 	}
+	/* I think this is legacy code that is no longer relevant
 	//This is checked from Mob::ApplySpellBonuses, applied to buffs that receive bonuses. See above, must be in 10% intervals to work.
 	else if (caster_id && instrument_mod > 10) {
 
 		Mob* buff_caster = entity_list.GetMob(caster_id);//If targeted bard song needed to confirm caster is not bard.
-		if (buff_caster && buff_caster->GetClassesBits() != GetPlayerClassBit(Class::Bard)) {
+		if (buff_caster && (buff_caster->GetClassesBits() & GetPlayerClassBit(Class::Bard) == 0)) {
 			oval = effect_value;
 			effect_value = effect_value * static_cast<int>(instrument_mod) / 10;
 
@@ -3507,6 +3508,7 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 				spells[spell_id].effect_id[effect_id], oval, instrument_mod, effect_value);
 		}
 	}
+	*/
 
 	return effect_value;
 }
