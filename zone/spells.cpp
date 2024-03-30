@@ -2877,7 +2877,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 			}
 		}
 		//handle bard AA and Discipline recast timers when singing
-		if (GetClass() == Class::Bard && spell_id != casting_spell_id && timer != 0xFFFFFFFF) {
+		if (!RuleB(Custom, MulticlassingEnabled) && GetClass() == Class::Bard && spell_id != casting_spell_id && timer != 0xFFFFFFFF) {
 			CastToClient()->GetPTimers().Start(timer, timer_duration);
 			LogSpells("Spell [{}]: Setting BARD custom reuse timer [{}] to [{}]", spell_id, casting_spell_timer, casting_spell_timer_duration);
 		}
@@ -3620,7 +3620,7 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 				LogSpells("Adding buff [{}] failed: stacking prevented by spell [{}] in slot [{}] with caster level [{}]",
 						spell_id, curbuf.spellid, buffslot, curbuf.casterlevel);
 				if (caster && caster->IsClient() && RuleB(Client, UseLiveBlockedMessage)) {
-					if (caster->GetClass() != Class::Bard) {
+					if (!IsBardSong(spell_id)) {
 						caster->Message(Chat::Red, "Your %s did not take hold on %s. (Blocked by %s.)", spells[spell_id].name, GetName(), spells[curbuf.spellid].name);
 					}
 				}
@@ -7344,7 +7344,6 @@ bool Mob::CheckItemRaceClassDietyRestrictionsOnCast(uint32 inventory_slot) {
 	//Added to prevent MQ2 exploitation of equipping normally-unequippable/clickable items with effects and clicking them for benefits.
 	EQ::ItemInstance *itm = CastToClient()->GetInv().GetItem(inventory_slot);
 	int bitmask = (CastToClient()->GetClassesBits());
-	//bitmask = bitmask << (CastToClient()->GetClass() - 1);
 	if (itm && itm->GetItem()->Classes != 65535) {
 		if ((itm->GetItem()->Click.Type == EQ::item::ItemEffectEquipClick) && !(itm->GetItem()->Classes & bitmask)) {
 			if (CastToClient()->ClientVersion() < EQ::versions::ClientVersion::SoF) {
