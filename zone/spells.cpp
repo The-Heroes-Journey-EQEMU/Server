@@ -1743,17 +1743,10 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		TrySympatheticProc(target, spell_id);
 	}
 
-<<<<<<< Updated upstream
-	TryTwincast(this, target, spell_id);
-
-	if (slot < CastingSlot::MaxGems && slot >= CastingSlot::Gem1) {
-		TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);
-=======
 		// Moved this to inside SpellFinished
 		// TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id);	
 
 		TryTwincast(this, target, spell_id);
->>>>>>> Stashed changes
 	}
 
 	if (IsClient() && DeleteChargeFromSlot >= 0) {
