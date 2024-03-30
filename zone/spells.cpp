@@ -7339,8 +7339,8 @@ bool Mob::CheckItemRaceClassDietyRestrictionsOnCast(uint32 inventory_slot) {
 
 	//Added to prevent MQ2 exploitation of equipping normally-unequippable/clickable items with effects and clicking them for benefits.
 	EQ::ItemInstance *itm = CastToClient()->GetInv().GetItem(inventory_slot);
-	int bitmask = 1;
-	bitmask = bitmask << (CastToClient()->GetClass() - 1);
+	int bitmask = (CastToClient()->GetClassesBits());
+	//bitmask = bitmask << (CastToClient()->GetClass() - 1);
 	if (itm && itm->GetItem()->Classes != 65535) {
 		if ((itm->GetItem()->Click.Type == EQ::item::ItemEffectEquipClick) && !(itm->GetItem()->Classes & bitmask)) {
 			if (CastToClient()->ClientVersion() < EQ::versions::ClientVersion::SoF) {
@@ -7371,6 +7371,7 @@ bool Mob::CheckItemRaceClassDietyRestrictionsOnCast(uint32 inventory_slot) {
 				if (CastToClient()->ClientVersion() >= EQ::versions::ClientVersion::RoF)
 				{
 					// Line 181 in eqstr_us.txt was changed in RoF+
+					LogDebug("bitmask: [{}], classes: [{}]", bitmask, itm->GetItem()->Classes);
 					Message(Chat::Yellow, "Your race, class, or deity cannot use this item.");
 				}
 				else
