@@ -1120,82 +1120,7 @@ bool Client::CheckFizzle(uint16 spell_id)
 
 	//Live AA - Spell Casting Expertise, Mastery of the Past
 	no_fizzle_level = aabonuses.MasteryofPast + itembonuses.MasteryofPast + spellbonuses.MasteryofPast;
-
-	if (spells[spell_id].classes[GetClass()-1] < no_fizzle_level) {
-		return true;
-	}
-
-	if (RuleB(Spells, UseLegacyFizzleCode)) {
-		// CALCULATE SPELL DIFFICULTY - THIS IS CAPPED AT 255
-		// calculates minimum level this spell is available - ensures similar casting difficulty for all classes
-
-		int minimum_level = UINT8_MAX;
-		for (int a = 0; a < Class::PLAYER_CLASS_COUNT; a++) {
-			int this_lvl = spells[spell_id].classes[a];
-			if (this_lvl < minimum_level) {
-				minimum_level = this_lvl;
-			}
-		}
-
-		int spell_difficulty = (minimum_level * 5 < UINT8_MAX) ? minimum_level * 5 : UINT8_MAX;
-
-		// CALCULATE EFFECTIVE CASTING SKILL WITH BONUSES
-		int bonus_casting_level = itembonuses.adjusted_casting_skill + spellbonuses.adjusted_casting_skill + aabonuses.adjusted_casting_skill;
-		int caster_skill = GetSkill(spells[spell_id].skill) + bonus_casting_level * 5;
-		caster_skill = (caster_skill < UINT8_MAX) ? caster_skill : UINT8_MAX;
-
-		LogSpellsDetail("Caster Skill - itembonus.ACS(112) [{}] + spellbonus.ACS(112) [{}] + aabonus.ACS(112) [{}] = TotalBonusCastingLevel [{}] | caster_skill [{}] (Max 255)", itembonuses.adjusted_casting_skill, spellbonuses.adjusted_casting_skill, aabonuses.adjusted_casting_skill, bonus_casting_level, caster_skill);
-
-		// CALCULATE EFFECTIVE SPECIALIZATION SKILL VALUE
-		float specialize_skill_value = GetSpecializeSkillValue(spell_id);
-		switch (GetAA(aaSpellCastingMastery)) {
-			case 1:
-				specialize_skill_value = specialize_skill_value * 1.05;
-				break;
-			case 2:
-				specialize_skill_value = specialize_skill_value * 1.15;
-				break;
-			case 3:
-				specialize_skill_value = specialize_skill_value * 1.3;
-				break;
-		}
-
-		float specialize_reduction = (specialize_skill_value > 50) ? (specialize_skill_value - 50) / 10 : 0.0f;
-
-		// CALCULATE EFFECTIVE CASTING STAT VALUE
-		float prime_stat_reduction = 0.0f;
-
-		if (IsIntelligenceCasterClass()) {
-			prime_stat_reduction = (GetINT() - 75) / 10.0;
-		} else if (IsWisdomCasterClass()) {
-			prime_stat_reduction = (GetWIS() - 75) / 10.0;
-		}
-
-		// BARDS ARE SPECIAL - they add both CHA and DEX mods to get casting rates similar to full casters without spec skill
-		if (GetClass() == Class::Bard) {
-			prime_stat_reduction = (GetCHA() - 75 + GetDEX() - 75) / 10.0;
-		}
-
-		// GET SPELL-SPECIFIC FIZZLE CHANCE (note that specialization is only used to reduce the Fizzle_adjust!)
-		float spell_fizzle_adjust = static_cast<float>(spells[spell_id].base_difficulty);
-		spell_fizzle_adjust = (spell_fizzle_adjust - specialize_reduction > 0) ? spell_fizzle_adjust - specialize_reduction : 0.0f;
-
-		// CALCULATE FINAL FIZZLE CHANCE
-		float fizzle_chance = spell_difficulty + spell_fizzle_adjust - caster_skill - prime_stat_reduction;
-
-		if (fizzle_chance > 95.0f) {
-			fizzle_chance = 95.0f;
-		} else if (fizzle_chance < 2.0f) {
-			fizzle_chance = 2.0f;
-		}
-
-		float fizzle_roll = zone->random.Real(0, 100);
-
-		LogSpells("Check Fizzle [{}]  spell: [{}]  fizzle_chance: [{}]  roll: [{}]", GetName(), spell_id, fizzle_chance, fizzle_roll);
-
-		return fizzle_roll > fizzle_chance;
-	}
-
+	
 	//is there any sort of focus that affects fizzling?
 
 	int par_skill;
@@ -2745,7 +2670,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					Group *target_group = entity_list.GetGroupByMob(spell_target);
 					if (target_group) {
 						target_group->CastGroupSpell(this, spell_id);
-						if (GetClass() != Class::Bard) {
+						if (!IsBardSong(spell_id)) {
 							SpellOnTarget(spell_id, this);
 						}
 					}
