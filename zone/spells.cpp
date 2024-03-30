@@ -6290,7 +6290,7 @@ bool Mob::AddProcToWeapon(uint16 spell_id, bool bPerma, uint16 iChance, uint16 b
 	}
 
 	// Special case for Vampiric Embrace. If this is a Shadow Knight, the proc is different.
-	if (spell_id == SPELL_VAMPIRIC_EMBRACE && GetClass() == Class::ShadowKnight) {
+	if (spell_id == SPELL_VAMPIRIC_EMBRACE && (GetClassesBits() & GetPlayerClassBit(Class::ShadowKnight))) {
 		spell_id = SPELL_VAMPIRIC_EMBRACE_OF_SHADOW;
 	}
 
@@ -6346,7 +6346,7 @@ bool Mob::AddProcToWeapon(uint16 spell_id, bool bPerma, uint16 iChance, uint16 b
 
 bool Mob::RemoveProcFromWeapon(uint16 spell_id, bool bAll) {
 	// Special case for Vampiric Embrace. If this is a Shadow Knight, the proc is different.
-	if (spell_id == SPELL_VAMPIRIC_EMBRACE && GetClass() == Class::ShadowKnight) {
+	if (spell_id == SPELL_VAMPIRIC_EMBRACE && (GetClassesBits() & GetPlayerClassBit(Class::ShadowKnight))) {
 		spell_id = SPELL_VAMPIRIC_EMBRACE_OF_SHADOW;
 	}
 
@@ -6446,7 +6446,7 @@ bool Mob::UseBardSpellLogic(uint16 spell_id, int slot)
 	(
 		IsValidSpell(spell_id) &&
 		slot != -1 &&
-		GetClass() == Class::Bard &&
+		GetClassesBits() & GetPlayerClassBit(Class::Bard) &&
 		slot <= EQ::spells::SPELL_GEM_COUNT &&
 		IsBardSong(spell_id)
 	);
@@ -6454,13 +6454,13 @@ bool Mob::UseBardSpellLogic(uint16 spell_id, int slot)
 
 int Mob::GetCasterLevel(uint16 spell_id) {
 	int level = GetLevel();
-	if (GetClass() == Class::Bard) {
+
+	level += itembonuses.effective_casting_level + spellbonuses.effective_casting_level + aabonuses.effective_casting_level;
+
+	if (GetClassesBits() == GetPlayerClassBit(Class::Bard) && !RuleB(Custom, MulticlassingEnabled)) {
 		// Bards receive effective casting level increases to resists/effect. They don't receive benefit from spells like intellectual superiority, however.
-		level += itembonuses.effective_casting_level + aabonuses.effective_casting_level;
-	} else {
-		level += itembonuses.effective_casting_level + spellbonuses.effective_casting_level + aabonuses.effective_casting_level;
+		level -= spellbonuses.effective_casting_level;
 	}
-	LogSpells("Determined effective casting level [{}]+[{}]+[{}]=[{}]", GetLevel(), spellbonuses.effective_casting_level, itembonuses.effective_casting_level, level);
 	return std::max(1, level);
 }
 
