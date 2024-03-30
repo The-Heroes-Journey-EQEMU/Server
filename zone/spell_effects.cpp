@@ -3465,7 +3465,7 @@ int64 Mob::CalcSpellEffectValue(uint16 spell_id, int effect_id, int caster_level
 		&& IsInstrumentModifierAppliedToSpellEffect(spell_id, spells[spell_id].effect_id[effect_id])) {
 			oval = effect_value;
 			effect_value = effect_value * static_cast<int>(instrument_mod) / 10;
-			LogSpells("Effect value [{}] altered with bard modifier of [{}] to yeild [{}]",
+			LogSpells("Effect ID [{}] with base value [{}] altered with bard modifier of [{}] to yeild [{}]", spells[spell_id].effect_id[effect_id],
 				oval, instrument_mod, effect_value);
 	}
 	/*
