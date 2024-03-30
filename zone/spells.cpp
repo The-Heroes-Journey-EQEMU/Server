@@ -2853,6 +2853,19 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 		}
 	}
 
+	if (RuleB(Custom, ExpandedPetAffinity)) {
+		if (IsClient() &&
+			IsBeneficialSpell(spell_id)
+			!spells[spell_id].is_discipline &&
+		    spell_target->IsClient() && 
+			spell_target->HasPet() && 
+			spell_target->GetPet() && 
+			spell_target->HasPetAffinity() &&
+			!spell_target->GetPet()->IsCharmed()) {
+				SpellOnTarget(spell_id, spell_target->GetPet());
+			}
+	}
+
 	return true;
 }
 
