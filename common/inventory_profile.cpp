@@ -1496,6 +1496,10 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 	uint32 quantity_found = 0;
 
 	for (auto iter = bucket.begin(); iter != bucket.end(); ++iter) {
+		// Skip checking corpses
+		if (iter->first <= EQ::invslot::CORPSE_END && iter->first >= EQ::invslot::CORPSE_BEGIN) {
+			continue;
+		}
 		if (iter->first <= EQ::invslot::POSSESSIONS_END && iter->first >= EQ::invslot::POSSESSIONS_BEGIN) {
 			if ((((uint64)1 << iter->first) & m_lookup->PossessionsBitmask) == 0)
 				continue;
@@ -1598,6 +1602,10 @@ int16 EQ::InventoryProfile::_HasItemByUse(std::map<int16, ItemInstance*>& bucket
 	uint32 quantity_found = 0;
 
 	for (auto iter = bucket.begin(); iter != bucket.end(); ++iter) {
+		// Skip checking corpses
+		if (iter->first <= EQ::invslot::CORPSE_END && iter->first >= EQ::invslot::CORPSE_BEGIN) {
+			continue;
+		}
 		if (iter->first <= EQ::invslot::POSSESSIONS_END && iter->first >= EQ::invslot::POSSESSIONS_BEGIN) {
 			if ((((uint64)1 << iter->first) & m_lookup->PossessionsBitmask) == 0)
 				continue;
@@ -1671,6 +1679,10 @@ int16 EQ::InventoryProfile::_HasItemByUse(ItemInstQueue& iqueue, uint8 use, uint
 int16 EQ::InventoryProfile::_HasItemByLoreGroup(std::map<int16, ItemInstance*>& bucket, uint32 loregroup)
 {
 	for (auto iter = bucket.begin(); iter != bucket.end(); ++iter) {
+		// Skip checking corpses
+		if (iter->first <= EQ::invslot::CORPSE_END && iter->first >= EQ::invslot::CORPSE_BEGIN) {
+			continue;
+		}
 		if (iter->first <= EQ::invslot::POSSESSIONS_END && iter->first >= EQ::invslot::POSSESSIONS_BEGIN) {
 			if ((((uint64)1 << iter->first) & m_lookup->PossessionsBitmask) == 0)
 				continue;
