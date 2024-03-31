@@ -1529,14 +1529,14 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 			auto bag_inst = bag_iter->second;
 			if (bag_inst == nullptr) { continue; }
 
-			if (bag_inst->GetID() == item_id || bag_inst->GetID() % 1000000 == item_id) {
+			if (bag_inst->GetID() == item_id || bag_inst->GetID() % 1000000 == item_id % 1000000) {
 				quantity_found += (bag_inst->GetCharges() <= 0) ? 1 : bag_inst->GetCharges();
 				if (quantity_found >= quantity)
 					return InventoryProfile::CalcSlotId(iter->first, bag_iter->first);
 			}
 
 			for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
-				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1 || bag_inst->GetAugmentItemID(index) % 1000000 == item_id && quantity <= 1)
+				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1 || bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1)
 					return invslot::SLOT_AUGMENT_GENERIC_RETURN;
 			}
 		}
@@ -1560,7 +1560,7 @@ int16 EQ::InventoryProfile::_HasItem(ItemInstQueue& iqueue, uint32 item_id, uint
 		auto inst = *iter;
 		if (inst == nullptr) { continue; }
 
-		if (inst->GetID() == item_id) {
+		if (inst->GetID() % 1000000 == item_id % 1000000) {
 			quantity_found += (inst->GetCharges() <= 0) ? 1 : inst->GetCharges();
 			if (quantity_found >= quantity)
 				return invslot::slotCursor;
@@ -1577,7 +1577,7 @@ int16 EQ::InventoryProfile::_HasItem(ItemInstQueue& iqueue, uint32 item_id, uint
 			auto bag_inst = bag_iter->second;
 			if (bag_inst == nullptr) { continue; }
 
-			if (bag_inst->GetID() == item_id) {
+			if (bag_inst->GetID() % 1000000 == item_id % 1000000) {
 				quantity_found += (bag_inst->GetCharges() <= 0) ? 1 : bag_inst->GetCharges();
 				if (quantity_found >= quantity)
 					return InventoryProfile::CalcSlotId(invslot::slotCursor, bag_iter->first);
