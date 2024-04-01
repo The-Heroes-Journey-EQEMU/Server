@@ -955,7 +955,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 		}
 	}
 
-	if (!(Strings::ToInt(sender->GetBucket("SeasonalCharacter"), 0) || Strings::ToInt(sender->GetBucket("DiscordantCharacter"), 0))) {
+	if (!(Strings::ToInt(GetBucket("SeasonalCharacter"), 0) || Strings::ToInt(GetBucket("DiscordantCharacter"), 0))) {
 		auto temporary_merchant_list_two = zone->tmpmerchanttable[npcid];
 		temporary_merchant_list.clear();
 		for (auto ml : temporary_merchant_list_two) {
