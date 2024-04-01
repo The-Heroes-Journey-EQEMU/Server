@@ -15626,12 +15626,12 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 	// Pass trade request on to recipient
 	if (tradee && tradee->IsClient()) {
-		if (IsHardcore() || CastToClient()->tradee->IsHardcore()) {
+		if (IsHardcore() || tradee->CastToClient()->IsHardcore()) {
 			Message(Chat::Red, "A Discordant may not trade with other players.");
 			return;
 		}
 
-		if (IsSeasonal() != CastToClient()->tradee->IsSeasonal()) {
+		if (IsSeasonal() != tradee->CastToClient()->IsSeasonal()) {
 			Message(Chat::Red, "Seasonal Characters may not trade with other players who are not Seasonal.");
 			return;
 		}
