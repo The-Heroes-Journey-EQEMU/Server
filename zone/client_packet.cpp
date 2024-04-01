@@ -7480,10 +7480,6 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 
 	Mob* invitee = nullptr;
 
-	if (IsSeasonal() != invitee->IsSeasonal()) {
-		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
-	}
-
 	if (RuleB(Character, GroupInvitesRequireTarget)) {
 		// We can only invite the current target.
 		invitee = GetTarget();
@@ -7494,6 +7490,10 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 	if (invitee == this) {
 		MessageString(Chat::LightGray, GROUP_INVITEE_SELF);
 		return;
+	}
+
+	if (invitee && invitee->IsClient && IsSeasonal() != invitee->CastToClient()->IsSeasonal()) {
+		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
 	}
 
 	if (invitee) {
