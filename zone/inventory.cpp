@@ -741,7 +741,7 @@ void Client::DropItem(int16 slot_id, bool recurse)
 		slot_id
 	);
 
-	if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(GetBucket("SeasonalCharacter"), 0)) {				
+	if (IsSeasonal()) {				
 		Message(Chat::Red, "Seasonal Characters may not drop items.");
 		SendCursorBuffer();
 		return;
