@@ -573,7 +573,7 @@ bool Object::HandleClick(Client* sender, const ClickObject_Struct* click_object)
 		bool duplicate_lore = false;
 
 		if (m_inst && sender) {
-			if (RuleI(Custom, EnableSeasonalCharacters) == std::stoi(sender->GetBucket("SeasonalCharacter")) && !m_ground_spawn) {
+			if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(sender->GetBucket("SeasonalCharacter"), 0) && !m_ground_spawn) {
 				cursor_delete = true;
 				sender->Message(Chat::Red, "You may not pick up items left on the ground by other players as a Seasonal Character.");
 			}
