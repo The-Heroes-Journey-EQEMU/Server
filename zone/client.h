@@ -1006,10 +1006,10 @@ public:
 	int GetEXPPercentage();
 
 	// Seasonal Helper Methods
-	bool IsSeasonal() const { return Strings::ToInt(GetBucket("SeasonalCharacter"), 0) == RuleI(Custom, EnableSeasonalCharacters); }
+	bool IsSeasonal() { return Strings::ToInt(GetBucket("SeasonalCharacter"), 0) == RuleI(Custom, EnableSeasonalCharacters); }
 
 	// Hardcore Helper Methods
-	bool IsHardcore() const { Strings::ToInt(GetBucket("DiscordantCharacter"), 0); }
+	bool IsHardcore() { Strings::ToInt(GetBucket("DiscordantCharacter"), 0); }
 
 	// Item methods
 	void UseAugmentContainer(int container_slot);
