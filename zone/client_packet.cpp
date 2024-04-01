@@ -7427,6 +7427,7 @@ void Client::Handle_OP_GroupFollow2(const EQApplicationPacket *app)
 	if (inviter && inviter->IsClient() && IsSeasonal() != inviter->CastToClient()->IsSeasonal()) {
 		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
 		inviter->Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
+		return;
 	}
 
 	if (LFP) {
@@ -7494,6 +7495,7 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 
 	if (invitee && invitee->IsClient() && IsSeasonal() != invitee->CastToClient()->IsSeasonal()) {
 		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
+		return;
 	}
 
 	if (invitee) {
