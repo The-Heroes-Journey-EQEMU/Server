@@ -574,7 +574,7 @@ bool Object::HandleClick(Client* sender, const ClickObject_Struct* click_object)
 
 		if (m_inst && sender) {
 			if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(sender->GetBucket("SeasonalCharacter"), 0) && !m_ground_spawn) {				
-				sender->Message(Chat::Red, "You may only pick up naturally spawned items as a Seasonal Character.");
+				sender->Message(Chat::Red, "Seasonal Characters may not pick up items left by players.");
 				return false;
 			}
 
