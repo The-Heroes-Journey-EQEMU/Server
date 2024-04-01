@@ -7492,7 +7492,7 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (invitee && invitee->IsClient && IsSeasonal() != invitee->CastToClient()->IsSeasonal()) {
+	if (invitee && invitee->IsClient() && IsSeasonal() != invitee->CastToClient()->IsSeasonal()) {
 		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
 	}
 
