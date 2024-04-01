@@ -2863,6 +2863,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 		if (spell_target && IsClient() && 
 			IsValidSpell(spell_id) &&
 			IsBeneficialSpell(spell_id) &&
+			!IsSummonPetSpell(spell_id) &&
 			!spells[spell_id].is_discipline &&
 			!spells[spell_id].short_buff_box &&	
 			spell_target->IsClient() && 		
