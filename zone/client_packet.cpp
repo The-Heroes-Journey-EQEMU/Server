@@ -15688,12 +15688,12 @@ void Client::Handle_OP_TradeRequestAck(const EQApplicationPacket *app)
 void Client::Handle_OP_TraderShop(const EQApplicationPacket *app)
 {
 	// Disable Trader Actions for Seasonal Characters 
-	if (IsSeasonal()) {
+	if (IsSeasonal() && !app->size == 4) {
 		Message(Chat::Red, "Seasonal Characters may not use traders until the end of the season.");
 		return;		
 	}
 
-	if (IsHardcore()) {
+	if (IsHardcore() && !app->size == 4) {
 		Message(Chat::Red, "A Discordant may not trade with other players.");
 		return;		
 	}
