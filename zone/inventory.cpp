@@ -743,10 +743,7 @@ void Client::DropItem(int16 slot_id, bool recurse)
 
 	if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(GetBucket("SeasonalCharacter"), 0)) {				
 		Message(Chat::Red, "Seasonal Characters may not drop items.");
-		auto* inst = m_inv.PopItem(slot_id);
-		if (inst) {
-			m_inv.PushCursor(*inst);
-		}
+		BulkSendInventoryItems();
 		return;
 	}
 
