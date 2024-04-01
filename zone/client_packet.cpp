@@ -15414,6 +15414,11 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 		return;		
 	}
 
+	if (IsHardcore()) {
+		Message(Chat::Red, "A Discordant may not trade with other players.");
+		return;	
+	}
+
 	uint32 max_items = EQ::invtype::BAZAAR_SIZE;
 
 	/*
@@ -15689,7 +15694,7 @@ void Client::Handle_OP_TraderShop(const EQApplicationPacket *app)
 	}
 
 	if (IsHardcore()) {
-		Message(Chat::Red, "A Discordant may not purchase items from other players.");
+		Message(Chat::Red, "A Discordant may not trade with other players.");
 		return;		
 	}
 
