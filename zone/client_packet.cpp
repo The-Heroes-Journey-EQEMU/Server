@@ -15409,6 +15409,10 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 	// SoF sends 1 or more unhandled OP_Trader packets of size 96 when a trade has completed.
 	// I don't know what they are for (yet), but it doesn't seem to matter that we ignore them.
 
+	if (IsSeasonal()) {
+		Message(Chat::Red, "Seasonal Characters may not use traders until the end of the season.");
+		return;		
+	}
 
 	uint32 max_items = EQ::invtype::BAZAAR_SIZE;
 
@@ -15584,6 +15588,13 @@ void Client::Handle_OP_TraderBuy(const EQApplicationPacket *app)
 	//
 	// Client has elected to buy an item from a Trader
 	//
+
+	if (IsSeasonal()) {
+		Message(Chat::Red, "Seasonal Characters may not use traders until the end of the season.");
+		return;		
+	}
+
+
 	if (app->size != sizeof(TraderBuy_Struct)) {
 		LogError("Wrong size: OP_TraderBuy, size=[{}], expected [{}]", app->size, sizeof(TraderBuy_Struct));
 		return;
@@ -15671,8 +15682,18 @@ void Client::Handle_OP_TradeRequestAck(const EQApplicationPacket *app)
 
 void Client::Handle_OP_TraderShop(const EQApplicationPacket *app)
 {
-	// Bazaar Trader:
+	// Disable Trader Actions for Seasonal Characters 
+	if (IsSeasonal()) {
+		Message(Chat::Red, "Seasonal Characters may not use traders until the end of the season.");
+		return;		
+	}
 
+	if (IsHardcore()) {
+		Message(Chat::Red, "A Discordant may not purchase items from other players.");
+		return;		
+	}
+
+	// Bazaar Trader:
 	if (app->size == sizeof(TraderClick_Struct))
 	{
 
