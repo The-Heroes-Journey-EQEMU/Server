@@ -15626,9 +15626,19 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 	// Pass trade request on to recipient
 	if (tradee && tradee->IsClient()) {
+		if (Strings::ToInt(GetBucket("DiscordantCharacter")) || Strings::ToInt(tradee->GetBucket("DiscordantCharacter"))) {
+			Message(Chat::Red, "A Discordant may not trade with other players.");
+			tradee->Message(Chat::Red, "A Discordant may not trade with other players.");
+			return;
+		}
+
 		if (GetBucket("SeasonalCharacter") == tradee->GetBucket("SeasonalCharacter")) {
 			tradee->CastToClient()->QueuePacket(app);
-		}		
+		} else {
+			Message(Chat::Red, "Seasonal Characters may not trade with other players who are not Seasonal.");
+			tradee->Message(Chat::Red, "Seasonal Characters may not trade with other players who are not Seasonal.");
+			return;
+		}
 	}
 	else if (tradee && (tradee->IsNPC() || tradee->IsBot())) {
         if (!tradee->IsEngaged()) {
