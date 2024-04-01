@@ -573,9 +573,9 @@ bool Object::HandleClick(Client* sender, const ClickObject_Struct* click_object)
 		bool duplicate_lore = false;
 
 		if (m_inst && sender) {
-			if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(sender->GetBucket("SeasonalCharacter"), 0) && !m_ground_spawn) {
-				cursor_delete = true;
+			if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(sender->GetBucket("SeasonalCharacter"), 0) && !m_ground_spawn) {				
 				sender->Message(Chat::Red, "You may not pick up items left on the ground by other players as a Seasonal Character.");
+				return false;
 			}
 
 			// if there is a lore conflict, delete the offending item from the server inventory
