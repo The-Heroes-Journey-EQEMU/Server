@@ -743,7 +743,7 @@ void Client::DropItem(int16 slot_id, bool recurse)
 
 	if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(GetBucket("SeasonalCharacter"), 0)) {				
 		Message(Chat::Red, "Seasonal Characters may not drop items.");
-		BulkSendInventoryItems();
+		SendCursorBuffer();
 		return;
 	}
 
@@ -966,6 +966,12 @@ void Client::DropInst(const EQ::ItemInstance* inst)
 	if (!inst) {
 		// Item doesn't exist in inventory!
 		Message(Chat::Red, "Error: Item not found");
+		return;
+	}
+
+	if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(GetBucket("SeasonalCharacter"), 0)) {				
+		Message(Chat::Red, "Seasonal Characters may not drop items.");
+		SendCursorBuffer();
 		return;
 	}
 
