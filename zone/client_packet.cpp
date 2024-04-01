@@ -15626,7 +15626,9 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 	// Pass trade request on to recipient
 	if (tradee && tradee->IsClient()) {
-		tradee->CastToClient()->QueuePacket(app);
+		if (GetBucket("SeasonalCharacter") == tradee->GetBucket("SeasonalCharacter")) {
+			tradee->CastToClient()->QueuePacket(app);
+		}		
 	}
 	else if (tradee && (tradee->IsNPC() || tradee->IsBot())) {
         if (!tradee->IsEngaged()) {
