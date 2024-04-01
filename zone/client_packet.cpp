@@ -15628,7 +15628,6 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 	if (tradee && tradee->IsClient()) {
 		if (Strings::ToInt(GetBucket("DiscordantCharacter")) || Strings::ToInt(tradee->GetBucket("DiscordantCharacter"))) {
 			Message(Chat::Red, "A Discordant may not trade with other players.");
-			tradee->Message(Chat::Red, "A Discordant may not trade with other players.");
 			return;
 		}
 
@@ -15636,7 +15635,6 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 			tradee->CastToClient()->QueuePacket(app);
 		} else {
 			Message(Chat::Red, "Seasonal Characters may not trade with other players who are not Seasonal.");
-			tradee->Message(Chat::Red, "Seasonal Characters may not trade with other players who are not Seasonal.");
 			return;
 		}
 	}
