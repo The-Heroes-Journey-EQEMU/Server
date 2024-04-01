@@ -1496,10 +1496,6 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 	uint32 quantity_found = 0;
 
 	for (auto iter = bucket.begin(); iter != bucket.end(); ++iter) {
-		// Skip checking corpses
-		if (iter->first <= EQ::invslot::CORPSE_END && iter->first >= EQ::invslot::CORPSE_BEGIN) {
-			continue;
-		}
 		if (iter->first <= EQ::invslot::POSSESSIONS_END && iter->first >= EQ::invslot::POSSESSIONS_BEGIN) {
 			if ((((uint64)1 << iter->first) & m_lookup->PossessionsBitmask) == 0)
 				continue;
@@ -1512,14 +1508,14 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 		auto inst = iter->second;
 		if (inst == nullptr) { continue; }
 
-		if (inst->GetID() == item_id || inst->GetID() == item_id) {
+		if (inst->GetID() % 1000000 == item_id % 1000000) {
 			quantity_found += (inst->GetCharges() <= 0) ? 1 : inst->GetCharges();
 			if (quantity_found >= quantity)
 				return iter->first;
 		}
 
 		for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
-			if (inst->GetAugmentItemID(index) == item_id && quantity <= 1)
+			if (inst->GetAugmentItemID(index) % 1000000 == item_id % 1000000 && quantity <= 1)
 				return invslot::SLOT_AUGMENT_GENERIC_RETURN;
 		}
 
@@ -1529,14 +1525,14 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 			auto bag_inst = bag_iter->second;
 			if (bag_inst == nullptr) { continue; }
 
-			if (bag_inst->GetID() == item_id || bag_inst->GetID() == item_id) {
+			if (bag_inst->GetID() % 1000000 == item_id % 1000000) {
 				quantity_found += (bag_inst->GetCharges() <= 0) ? 1 : bag_inst->GetCharges();
 				if (quantity_found >= quantity)
 					return InventoryProfile::CalcSlotId(iter->first, bag_iter->first);
 			}
 
 			for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
-				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1 || bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1)
+				if (bag_inst->GetAugmentItemID(index) % 1000000 == item_id % 1000000 && quantity <= 1)
 					return invslot::SLOT_AUGMENT_GENERIC_RETURN;
 			}
 		}
