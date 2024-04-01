@@ -7421,15 +7421,20 @@ void Client::Handle_OP_GroupFollow2(const EQApplicationPacket *app)
 		return;
 	}
 
+	GroupGeneric_Struct* gf = (GroupGeneric_Struct*)app->pBuffer;
+	Mob* inviter = entity_list.GetClientByName(gf->name1);
+
+	if (IsSeasonal() != inviter->IsSeasonal()) {
+		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
+		inviter->Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
+	}
+
 	if (LFP) {
 		// If we were looking for players to start our own group, but we accept an invitation to another
 		// group, turn LFP off.
 		database.SetLFP(CharacterID(), false);
 		worldserver.StopLFP(CharacterID());
 	}
-
-	GroupGeneric_Struct* gf = (GroupGeneric_Struct*)app->pBuffer;
-	Mob* inviter = entity_list.GetClientByName(gf->name1);
 
 	// Inviter and Invitee are in the same zone
 	if (inviter != nullptr && inviter->IsClient())
@@ -7470,9 +7475,14 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 		return;
 	}
 
+
 	GroupInvite_Struct* gis = (GroupInvite_Struct*)app->pBuffer;
 
 	Mob* invitee = nullptr;
+
+	if (IsSeasonal() != invitee->IsSeasonal()) {
+		Message(Chat::Red, "Seasonal characters may only group with other Seasonal characters.");
+	}
 
 	if (RuleB(Character, GroupInvitesRequireTarget)) {
 		// We can only invite the current target.
