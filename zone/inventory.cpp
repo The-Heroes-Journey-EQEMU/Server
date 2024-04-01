@@ -975,7 +975,6 @@ void Client::DropInst(const EQ::ItemInstance* inst)
 		return;
 	}
 
-
 	if (inst->GetItem()->NoDrop == 0)
 	{
 		Message(Chat::Red, "This item is NODROP. Deleting.");
