@@ -980,29 +980,23 @@ int64 Mob::GetSpellHPBonuses() {
 
 bool Mob::IsIntelligenceCasterClass(uint8 class_id) const
 {
-	if (IsClient() && class_id < Class::Warrior) {
+	if (IsClient()) {
 		int classes_bits = CastToClient()->GetClassesBits();
-
 		std::vector<uint16> classes = {
 			Class::ShadowKnight, 
 			Class::Bard, 
 			Class::Necromancer, 
-			Class::Wizard,
-			Class::Enchanter,
+			Class::Wizard,			
 			Class::Magician,
+			Class::Enchanter,
 		};
-
 		for (const auto& classid : classes) {
 			if (classes_bits & (1 << (classid - 1))) {
 				return true;
 			}
-		}
-
-		return false;
+		}		
 	} else {
-		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
-
-		switch (effective_class_id) {
+		switch (GetClass()) {
 			case Class::ShadowKnight:
 			case Class::Bard:
 			case Class::Necromancer:
@@ -1016,105 +1010,15 @@ bool Mob::IsIntelligenceCasterClass(uint8 class_id) const
 			case Class::MagicianGM:
 			case Class::EnchanterGM:
 				return true;
-		}
+		}	
     }
-}
-
-bool Mob::IsPureMeleeClass(uint8 class_id) const
-{
-	if (IsClient() && class_id < Class::Warrior) {
-		int classes_bits = CastToClient()->GetClassesBits();
-
-		std::vector<uint16> classes = {
-			Class::Warrior, 
-			Class::Rogue, 
-			Class::Monk, 
-			Class::Berserker,
-		};
-
-		for (const auto& classid : classes) {
-			if (classes_bits & (1 << (classid - 1))) {
-				return true;
-			}
-		}
-
-		return false;
-	} else {
-		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
-
-        switch(effective_class_id) {
-			case Class::Warrior:
-			case Class::Monk:
-			case Class::Rogue:
-			case Class::Berserker:
-			case Class::WarriorGM:
-			case Class::MonkGM:
-			case Class::RogueGM:
-			case Class::BerserkerGM:
-                return true;
-            default:
-                return false;
-        }
-    }
-}
-
-bool Mob::IsWarriorClass(uint8 class_id) const { 
-	if (IsClient() && class_id < Class::Warrior) {
-		int classes_bits = CastToClient()->GetClassesBits();
-
-		std::vector<uint16> classes = {
-			Class::Warrior, 
-			Class::Rogue, 
-			Class::Monk, 
-			Class::Paladin,
-			Class::ShadowKnight, 
-			Class::Ranger, 
-			Class::Beastlord, 
-			Class::Berserker, 
-			Class::Bard,
-		};
-
-		for (const auto& classid : classes) {
-			if (classes_bits & (1 << (classid - 1))) {
-				return true;
-			}
-		}
-
-		return false;
-	} else {
-		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
-
-        switch(effective_class_id) {
-            case Class::Warrior:
-            case Class::WarriorGM:
-            case Class::Rogue:
-            case Class::RogueGM:
-            case Class::Monk:
-            case Class::MonkGM:
-            case Class::Paladin:
-            case Class::PaladinGM:
-            case Class::ShadowKnight:
-            case Class::ShadowKnightGM:
-            case Class::Ranger:
-            case Class::RangerGM:
-            case Class::Beastlord:
-            case Class::BeastlordGM:
-            case Class::Berserker:
-            case Class::BerserkerGM:
-            case Class::Bard:
-            case Class::BardGM:
-                return true;
-            default:
-                return false;
-        }
-    }
+	return false;
 }
 
 bool Mob::IsWisdomCasterClass(uint8 class_id) const
 {
-	if (IsClient() && class_id < Class::Warrior) {
+	if (IsClient()) {
 		int classes_bits = CastToClient()->GetClassesBits();
-
 		std::vector<uint16> classes = {
 			Class::Cleric, 
 			Class::Paladin, 
@@ -1123,18 +1027,13 @@ bool Mob::IsWisdomCasterClass(uint8 class_id) const
 			Class::Shaman,
 			Class::Beastlord, 
 		};
-
 		for (const auto& class_id : classes) {
 			if (classes_bits & (1 << (class_id - 1))) {
 				return true;
 			}
 		}
-
-		return false;
 	} else {
-		uint8 effective_class_id = (class_id >= Class::Warrior) ? class_id : GetClass();
-
-        switch(effective_class_id) {
+        switch (GetClass()) {
 			case Class::Cleric:
 			case Class::Paladin:
 			case Class::Ranger:
@@ -1147,11 +1046,87 @@ bool Mob::IsWisdomCasterClass(uint8 class_id) const
 			case Class::DruidGM:
 			case Class::ShamanGM:
 			case Class::BeastlordGM:
-                return true;
-            default:
-                return false;
+				return true;
+		}
+    }
+	return false;
+}
+
+bool Mob::IsPureMeleeClass(uint8 class_id) const
+{
+	if (IsClient()) {
+		int classes_bits = CastToClient()->GetClassesBits();
+		std::vector<uint16> classes = {
+			Class::Warrior,
+			Class::Monk,
+			Class::Rogue,			 
+			Class::Berserker,
+		};
+		for (const auto& classid : classes) {
+			if (classes_bits & (1 << (classid - 1))) {
+				return true;
+			}
+		}
+	} else {
+        switch (GetClass()) {
+			case Class::Warrior:
+			case Class::Monk:
+			case Class::Rogue:
+			case Class::Berserker:
+			case Class::WarriorGM:
+			case Class::MonkGM:
+			case Class::RogueGM:
+			case Class::BerserkerGM:
+				return true;
         }
     }
+	return false;
+}
+
+bool Mob::IsWarriorClass(uint8 class_id) const 
+{ 
+	if (IsClient()) {
+		int classes_bits = CastToClient()->GetClassesBits();
+		std::vector<uint16> classes = {
+			Class::Warrior,
+			Class::Paladin,
+			Class::Ranger,
+			Class::ShadowKnight, 
+			Class::Monk, 
+			Class::Bard,
+			Class::Rogue,			
+			Class::Beastlord, 
+			Class::Berserker,			
+		};
+		for (const auto& classid : classes) {
+			if (classes_bits & (1 << (classid - 1))) {
+				return true;
+			}
+		}		
+	} else {
+        switch (GetClass()) {
+			case Class::Warrior:
+			case Class::Paladin:
+			case Class::Ranger:
+			case Class::ShadowKnight:
+			case Class::Monk:
+			case Class::Bard:
+			case Class::Rogue:
+			case Class::Beastlord:
+			case Class::Berserker:
+			case Class::WarriorGM:
+			case Class::PaladinGM:
+			case Class::RangerGM:
+			case Class::ShadowKnightGM:
+			case Class::MonkGM:
+			case Class::BardGM:
+			case Class::RogueGM:
+			case Class::BeastlordGM:
+			case Class::BerserkerGM:
+				return true;
+        }
+    }
+	return false;
 }
 
 uint8 Mob::GetArchetype() const
@@ -1735,6 +1710,22 @@ void Mob::SendHPUpdate(bool force_update_all)
 			_appearance = eaLooting;
 		}
 	}
+}
+
+void Mob::SendRename(Mob *sender, const char* old_name, const char* new_name)
+{
+	auto out2 = new EQApplicationPacket(OP_MobRename, sizeof(MobRename_Struct));
+	auto data = (MobRename_Struct *)out2->pBuffer;
+	out2->priority = 6;
+
+	strn0cpy(data->old_name, old_name, sizeof(data->old_name));
+	strn0cpy(data->old_name_again, old_name, sizeof(data->old_name_again));
+	strn0cpy(data->new_name, new_name, sizeof(data->new_name));
+	data->unknown192 = 0;
+	data->unknown196 = 1;
+
+	entity_list.QueueClients(sender, out2);
+	safe_delete(out2);
 }
 
 void Mob::StopMoving()
@@ -4464,15 +4455,7 @@ void Mob::TempName(const char *newname)
 	entity_list.MakeNameUnique(temp_name);
 
 	// Send the new name to all clients
-	auto outapp = new EQApplicationPacket(OP_MobRename, sizeof(MobRename_Struct));
-	MobRename_Struct* mr = (MobRename_Struct*) outapp->pBuffer;
-	strn0cpy(mr->old_name, old_name, 64);
-	strn0cpy(mr->old_name_again, old_name, 64);
-	strn0cpy(mr->new_name, temp_name, 64);
-	mr->unknown192 = 0;
-	mr->unknown196 = 1;
-	entity_list.QueueClients(this, outapp);
-	safe_delete(outapp);
+	SendRename(this, old_name, temp_name);
 
 	SetName(temp_name);
 }
