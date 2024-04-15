@@ -10889,8 +10889,7 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 {
 	if (m_ClientVersionBit & EQ::versions::maskRoF2AndLater) {
-		if (!CharacterID())
-		{
+		if (!CharacterID()) {
 			return;
 		}
 
@@ -10906,12 +10905,14 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// Handling each move operation
 		for (uint32 i = 0; i < moves->count; ++i) {
 			const MultiMoveItemSub_Struct& move = moves->moves[i];
-			Message(Chat::Red, "Slot [{}], Name [{}]", move.from_slot.Slot, GetInv().GetItem(move.from_slot.Slot)->GetID());
+			Message(Chat::Red, fmt::format("Slot [{}], Name [{}]", move.from_slot.Slot, GetInv().GetItem(move.from_slot.Slot)->GetID()));
+			// Process will be to check if each item exists in the from_slot, then check if to_slot is empty.
+			// if to_slot is empty, do the swap, otherwise swap into cursor queue
 		}
 
 		// Add more handling if necessary
 	} else {
-		Kick("Unimplemented move multiple items"); // TODO: lets not desync though
+		Kick("Unimplemented move multiple items"); // This packet should not be sent by an older client
 	}
 }
 
