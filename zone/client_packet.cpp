@@ -10888,7 +10888,31 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 
 void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 {
-	Kick("Unimplemented move multiple items"); // TODO: lets not desync though
+	if (m_ClientVersionBit & EQ::versions::maskRoF2AndLater) {
+		if (!CharacterID())
+		{
+			return;
+		}
+
+		if (app->size < sizeof(MultiMoveItem_Struct)) {
+			return; // Not enough data to be a valid packet
+		}
+
+		const MultiMoveItem_Struct* moves = reinterpret_cast<const MultiMoveItem_Struct*>(app->pBuffer);
+		if (app->size != sizeof(MultiMoveItem_Struct) + sizeof(MultiMoveItemSub_Struct) * moves->count) {
+			return; // Packet size does not match expected size
+		}
+
+		// Handling each move operation
+		for (uint32 i = 0; i < moves->count; ++i) {
+			const MultiMoveItemSub_Struct& move = moves->moves[i];
+			Message(Chat::Red, "Slot [{}], Name [{}]", move.from_slot.Slot, GetInv().GetItem(move.from_slot.Slot)->GetID());
+		}
+
+		// Add more handling if necessary
+	} else {
+		Kick("Unimplemented move multiple items"); // TODO: lets not desync though
+	}
 }
 
 void Client::Handle_OP_OpenContainer(const EQApplicationPacket *app)
