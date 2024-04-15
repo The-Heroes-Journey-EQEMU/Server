@@ -10901,14 +10901,31 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		if (app->size != sizeof(MultiMoveItem_Struct) + sizeof(MultiMoveItemSub_Struct) * moves->count) {
 			return; // Packet size does not match expected size
 		}
-
-		// I don't think we actually care to handle this packet as properly described in the packet.
-		// We only need to look at the first MultiMoveItemSub_Struct, get the bag slots involved and swap their contents
-		// It might be more efficient to do it another way but... this should be fine?			
+			
 		const auto from_bag = moves->moves[0].from_slot.Slot;
 		const auto to_bag   = moves->moves[0].to_slot.Slot;
 
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
+			for (int i = 0; i < moves->count; i++) {
+				MoveItem_Struct* move_struct = new MoveItem_Struct();
+				move_struct->from_slot = m_inv.CalcSlotId(moves->moves[i].from_slot.Slot, moves->moves[i].from_slot.SubIndex);
+				move_struct->to_slot   = m_inv.CalcSlotId(moves->moves[i].to_slot.Slot, moves->moves[i].to_slot.SubIndex);
+
+				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
+					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
+					continue;
+				}
+
+				move_struct->number_in_stack = moves->moves[i].number_in_stack;
+
+				if (m_inv.GetItem(move_struct->from_slot) || m_inv.GetItem(move_struct->to_slot)) {
+					SwapItem(move_struct);
+				}
+
+				safe_delete(move_struct);
+			}
+
+			/* pause this verison, lets try a diff method
 			for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END; i++) {
 				MoveItem_Struct* move_struct = new MoveItem_Struct();
 
@@ -10917,6 +10934,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
 					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
+					continue;
 				}
 
 				if (m_inv.GetItem(move_struct->from_slot)) {
@@ -10935,6 +10953,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				safe_delete(move_struct);
 			}
+		*/
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
 		}	
