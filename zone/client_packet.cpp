@@ -10911,8 +10911,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// Handling each move operation
 		for (uint32 i = 0; i < moves->count; ++i) {
 			const MultiMoveItemSub_Struct& move = moves->moves[i];
-			LogDebug("From Slot [{}], SubIndex [{}], Name? [{}]", move.from_slot.Slot, move.from_slot.SubIndex, GetInv().GetItem(move.from_slot.SubIndex)->GetID());
-			LogDebug("To Slot [{}], SubIndex [{}], Name? [{}]", move.to_slot.Slot, move.to_slot.SubIndex, GetInv().GetItem(move.to_slot.SubIndex)->GetID());
+			LogDebug("From Slot [{}], SubIndex [{}], Name? [{}]", move.from_slot.SubIndex, GetInv().GetItem(move.from_slot.Slot)->GetID());
+			LogDebug("To Slot [{}], Name [{}]", move.to_slot.SubIndex, GetInv().GetItem(move.to_slot.Slot)->GetID());
 			// Process will be to check if each item exists in the from_slot, then check if to_slot is empty.
 			// if to_slot is empty, do the swap, otherwise swap into cursor queue
 
