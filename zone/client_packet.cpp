@@ -10915,8 +10915,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				move_struct->from_slot = m_inv.CalcSlotId(from_bag, i);
 				move_struct->to_slot   = m_inv.CalcSlotId(to_bag, i);			
 
-				if (from_slot == 33 || to_slot == 33) {
-					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?!");
+				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
+					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
 				}
 
 				if (m_inv.GetItem(move_struct->from_slot)) {
