@@ -10926,27 +10926,26 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 		// I don't think we actually care to handle this packet as properly described in the packet.
 		// We only need to look at the first MultiMoveItemSub_Struct, get the bag slots involved and swap their contents
-		// It might be more efficient to do it another way but... this should be fine?
-
-		auto inventory = GetInv();		
+		// It might be more efficient to do it another way but... this should be fine?			
 		const auto from_bag = moves->moves[0].from_slot.Slot;
 		const auto to_bag   = moves->moves[0].to_slot.Slot;
 
-		if (inventory.GetItem(from_bag)->IsClassBag() && inventory.GetItem(to_bag)->IsClassBag()) {
+		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
 			for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END; i++) {
 				MoveItem_Struct* move_struct = new MoveItem_Struct();
 
-				move_struct->from_slot = inventory.CalcSlotId(from_bag, i);
-				move_struct->to_slot   = inventory.CalcSlotId(to_bag, i);
+				move_struct->from_slot = m_inv.CalcSlotId(from_bag, i);
+				move_struct->to_slot   = m_inv.CalcSlotId(to_bag, i);
 
-				if (inventory.GetItem(move_struct->from_slot) && inventory.GetItem(move_struct->from_slot)->IsStackable()) {
-					move_struct->number_in_stack = inventory.GetItem(move_struct->from_slot)->GetCharges();
+				auto from_item = m_inv.GetItem(m_inv.CalcSlotId(from_bag, i));
+				if (m_inv.GetItem(move_struct->from_slot) && m_inv.GetItem(move_struct->from_slot)->IsStackable()) {
+					move_struct->number_in_stack = m_inv.GetItem(move_struct->from_slot)->GetCharges();
 				}
 
-				if (inventory.GetItem(move_struct->from_slot) || inventory.GetItem(move_struct->to_slot)) {
+				if (m_inv.GetItem(move_struct->from_slot) || m_inv.GetItem(move_struct->to_slot)) {
 					SwapItem(move_struct);
 				}
-				
+
 				safe_delete(move_struct);
 			}
 		} else {
@@ -10954,7 +10953,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		}	
 		
 	} else {
-		Kick("Unimplemented move multiple items"); // This packet should not be sent by an older client
+		LinkDead(); // This packet should not be sent by an older client
 	}
 }
 
