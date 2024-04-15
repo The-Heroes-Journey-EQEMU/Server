@@ -10897,26 +10897,26 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 			return; // Not enough data to be a valid packet
 		}
 
-		const MultiMoveItem_Struct* moves = reinterpret_cast<const MultiMoveItem_Struct*>(app->pBuffer);
-		if (app->size != sizeof(MultiMoveItem_Struct) + sizeof(MultiMoveItemSub_Struct) * moves->count) {
+		const MultiMoveItem_Struct* multi_move = reinterpret_cast<const MultiMoveItem_Struct*>(app->pBuffer);
+		if (app->size != sizeof(MultiMoveItem_Struct) + sizeof(MultiMoveItemSub_Struct) * multi_move->count) {
 			return; // Packet size does not match expected size
 		}
 			
-		const auto from_bag = moves->moves[0].from_slot.Slot;
-		const auto to_bag   = moves->moves[0].to_slot.Slot;
+		const auto from_bag = multi_move->moves[0].from_slot.Slot;
+		const auto to_bag   = multi_move->moves[0].to_slot.Slot;
 
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
-			for (int i = 0; i < moves->count; i++) {
+			for (int i = 0; i < multi_move->count; i++) {
 				MoveItem_Struct* move_struct = new MoveItem_Struct();
-				move_struct->from_slot = m_inv.CalcSlotId(moves->moves[i].from_slot.Slot, moves->moves[i].from_slot.SubIndex);
-				move_struct->to_slot   = m_inv.CalcSlotId(moves->moves[i].to_slot.Slot, moves->moves[i].to_slot.SubIndex);
+				move_struct->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
+				move_struct->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
 				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
 					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
 					continue;
 				}
 
-				move_struct->number_in_stack = moves->moves[i].number_in_stack;
+				move_struct->number_in_stack = multi_move->moves[i].number_in_stack;
 
 				if (m_inv.GetItem(move_struct->from_slot) || m_inv.GetItem(move_struct->to_slot)) {
 					SwapItem(move_struct);
