@@ -10901,14 +10901,22 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		if (app->size != sizeof(MultiMoveItem_Struct) + sizeof(MultiMoveItemSub_Struct) * moves->count) {
 			return; // Packet size does not match expected size
 		}
+		
+		// Ok, this is a little weird.
+		// Each MultiMoveItemSub_Struct has from_slot and to_slot which are InventorySlot_Struct
+		// InventorySlot_Struct has Slot, which is actually the parent bag slots being swapped
+		// There are only two values for that in the entire thing 
+
 
 		// Handling each move operation
 		for (uint32 i = 0; i < moves->count; ++i) {
 			const MultiMoveItemSub_Struct& move = moves->moves[i];
-			LogDebug("From Slot [{}], Name [{}]", move.from_slot.Slot, GetInv().GetItem(move.from_slot.Slot)->GetID());
-			LogDebug("To Slot [{}], Name [{}]", move.to_slot.Slot, GetInv().GetItem(move.to_slot.Slot)->GetID());
+			LogDebug("From Slot [{}], SubIndex [{}], Name? [{}]", move.from_slot.Slot, move.from_slot.SubIndex, GetInv().GetItem(move.from_slot.SubIndex)->GetID());
+			LogDebug("To Slot [{}], SubIndex [{}], Name? [{}]", move.to_slot.Slot, move.to_slot.SubIndex, GetInv().GetItem(move.to_slot.SubIndex)->GetID());
 			// Process will be to check if each item exists in the from_slot, then check if to_slot is empty.
 			// if to_slot is empty, do the swap, otherwise swap into cursor queue
+
+		
 		}
 
 		// Add more handling if necessary
