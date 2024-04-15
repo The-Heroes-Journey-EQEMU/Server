@@ -10903,8 +10903,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		}
 			
 		const auto from_bag = multi_move->moves[0].from_slot.Slot;
-		const auto to_bag   = multi_move->moves[0].to_slot.Slot;
+		const auto to_bag   = multi_move->moves[0].to_slot.Slot;		
 
+		// This is checked by the client, but can't hurt to check here too.
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
 			for (int i = 0; i < multi_move->count; i++) {
 				MoveItem_Struct* move_struct = new MoveItem_Struct();
@@ -10912,7 +10913,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				move_struct->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
 				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
-					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
+					LogInventory("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
 					continue;
 				}
 
@@ -10924,36 +10925,6 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				safe_delete(move_struct);
 			}
-
-			/* pause this verison, lets try a diff method
-			for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END; i++) {
-				MoveItem_Struct* move_struct = new MoveItem_Struct();
-
-				move_struct->from_slot = m_inv.CalcSlotId(from_bag, i);
-				move_struct->to_slot   = m_inv.CalcSlotId(to_bag, i);			
-
-				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
-					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
-					continue;
-				}
-
-				if (m_inv.GetItem(move_struct->from_slot)) {
-					if (m_inv.GetItem(move_struct->from_slot)->IsStackable()) {
-						move_struct->number_in_stack = m_inv.GetItem(move_struct->from_slot)->GetCharges();
-					} else {
-						move_struct->number_in_stack = 1;
-					}					
-				} else {
-					move_struct->number_in_stack = 0;
-				}
-
-				if (m_inv.GetItem(move_struct->from_slot) || m_inv.GetItem(move_struct->to_slot)) {
-					SwapItem(move_struct);
-				}
-
-				safe_delete(move_struct);
-			}
-		*/
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
 		}	
