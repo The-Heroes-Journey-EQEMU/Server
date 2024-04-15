@@ -10907,10 +10907,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// It might be more efficient to do it another way but... this should be fine?			
 		const auto from_bag = moves->moves[0].from_slot.Slot;
 		const auto to_bag   = moves->moves[0].to_slot.Slot;
-		const auto max_slot = m_inv.GetItem(to_bag)->GetItem()->BagSlots;
 
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
-			for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END || i < max_slot; i++) {
+			for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END; i++) {
 				MoveItem_Struct* move_struct = new MoveItem_Struct();
 
 				move_struct->from_slot = m_inv.CalcSlotId(from_bag, i);
