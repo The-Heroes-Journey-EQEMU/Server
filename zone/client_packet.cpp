@@ -10926,6 +10926,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 		// I don't think we actually care to handle this packet as properly described in the packet.
 		// We only need to look at the first MultiMoveItemSub_Struct, get the bag slots involved and swap their contents
+		// It might be more efficient to do it another way but... this should be fine?
 
 		auto inventory = GetInv();		
 		const auto from_bag = moves->moves[0].from_slot.Slot;
@@ -10937,9 +10938,15 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				move_struct->from_slot = inventory.CalcSlotId(from_bag, i);
 				move_struct->to_slot   = inventory.CalcSlotId(to_bag, i);
-				move_struct->number_in_stack = inventory.GetItem(move_struct->from_slot)->GetCharges();
 
-				SwapItem(move_struct);
+				if (inventory.GetItem(move_struct->from_slot) && inventory.GetItem(move_struct->from_slot)->IsStackable()) {
+					move_struct->number_in_stack = inventory.GetItem(move_struct->from_slot)->GetCharges();
+				}
+
+				if (inventory.GetItem(move_struct->from_slot) || inventory.GetItem(move_struct->to_slot)) {
+					SwapItem(move_struct);
+				}
+				
 				safe_delete(move_struct);
 			}
 		} else {
