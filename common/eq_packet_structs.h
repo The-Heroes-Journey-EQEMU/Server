@@ -1655,6 +1655,18 @@ struct MoveItem_Struct
 /*0012*/
 };
 
+// New for RoF2 - Size: 12
+struct InventorySlot_Struct
+{
+/*000*/	int16	Type;		// Worn and Normal inventory = 0, Bank = 1, Shared Bank = 2, Delete Item = -1
+/*002*/	int16	Unknown02;
+/*004*/	int16	Slot;
+/*006*/	int16	SubIndex;
+/*008*/	int16	AugIndex;	// Guessing - Seen 0xffff
+/*010*/	int16	Unknown01;	// Normally 0 - Seen 13262 when deleting an item, but didn't match item ID
+/*012*/
+};
+
 struct MultiMoveItemSub_Struct
 {
 /*0000*/ InventorySlot_Struct	from_slot;
@@ -1667,18 +1679,6 @@ struct MultiMoveItem_Struct
 {
 /*0000*/ uint32	count;
 /*0004*/ MultiMoveItemSub_Struct moves[0];
-};
-
-// New for RoF2 - Size: 12
-struct InventorySlot_Struct
-{
-/*000*/	int16	Type;		// Worn and Normal inventory = 0, Bank = 1, Shared Bank = 2, Delete Item = -1
-/*002*/	int16	Unknown02;
-/*004*/	int16	Slot;
-/*006*/	int16	SubIndex;
-/*008*/	int16	AugIndex;	// Guessing - Seen 0xffff
-/*010*/	int16	Unknown01;	// Normally 0 - Seen 13262 when deleting an item, but didn't match item ID
-/*012*/
 };
 
 // both MoveItem_Struct/DeleteItem_Struct server structures will be changing to a structure-based slot format..this will
