@@ -10888,7 +10888,7 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 
 void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 {
-	if (m_ClientVersionBit & EQ::versions::maskRoF2AndLater) {
+	if (m_ClientVersionBit & EQ::versions::maskRoF2AndLater) {		
 		if (!CharacterID()) {
 			return;
 		}
@@ -10905,21 +10905,39 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// Ok, this is a little weird.
 		// Each MultiMoveItemSub_Struct has from_slot and to_slot which are InventorySlot_Struct
 		// InventorySlot_Struct has Slot, which is actually the parent bag slots being swapped
-		// There are only two values for that in the entire thing 
+		// SubIndex is the slot INSIDE the bag, which in the special case of slot 33 (the cursor slot) is 1-index, otherwise is 0-index
+		// 
 
+		// inside-Bag slots begin at EQ::invbag::GENERAL_BAGS_BEGIN
+		// the slots the bags are in are either 33, or begin at EQ::invbag::GENERAL_BEGIN
+		// bags are up to size EQ::invbag::SLOT_COUNT, except slot 33 which is EQ::invbag::SLOT_COUNT+1 because of being 1-index
 
-		// Handling each move operation
-		for (uint32 i = 0; i < moves->count; ++i) {
-			const MultiMoveItemSub_Struct& move = moves->moves[i];
-			LogDebug("From Slot [{}], Name? [{}]", move.from_slot.SubIndex, GetInv().GetItem(move.from_slot.Slot)->GetID());
-			LogDebug("To Slot [{}], Name [{}]", move.to_slot.SubIndex, GetInv().GetItem(move.to_slot.Slot)->GetID());
-			// Process will be to check if each item exists in the from_slot, then check if to_slot is empty.
-			// if to_slot is empty, do the swap, otherwise swap into cursor queue
-
+		// for each move we will need to construct a MoveItem_Struct as below, using the ABSOLUTE slot ID (not the relative slot IDs we get from Slot and SubIndex)
 		
-		}
+		/*
+		struct MoveItem_Struct
+		{
+		 uint32 from_slot;
+		 uint32 to_slot;
+		 uint32 number_in_stack;
+		
+		}; 
+		*/
 
-		// Add more handling if necessary
+		// I don't think we actually care to handle this packet as properly described in the packet.
+		// We only need to look at the first MultiMoveItemSub_Struct, get the bag slots involved and swap their contents
+
+		auto inventory = GetInv();		
+		const auto from_bag = moves->moves[0].from_slot.Slot;
+		const auto to_bag   = moves->moves[0].to_slot.Slot;
+
+		if (inventory.GetItem(from_bag)->IsClassBag() && inventory.GetItem(to_bag)->IsClassBag()) {
+			// Debug Exploration here
+			LogDebug("FROM: Parent Slot [{}], Item Slot [{}], Item ID [{}]", from_bag, inventory.CalcSlotId(from_bag, moves->moves[0].from_slot.SubIndex), inventory.GetItem(inventory.CalcSlotId(from_bag, moves->moves[0].from_slot.SubIndex))->GetID());
+		} else {
+			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
+		}	
+		
 	} else {
 		Kick("Unimplemented move multiple items"); // This packet should not be sent by an older client
 	}
