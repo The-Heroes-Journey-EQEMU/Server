@@ -10912,8 +10912,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				move_struct->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
 				move_struct->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
-				if (move_struct->from_slot == 33 || move_struct->to_slot == 33) {
-					LogInventory("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?! [{}], [{}]", move_struct->from_slot, move_struct->to_slot);
+				if (move_struct->from_slot == EQ::invslot::slotCursor || move_struct->to_slot == EQ::invslot::slotCursor) {
+					LogInventory("ERROR: Cursor slot cannot be moved in this way");
 					continue;
 				}
 
