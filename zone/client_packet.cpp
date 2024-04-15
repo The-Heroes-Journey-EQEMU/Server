@@ -10901,28 +10901,6 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		if (app->size != sizeof(MultiMoveItem_Struct) + sizeof(MultiMoveItemSub_Struct) * moves->count) {
 			return; // Packet size does not match expected size
 		}
-		
-		// Ok, this is a little weird.
-		// Each MultiMoveItemSub_Struct has from_slot and to_slot which are InventorySlot_Struct
-		// InventorySlot_Struct has Slot, which is actually the parent bag slots being swapped
-		// SubIndex is the slot INSIDE the bag, which in the special case of slot 33 (the cursor slot) is 1-index, otherwise is 0-index
-		// 
-
-		// inside-Bag slots begin at EQ::invbag::GENERAL_BAGS_BEGIN
-		// the slots the bags are in are either 33, or begin at EQ::invbag::GENERAL_BEGIN
-		// bags are up to size EQ::invbag::SLOT_COUNT, except slot 33 which is EQ::invbag::SLOT_COUNT+1 because of being 1-index
-
-		// for each move we will need to construct a MoveItem_Struct as below, using the ABSOLUTE slot ID (not the relative slot IDs we get from Slot and SubIndex)
-		
-		/*
-		struct MoveItem_Struct
-		{
-		 uint32 from_slot;
-		 uint32 to_slot;
-		 uint32 number_in_stack;
-		
-		}; 
-		*/
 
 		// I don't think we actually care to handle this packet as properly described in the packet.
 		// We only need to look at the first MultiMoveItemSub_Struct, get the bag slots involved and swap their contents
@@ -10935,11 +10913,20 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				MoveItem_Struct* move_struct = new MoveItem_Struct();
 
 				move_struct->from_slot = m_inv.CalcSlotId(from_bag, i);
-				move_struct->to_slot   = m_inv.CalcSlotId(to_bag, i);
+				move_struct->to_slot   = m_inv.CalcSlotId(to_bag, i);			
 
-				auto from_item = m_inv.GetItem(m_inv.CalcSlotId(from_bag, i));
-				if (m_inv.GetItem(move_struct->from_slot) && m_inv.GetItem(move_struct->from_slot)->IsStackable()) {
-					move_struct->number_in_stack = m_inv.GetItem(move_struct->from_slot)->GetCharges();
+				if (from_slot == 33 || to_slot == 33) {
+					LogDebug("ERROR: ONE OF THE SLOTS WAS CURSOR?! HOW?!");
+				}
+
+				if (m_inv.GetItem(move_struct->from_slot)) {
+					if (m_inv.GetItem(move_struct->from_slot)->IsStackable()) {
+						move_struct->number_in_stack = m_inv.GetItem(move_struct->from_slot)->GetCharges();
+					} else {
+						move_struct->number_in_stack = 1;
+					}					
+				} else {
+					move_struct->number_in_stack = 0;
 				}
 
 				if (m_inv.GetItem(move_struct->from_slot) || m_inv.GetItem(move_struct->to_slot)) {
