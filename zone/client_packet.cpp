@@ -10932,8 +10932,16 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		const auto to_bag   = moves->moves[0].to_slot.Slot;
 
 		if (inventory.GetItem(from_bag)->IsClassBag() && inventory.GetItem(to_bag)->IsClassBag()) {
-			// Debug Exploration here
-			LogDebug("FROM: Parent Slot [{}], Item Slot [{}], Item ID [{}]", from_bag, inventory.CalcSlotId(from_bag, moves->moves[0].from_slot.SubIndex), inventory.GetItem(inventory.CalcSlotId(from_bag, moves->moves[0].from_slot.SubIndex))->GetID());
+			for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END; i++) {
+				MoveItem_Struct* move_struct = new MoveItem_Struct();
+
+				move_struct->from_slot = inventory.CalcSlotId(from_bag, i);
+				move_struct->to_slot   = inventory.CalcSlotId(to_bag, i);
+				move_struct->number_in_stack = inventory.GetItem(move_struct->from_slot)->GetCharges();
+
+				SwapItem(move_struct);
+				safe_delete(move_struct);
+			}
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
 		}	
