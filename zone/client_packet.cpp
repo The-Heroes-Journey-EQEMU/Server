@@ -10920,7 +10920,11 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 					continue;
 				}
 
-				mi->number_in_stack = multi_move->moves[i].number_in_stack-1;
+				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
+					mi->number_in_stack = multi_move->moves[i].number_in_stack;
+				} else {
+					mi->number_in_stack = 0;
+				}				
 
 				LogInventory("Swapping slot [{}] to slot [{}]",mi->from_slot,mi->to_slot);
 
