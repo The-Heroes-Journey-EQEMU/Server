@@ -10927,6 +10927,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				if (error)
 					InterrogateInventory(this, true, false, true, error);
 			}
+
+			safe_delete(mi);
+			return;
 		} else if (m_inv.GetItem(from_parent)->IsClassBag()) {
 
 		} else {
