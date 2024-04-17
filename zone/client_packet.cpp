@@ -10920,33 +10920,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 					continue;
 				}
 
-				mi->number_in_stack = multi_move->moves[i].number_in_stack;
+				mi->number_in_stack = multi_move->moves[i].number_in_stack-1;
 
 				LogInventory("Swapping slot [{}] to slot [{}]",mi->from_slot,mi->to_slot);
-				
-				bool mi_hack = false;
-				
-				if (mi->from_slot >= EQ::invbag::GENERAL_BAGS_BEGIN && mi->from_slot <= EQ::invbag::CURSOR_BAG_END) {
-					if (mi->from_slot >= EQ::invbag::CURSOR_BAG_BEGIN) { mi_hack = true; }
-					else {
-						int16 from_parent = m_inv.CalcSlotId(mi->from_slot);
-						if (!m_inv[from_parent]) { mi_hack = true; }
-						else if (!m_inv[from_parent]->IsClassBag()) { mi_hack = true; }
-						else if (m_inv.CalcBagIdx(mi->from_slot) >= m_inv[from_parent]->GetItem()->BagSlots) { mi_hack = true; }
-					}
-				}
-
-				if (mi->to_slot >= EQ::invbag::GENERAL_BAGS_BEGIN && mi->to_slot <= EQ::invbag::CURSOR_BAG_END) {
-					if (mi->to_slot >= EQ::invbag::CURSOR_BAG_BEGIN) { mi_hack = true; }
-					else {
-						int16 to_parent = m_inv.CalcSlotId(mi->to_slot);
-						if (!m_inv[to_parent]) { mi_hack = true; }
-						else if (!m_inv[to_parent]->IsClassBag()) { mi_hack = true; }
-						else if (m_inv.CalcBagIdx(mi->to_slot) >= m_inv[to_parent]->GetItem()->BagSlots) { mi_hack = true; }
-					}
-				}
-
-				if (mi_hack) { Message(Chat::Yellow, "Caution: Illegal use of inaccessible bag slots!"); }
 
 				if (!SwapItem(mi) && IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot)) {
 					SwapItemResync(mi);
