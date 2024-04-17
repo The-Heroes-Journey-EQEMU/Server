@@ -10911,22 +10911,53 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// This is checked by the client, but can't hurt to check here too.
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
 			for (int i = 0; i < multi_move->count; i++) {
-				MoveItem_Struct* move_struct = new MoveItem_Struct();
-				move_struct->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
-				move_struct->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+				MoveItem_Struct* mi = new MoveItem_Struct();
+				mi->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
+				mi->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
-				if (move_struct->from_slot == EQ::invslot::slotCursor || move_struct->to_slot == EQ::invslot::slotCursor) {
+				if (mi->from_slot == EQ::invslot::slotCursor || mi->to_slot == EQ::invslot::slotCursor) {
 					LogInventory("ERROR: Cursor slot cannot be moved in this way");
 					continue;
 				}
 
-				move_struct->number_in_stack = multi_move->moves[i].number_in_stack;
+				mi->number_in_stack = multi_move->moves[i].number_in_stack;
 
-				LogInventory("Swapping slot [{}] to slot [{}]",move_struct->from_slot,move_struct->to_slot);
+				LogInventory("Swapping slot [{}] to slot [{}]",mi->from_slot,mi->to_slot);
 				
-				SwapItem(move_struct);
+				bool mi_hack = false;
+				
+				if (mi->from_slot >= EQ::invbag::GENERAL_BAGS_BEGIN && mi->from_slot <= EQ::invbag::CURSOR_BAG_END) {
+					if (mi->from_slot >= EQ::invbag::CURSOR_BAG_BEGIN) { mi_hack = true; }
+					else {
+						int16 from_parent = m_inv.CalcSlotId(mi->from_slot);
+						if (!m_inv[from_parent]) { mi_hack = true; }
+						else if (!m_inv[from_parent]->IsClassBag()) { mi_hack = true; }
+						else if (m_inv.CalcBagIdx(mi->from_slot) >= m_inv[from_parent]->GetItem()->BagSlots) { mi_hack = true; }
+					}
+				}
 
-				safe_delete(move_struct);
+				if (mi->to_slot >= EQ::invbag::GENERAL_BAGS_BEGIN && mi->to_slot <= EQ::invbag::CURSOR_BAG_END) {
+					if (mi->to_slot >= EQ::invbag::CURSOR_BAG_BEGIN) { mi_hack = true; }
+					else {
+						int16 to_parent = m_inv.CalcSlotId(mi->to_slot);
+						if (!m_inv[to_parent]) { mi_hack = true; }
+						else if (!m_inv[to_parent]->IsClassBag()) { mi_hack = true; }
+						else if (m_inv.CalcBagIdx(mi->to_slot) >= m_inv[to_parent]->GetItem()->BagSlots) { mi_hack = true; }
+					}
+				}
+
+				if (mi_hack) { Message(Chat::Yellow, "Caution: Illegal use of inaccessible bag slots!"); }
+
+				if (!SwapItem(mi) && IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot)) {
+					SwapItemResync(mi);
+
+					bool error = false;
+					InterrogateInventory(this, false, true, false, error, false);
+					if (error)
+						InterrogateInventory(this, true, false, true, error);
+				}
+
+				safe_delete(mi);
 			}
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
