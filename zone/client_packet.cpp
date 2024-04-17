@@ -10893,9 +10893,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				move_struct->number_in_stack = multi_move->moves[i].number_in_stack;
 
-				if (m_inv.GetItem(move_struct->from_slot) || m_inv.GetItem(move_struct->to_slot)) {
-					SwapItem(move_struct);
-				}
+				LogInventory("Swapping slot [{}] to slot [{}]",move_struct->from_slot,move_struct->to_slot);
+				
+				SwapItem(move_struct);
 
 				safe_delete(move_struct);
 			}
