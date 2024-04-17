@@ -10915,7 +10915,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				mi->to_slot   = m_inv.CalcSlotId(multi_move->moves[0].to_slot.Slot, i); // We can only transfer to one place, so this is guaranteed to be valid-ish
 				mi->number_in_stack = 0; // This is always 0 in MoveItem_Struct unless we are combining stacks, which this never tries to do.
 
-				if (IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot)) {
+				if (IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot) && (m_inv.GetItem(mi->from_slot) || m_inv.GetItem(mi->to_slot))) {
 					if (!SwapItem(mi)) {
 						SwapItemResync(mi);
 
@@ -10928,7 +10928,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				safe_delete(mi);
 			}
-									
+
 			return;
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
