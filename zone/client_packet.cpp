@@ -10905,34 +10905,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		}
 			
 		const auto from_bag = multi_move->moves[0].from_slot.Slot;
-		const auto to_bag   = multi_move->moves[0].to_slot.Slot;		
+		const auto to_bag   = multi_move->moves[0].to_slot.Slot;
 
-		// This is checked by the client, but can't hurt to check here too.
-		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
-			for (int i = EQ::invbag::SLOT_BEGIN; i < EQ::invbag::SLOT_COUNT; i++) {
-				MoveItem_Struct* mi = new MoveItem_Struct();
-				mi->from_slot = m_inv.CalcSlotId(EQ::invslot::slotCursor, i); // We always transfer from cursor
-				mi->to_slot   = m_inv.CalcSlotId(multi_move->moves[0].to_slot.Slot, i); // We can only transfer to one place, so this is guaranteed to be valid-ish
-				mi->number_in_stack = 0; // This is always 0 in MoveItem_Struct unless we are combining stacks, which this never tries to do.
-
-				if (IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot) && (m_inv.GetItem(mi->from_slot) || m_inv.GetItem(mi->to_slot))) {
-					if (!SwapItem(mi)) {
-						SwapItemResync(mi);
-
-						bool error = false;
-						InterrogateInventory(this, false, true, false, error, false);
-						if (error)
-							InterrogateInventory(this, true, false, true, error);
-					}
-				}
-
-				safe_delete(mi);
-			}
-
-			return;
-		} else {
-			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
-		}	
+		
 		
 	} else {
 		LinkDead(); // This packet should not be sent by an older client
