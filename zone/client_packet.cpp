@@ -10909,7 +10909,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 		// This is checked by the client, but can't hurt to check here too.
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
-			for (int i = 0; i < multi_move->count; i++) {
+			for (int i = EQ::invbag::SLOT_BEGIN; i < EQ::invbag::SLOT_COUNT; i++) {
 				if (multi_move->moves[i].from_slot.Slot == EQ::invslot::slotCursor) {
 					MoveItem_Struct* mi = new MoveItem_Struct();
 					mi->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
