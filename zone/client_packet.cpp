@@ -10913,8 +10913,24 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// 2) from_parent is a bag and we left-clicked (combine)
 		// 3) from_parent is not a bag and left-clicked (combine)
 
-		if (!m_inv.GetItem(from_parent)->IsClassBag()) {
-			LogDebug("val: [{}]", multi_move->count);
+		if (!m_inv.GetItem(from_parent)->IsClassBag() && multi_move->count == 1) {
+			MoveItem_Struct* mi = new MoveItem_Struct();
+			mi->from_slot = m_inv.CalcSlotId(multi_move->moves[0].from_slot.Slot, multi_move->moves[0].from_slot.SubIndex);
+			mi->to_slot   = m_inv.CalcSlotId(multi_move->moves[0].to_slot.Slot, multi_move->moves[0].to_slot.SubIndex);
+			mi->number_in_stack = multi_move->moves[0].number_in_stack;
+
+			if (!SwapItem(mi) && IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot)) {
+				SwapItemResync(mi);
+
+				bool error = false;
+				InterrogateInventory(this, false, true, false, error, false);
+				if (error)
+					InterrogateInventory(this, true, false, true, error);
+			}
+		} else if (m_inv.GetItem(from_parent)->IsClassBag()) {
+
+		} else {
+			LogError("Invalid OP_MoveMultipleItems Recieved");
 		}
 		
 		
