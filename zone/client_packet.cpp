@@ -10887,7 +10887,8 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 
 void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 {
-	if (m_ClientVersionBit & EQ::versions::maskRoF2AndLater) {		
+	if (m_ClientVersionBit & EQ::versions::maskRoF2AndLater) {
+		LogDebug("OP_MoveMultipleItems Triggered");
 		if (!CharacterID()) {
 			LinkDead();
 			return;
@@ -10907,6 +10908,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		const auto from_bag = multi_move->moves[0].from_slot.Slot;
 		const auto to_bag   = multi_move->moves[0].to_slot.Slot;
 
+		// Three options here;
+		// 1) from_bag 
 		
 		
 	} else {
