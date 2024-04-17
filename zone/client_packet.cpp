@@ -10905,11 +10905,17 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 			return; // Packet size does not match expected size
 		}
 			
-		const auto from_bag = multi_move->moves[0].from_slot.Slot;
-		const auto to_bag   = multi_move->moves[0].to_slot.Slot;
+		const auto from_parent = multi_move->moves[0].from_slot.Slot;
+		const auto to_parent   = multi_move->moves[0].to_slot.Slot;
 
 		// Three options here;
-		// 1) from_bag 
+		// 1) from_parent is a bag and we right-clicked (swap)
+		// 2) from_parent is a bag and we left-clicked (combine)
+		// 3) from_parent is not a bag and left-clicked (combine)
+
+		if (!m_inv.GetItem(from_parent)->IsClassBag()) {
+			LogDebug("val: [{}]", multi_move->count);
+		}
 		
 		
 	} else {
