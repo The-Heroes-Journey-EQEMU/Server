@@ -10834,7 +10834,7 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 	LogInventory("Debug: [{}], [{}], [{}]", mi->from_slot, mi->to_slot, mi->number_in_stack);
 
 	
-	if (spellend_timer.Enabled() && casting_spell_id && !(GetClassesBits() & GetPlayerClassBit(Class::Bard) || RuleB(Custom, MulticlassingEnabled)));
+	if (spellend_timer.Enabled() && casting_spell_id && !(GetClassesBits() & GetPlayerClassBit(Class::Bard) || RuleB(Custom, MulticlassingEnabled)))
 	{
 		if (mi->from_slot != mi->to_slot && (mi->from_slot <= EQ::invslot::GENERAL_END || mi->from_slot > 39) && IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot))
 		{
