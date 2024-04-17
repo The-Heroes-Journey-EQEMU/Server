@@ -10826,13 +10826,9 @@ void Client::Handle_OP_MoveItem(const EQApplicationPacket *app)
 		LogError("Wrong size: OP_MoveItem, size=[{}], expected [{}]", app->size, sizeof(MoveItem_Struct));
 		return;
 	}
-
-	
-
 	
 	MoveItem_Struct* mi = (MoveItem_Struct*)app->pBuffer;
 	LogInventory("Debug: [{}], [{}], [{}]", mi->from_slot, mi->to_slot, mi->number_in_stack);
-
 	
 	if (spellend_timer.Enabled() && casting_spell_id && !(GetClassesBits() & GetPlayerClassBit(Class::Bard) || RuleB(Custom, MulticlassingEnabled)))
 	{
@@ -10932,6 +10928,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				safe_delete(mi);
 			}
+
+			return;
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
 		}	
