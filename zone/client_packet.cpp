@@ -10928,7 +10928,6 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				safe_delete(mi);
 			}
-
 			return;
 		} else {
 			LogDebug("ERROR: At least one of the items being swapped was not a bag.");
