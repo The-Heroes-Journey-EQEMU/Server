@@ -10910,11 +10910,11 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// This is checked by the client, but can't hurt to check here too.
 		if (m_inv.GetItem(from_bag)->IsClassBag() && m_inv.GetItem(to_bag)->IsClassBag()) {
 			for (int i = 0; i < multi_move->count; i++) {
-				if (multi_move->moves[i].from_slot.Slot != EQ::invslot::slotCursor) {
+				if (multi_move->moves[i].from_slot.Slot == EQ::invslot::slotCursor) {
 					MoveItem_Struct* mi = new MoveItem_Struct();
 					mi->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
 					mi->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-					mi->number_in_stack = 0; // This is always 0 in MoveItem_Struct unless we are combining stacks, which this never tries to do.
+					mi->number_in_stack = 0; // This is always 0 in MoveItem_Struct unless wte are combining stacks, which this never tries to do.
 
 					LogInventory("Swapping slot [{}] to slot [{}]",mi->from_slot,mi->to_slot);
 
