@@ -10917,7 +10917,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				MoveItem_Struct* mi = new MoveItem_Struct();
 				mi->from_slot = m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
 				mi->to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-				mi->number_in_stack = m_inv.GetItem(mi->from_slot)->IsStackable() ? multi_move->moves[i].number_in_stack : m_inv.GetItem(mi->from_slot)->GetCharges();
+				mi->number_in_stack = 0; // This is always 0 in MoveItem_Struct unless we are combining stacks, which this never tries to do.
 
 				LogInventory("Swapping slot [{}] to slot [{}]",mi->from_slot,mi->to_slot);
 
