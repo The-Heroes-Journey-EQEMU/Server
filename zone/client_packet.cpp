@@ -10931,10 +10931,14 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		if (left_click) {
 			for (int i = 0; i < multi_move->count; i++) {
 				MoveItem_Struct* mi = new MoveItem_Struct();
-				mi->from_slot 		= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
-				mi->to_slot   		= m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-
-				LogDebug("WTF? [{}], [{}], [{}]", mi->to_slot, multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+				mi->from_slot 	= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
+				if (multi_move->moves[i].to_slot.Type == 0) { // Target is general inventory					
+					mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+				} else if (multi_move->moves[i].to_slot.Type == 1 ) { // Target is bank inventory
+					mi->to_slot = mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
+				} else {
+					mi->to_slot = mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::SHARED_BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
+				}				
 
 				// This sends '1' as the stack count for unstackable items, which our titanium-era SwapItem blows up
 				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
