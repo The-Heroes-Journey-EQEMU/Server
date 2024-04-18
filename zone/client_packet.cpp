@@ -10953,11 +10953,34 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// Ok This one is difficult. This is a swap transaction, where the contents of the cursor bag is exchanged with the contents of the target bag
 		// The problem is that the packet doesn't assume that these are swaps, but rather just finalized movements, while all that we can do are swaps
 		// As a result, the operations in the second bag will tend to step on the operations from the first bag
-		} else {
-			for (int i = 0; i < multi_move->count; i++) {
+		} else {			
+			struct MoveInfo {
+				EQ::ItemInstance* item;
+				uint16 to_slot;
+			};
+
+			std::vector<MoveInfo> items;
+    		items.reserve(multi_move->count);
+
+			for (int i = 0; i < multi_move->count; i++) {				
 				LogDebug("Proposed move slot [{}]({}) to slot [{}]({}).",
 						multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex,
 						multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+
+				auto from_slot = multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
+				auto to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex); 
+
+				MoveInfo move;
+
+				move.item = m_inv.GetItem(from_slot);
+				move.to_slot = to_slot;
+				
+				items.push_back(move);
+				m_inv.DeleteItem(from_slot);				
+			}
+
+			for (const MoveInfo& move : items) {
+				m_inv.PutItem(move.to_slot, *move.item);
 			}
 		}
 		
