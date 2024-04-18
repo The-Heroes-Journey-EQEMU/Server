@@ -10926,7 +10926,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 			LogDebug("[{}] [{}] [{}]",
 					multi_move->moves[i].from_slot.SubIndex,
 					multi_move->moves[i].to_slot.SubIndex,
-					multi_move->moves[0].number_in_stack);
+					multi_move->moves[i].number_in_stack);
 		}
 
 		if (left_click) {
@@ -10947,6 +10947,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				if (!SwapItem(mi) && IsValidSlot(mi->from_slot) && IsValidSlot(mi->to_slot)) {
 					SwapItemResync(mi);
+
+					
 
 					bool error = false;
 					InterrogateInventory(this, false, true, false, error, false);
