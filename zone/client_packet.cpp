@@ -10932,13 +10932,9 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		if (left_click) {
 			for (int i = 0; i < multi_move->count; i++) {
 				MoveItem_Struct* mi = new MoveItem_Struct();
-				mi->from_slot 		= m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
-				mi->to_slot   		= m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-
-				if (mi->from_slot == -1) {
-					mi->from_slot = multi_move->moves[i].from_slot.Slot;
-				}
-
+				mi->from_slot 		= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
+				mi->to_slot   		= multi_move->moves[i].to_slot.SubIndex == -1 ? multi_move->moves[i].to_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+				
 				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
 					mi->number_in_stack = multi_move->moves[i].number_in_stack;
 				} else {
