@@ -10913,8 +10913,6 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// This can be a bag, in which case it tries to fill the target bag with the contents of the bag on the cursor
 		// CTRL + right click swaps the contents of two bags if a bag is on your cursor and you ctrl-right click on another bag.
 
-		// Christ this packet is annoying.
-
 		// We need to check if this is a swap or just an addition (left click or right click)
 		// Check if any component of this transaction is coming from anywhere other than the cursor
 		int left_click = true;
@@ -10929,12 +10927,16 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 					multi_move->moves[i].number_in_stack);
 		}
 
+		// This is a left click which is purely additive. This should always be cursor object or cursor bag contents into general\bank\whatever bag
 		if (left_click) {
 			for (int i = 0; i < multi_move->count; i++) {
 				MoveItem_Struct* mi = new MoveItem_Struct();
 				mi->from_slot 		= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
-				mi->to_slot   		= multi_move->moves[i].to_slot.SubIndex == -1 ? multi_move->moves[i].to_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-				
+				mi->to_slot   		= m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+
+				LogDebug("WTF? [{}]", mi->to_slot);
+
+				// This sends '1' as the stack count for unstackable items, which our titanium-era SwapItem blows up
 				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
 					mi->number_in_stack = multi_move->moves[i].number_in_stack;
 				} else {
@@ -10949,6 +10951,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 						InterrogateInventory(this, true, false, true, error);
 				}
 			}
+		// Ok
 		} else {
 
 		}
