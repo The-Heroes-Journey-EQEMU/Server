@@ -10917,7 +10917,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// Check if any component of this transaction is coming from anywhere other than the cursor
 		int left_click = true;
 		for (int i = 0; i < multi_move->count; i++) {
-			if (multi_move->moves[0].from_slot.Slot != EQ::invslot::slotCursor) {
+			if (multi_move->moves[i].from_slot.Slot != EQ::invslot::slotCursor) {
 				left_click = false;
 			}
 		}
