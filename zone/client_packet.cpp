@@ -10978,6 +10978,10 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				items.push_back(move);
 				m_inv.PopItem(from_slot);
 			}
+
+			for (const MoveInfo& move : items) {
+				m_inv.PutItem(move.to_slot, *move.item);
+			}
 		}
 		
 	} else {
