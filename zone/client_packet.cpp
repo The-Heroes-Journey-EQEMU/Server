@@ -10922,6 +10922,11 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 			if (multi_move->moves[0].from_slot.Slot != EQ::invslot::slotCursor) {
 				left_click = false;
 			}
+
+			LogDebug("[{}] [{}] [{}]",
+					multi_move->moves[i].from_slot.SubIndex,
+					multi_move->moves[i].to_slot.SubIndex,
+					multi_move->moves[0].number_in_stack);
 		}
 
 		if (left_click) {
