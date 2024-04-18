@@ -10934,7 +10934,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				mi->from_slot 		= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
 				mi->to_slot   		= m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
-				LogDebug("WTF? [{}]", mi->to_slot);
+				LogDebug("WTF? [{}], [{}], [{}]", mi->to_slot, multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
 				// This sends '1' as the stack count for unstackable items, which our titanium-era SwapItem blows up
 				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
