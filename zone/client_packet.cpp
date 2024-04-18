@@ -10934,7 +10934,12 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				MoveItem_Struct* mi = new MoveItem_Struct();
 				mi->from_slot 		= m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
 				mi->to_slot   		= m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-				mi->number_in_stack = multi_move->moves[i].number_in_stack;
+
+				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
+					mi->number_in_stack = multi_move->moves[i].number_in_stack;
+				} else {
+					mi->number_in_stack = 0;
+				}
 
 				if (mi->from_slot == -1) {
 					mi->from_slot = multi_move->moves[i].from_slot.Slot;
