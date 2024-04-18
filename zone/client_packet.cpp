@@ -10972,6 +10972,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 
 				MoveInfo move;
 
+				LogDebug("PopItem Slot [{}], item name [{}]", from_slot, m_inv.GetItem(from_slot)->GetItem()->Name);
 				move.item = m_inv.PopItem(from_slot);
 				move.to_slot = to_slot;
 				
@@ -10979,6 +10980,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 			}
 
 			for (const MoveInfo& move : items) {
+				LogDebug("PutItem Slot [{}], item name [{}]", move.to_slot, move.item->GetItem()->Name);
 				m_inv.PutItem(move.to_slot, *move.item);
 			}
 		}
