@@ -10926,13 +10926,13 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		if (left_click) {
 			for (int i = 0; i < multi_move->count; i++) {
 				MoveItem_Struct* mi = new MoveItem_Struct();
-				mi->from_slot 	= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
-				if (multi_move->moves[i].to_slot.Type == 0) { // Target is general inventory					
-					mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-				} else if (multi_move->moves[i].to_slot.Type == 1 ) { // Target is bank inventory
-					mi->to_slot = mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
-				} else { // Target is shared bank inventory
-					mi->to_slot = mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::SHARED_BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
+				mi->from_slot 	= multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);									
+				mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
+				
+				if (multi_move->moves[i].to_slot.Type == 1) { // Target is bank inventory
+					mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
+				} else if (multi_move->moves[i].to_slot.Type == 2) { // Target is shared bank inventory
+					mi->to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::SHARED_BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
 				}				
 
 				// This sends '1' as the stack count for unstackable items, which our titanium-era SwapItem blows up
@@ -10950,9 +10950,8 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 						InterrogateInventory(this, true, false, true, error);
 				}
 			}
-		// Ok This one is difficult. This is a swap transaction, where the contents of the cursor bag is exchanged with the contents of the target bag
-		// The problem is that the packet doesn't assume that these are swaps, but rather just finalized movements, while all that we can do are swaps
-		// As a result, the operations in the second bag will tend to step on the operations from the first bag
+		// This is the swap.
+		// Client behavior is just to move stacks without combining them
 		} else {			
 			struct MoveInfo {
 				EQ::ItemInstance* item;
@@ -10962,26 +10961,27 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 			std::vector<MoveInfo> items;
     		items.reserve(multi_move->count);
 
-			for (int i = 0; i < multi_move->count; i++) {				
-				LogDebug("Proposed move slot [{}]({}) to slot [{}]({}).",
-						multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex,
-						multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
-
+			for (int i = 0; i < multi_move->count; i++) {
 				auto from_slot = multi_move->moves[i].from_slot.SubIndex == -1 ? multi_move->moves[i].from_slot.Slot : m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex);
-				auto to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex); 
+				auto to_slot   = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex);
 
+				if (multi_move->moves[i].to_slot.Type == 1) { // Target is bank inventory
+					to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
+				} else if (multi_move->moves[i].to_slot.Type == 2) { // Target is shared bank inventory
+					to_slot = m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot + EQ::invslot::SHARED_BANK_BEGIN, multi_move->moves[i].to_slot.SubIndex);
+				}
+
+				// Probably need some error checking here, but I wasn't able to produce any error states on purpose.				
 				MoveInfo move;
-
-				LogDebug("PopItem Slot [{}], item name [{}]", from_slot, m_inv.GetItem(from_slot)->GetItem()->Name);
-				move.item = m_inv.PopItem(from_slot);
+				move.item = m_inv.PopItem(from_slot); // Don't delete the instance here
 				move.to_slot = to_slot;
-				
-				items.push_back(move);
+				if (move.item) {				
+					items.push_back(move);
+				}
 			}
 
 			for (const MoveInfo& move : items) {
-				LogDebug("PutItem Slot [{}], item name [{}]", move.to_slot, move.item->GetItem()->Name);
-				PutItemInInventory(move.to_slot, *move.item);
+				PutItemInInventory(move.to_slot, *move.item); // This saves inventory too
 			}
 		}
 		
