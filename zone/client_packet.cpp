@@ -10912,8 +10912,18 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 		// This can be a bag, in which case it tries to fill the target bag with the contents of the bag on the cursor
 		// CTRL + right click swaps the contents of two bags if a bag is on your cursor and you ctrl-right click on another bag.
 
-		LogDebug("count: [{}], [{}], [{}]", multi_move->count, multi_move->moves[0].from_slot.Slot, multi_move->moves[0].from_slot.SubIndex);	
-		
+		// Christ this packet is annoying.
+
+		// collect data on each movement prior to performing the movement
+		// packet only provides slots, not which item are moved
+		for (int i = 0; i < multi_move->count; i++) {
+			LogDebug("from_slot: [{}] ({}), to_slot: [{}] ({}), number: [{}]", 
+				m_inv.CalcSlotId(multi_move->moves[i].from_slot.Slot, multi_move->moves[i].from_slot.SubIndex),
+				multi_move->moves[i].from_slot.SubIndex,
+				m_inv.CalcSlotId(multi_move->moves[i].to_slot.Slot, multi_move->moves[i].to_slot.SubIndex),
+				multi_move->moves[i].to_slot.SubIndex,
+				multi_move->moves[i].number_in_stack);
+		}		
 		
 	} else {
 		LinkDead(); // This packet should not be sent by an older client
