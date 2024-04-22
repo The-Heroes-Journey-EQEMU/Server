@@ -32,6 +32,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <functional>
 
 class EvolveInfo;
 struct InspectMessage_Struct;
@@ -39,7 +40,6 @@ struct PlayerProfile_Struct;
 struct SPDat_Spell_Struct;
 struct NPCFactionList;
 struct FactionAssociations;
-
 
 namespace EQ
 {
@@ -49,6 +49,9 @@ namespace EQ
 	class InventoryProfile;
 	class MemoryMappedFile;
 }
+
+using ItemInstanceGenerateCallback = std::function<void(EQ::ItemInstance*)>;
+
 
 /*
     This object is inherited by world and zone's DB object,
@@ -61,7 +64,7 @@ public:
 	SharedDatabase();
 	SharedDatabase(const char *host, const char *user, const char *passwd, const char *database, uint32 port);
 	virtual ~SharedDatabase();
-
+	
 	/**
 	 * Character
 	 */
@@ -150,6 +153,10 @@ public:
 		uint32 ornament_hero_model = 0
 	);
 	EQ::ItemInstance *CreateBaseItem(const EQ::ItemData *item, int16 charges = 0);
+	ItemInstanceGenerateCallback generate_cb;
+	void SetItemInstanceGenerateCallback(ItemInstanceGenerateCallback cb) {
+		generate_cb = cb;
+	};
 
 	void GetItemsCount(int32 &item_count, uint32 &max_id);
 	void LoadItems(void *data, uint32 size, int32 items, uint32 max_item_id);
