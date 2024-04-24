@@ -511,7 +511,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			targ_exp += upgrade_item->GetItem()->AStr * 100000;
 		}
 
-		Message(Chat::Red, "EXP: [{}]", in_add_exp);
+		Message(Chat::Red, "EXP: %d", in_add_exp);
 	}
 
 	EVENT_ITEM_ScriptStopReturn();
