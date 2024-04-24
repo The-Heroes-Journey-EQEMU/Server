@@ -559,7 +559,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			}
 		}
 
-		Message(Chat::Red, "EXP: %d, Target: %d, Percentage: %.2f", in_add_exp, targ_exp, (float)targ_exp / (float)in_add_exp);
+		Message(Chat::Red, "EXP: %d, Target: %d, Percentage: %.2f", in_add_exp, targ_exp, (float)in_add_exp / (float)targ_exp);
 
 	}
 
