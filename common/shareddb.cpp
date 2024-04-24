@@ -774,16 +774,11 @@ bool SharedDatabase::GetInventory(uint32 char_id, EQ::InventoryProfile *inv)
 					inst->PutAugment(this, i, aug[i]);
 			}
 		}
-<<<<<<< HEAD
-		
-	
-=======
 
 		if (generate_cb) {
 			generate_cb(inst);
 		}
 
->>>>>>> df0345272 (add foundation for dynamic persisted items, better checks around concrete method in compilerbridge)
 		int16 put_slot_id;
 		if (slot_id >= EQ::invbag::CURSOR_BAG_BEGIN && slot_id <= EQ::invbag::CURSOR_BAG_END) {
 			put_slot_id = inv->PushCursor(*inst);
