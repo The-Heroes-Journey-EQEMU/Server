@@ -507,7 +507,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		if (upgrade_item && upgrade_item->GetID() < 2000000) {
 			auto   bucket_key = "item-" + std::to_string(upgrade_item->GetID()) + "-upgrade-progress";
-			uint64 item_exp = Strings::ToInt(GetBucket(bucket_key)) + in_add_exp;
+			uint64 item_exp   = Strings::ToInt(GetBucket(bucket_key), 0) + in_add_exp;			
 
 			// Calculate target XP soak
 			targ_exp += std::max(upgrade_item->GetItem()->Mana, upgrade_item->GetItem()->Endur) * 10000;
@@ -546,39 +546,19 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			targ_exp += upgrade_item->GetItem()->HeroicWis 		* 1000;
 			targ_exp += upgrade_item->GetItem()->HeroicCha 		* 1000;
 
-			if (upgrade_item->GetItem()->Focus.Effect > 0) {
-				targ_exp += 10000;
-			}
+			if (upgrade_item->GetItem()->Focus.Effect > 0) { targ_exp += 10000; }
+			if (upgrade_item->GetItem()->Click.Effect > 0) { targ_exp += 10000;	}
+			if (upgrade_item->GetItem()->Proc.Effect > 0)  { targ_exp += 10000; }
 
-			if (upgrade_item->GetItem()->Click.Effect > 0) {
-				targ_exp += 10000;
-			}
+			targ_exp *= 500;
 
-			if (upgrade_item->GetItem()->Proc.Effect > 0) {
-				targ_exp += 10000;
-			}
+			EQ::SayLinkEngine linker;
+			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+			linker.SetItemInst(upgrade_item);
+			Message(Chat::Experience, "You channel a portion of the experience you gained into improving [%s]", linker.GenerateLink().c_str());
+			
 
-			targ_exp *= 750;
-
-			if (item_exp >= targ_exp) {
-				auto new_item = database.CreateItem(upgrade_item->GetID() + 1000000, 
-													upgrade_item->GetCharges(),
-													upgrade_item->GetAugment(0)->GetID(),
-													upgrade_item->GetAugment(1)->GetID(),
-													upgrade_item->GetAugment(2)->GetID(),
-													upgrade_item->GetAugment(3)->GetID(),
-													upgrade_item->GetAugment(4)->GetID(),
-													upgrade_item->GetAugment(5)->GetID(),
-													true);
-				if (new_item != nullptr) {
-					m_inv.PutItem(EQ::invslot::slotCursor, *new_item);
-					Message(Chat::Red, "UPGRADED");
-				}
-			} else {
-				SetBucket(bucket_key,std::to_string(item_exp));
-			}
-
-			Message(Chat::Red, "EXP: %d, Target: %d, Percentage: %.9f", in_add_exp, targ_exp, (float)in_add_exp / (float)targ_exp);
+			in_add_exp *= .50;			
 		}
 	}
 
