@@ -502,8 +502,17 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		return;
 	}
 
-	in_add_exp = 0;
+	if (RuleB(Custom, PowerSourceItemUpgrade)) {
+		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+		if (upgrade_item && upgrade_item->GetID() < 2000000) {
+			uint64 item_exp = Strings::ToInt(GetBucket("item-" + std::to_string(upgrade_item->GetID()) + "-upgrade-progress"));
+			uint64 targ_exp = 0;
+			// Calculate target XP soak
+			targ_exp += upgrade_item->GetItem()->AStr * 100000;
+		}
 
+		Message(Chat::Red, "EXP: [{}]", in_add_exp);
+	}
 
 	EVENT_ITEM_ScriptStopReturn();
 
