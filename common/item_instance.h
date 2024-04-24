@@ -36,7 +36,7 @@ class EvolveInfo;			// Stores information about an evolving item family
 #include "../common/memory_buffer.h"
 
 #include <map>
-
+#include <cstring>
 
 // Specifies usage type for item inside EQ::ItemInstance
 enum ItemInstTypes
@@ -150,7 +150,14 @@ namespace EQ
 		// Has attack/delay?
 		bool IsWeapon() const;
 		bool IsAmmo() const;
-
+		const void SetID(uint32 id) {  if (m_item) { const_cast<ItemData*>(m_item)->ID = id; } }
+		const void SetComment(const std::string& comment) {  
+			if (m_item) { 
+				auto mutable_item = const_cast<ItemData*>(m_item);
+				std::strncpy(mutable_item->Comment, comment.c_str(), sizeof(mutable_item->Comment) - 1);
+    			mutable_item->Comment[sizeof(mutable_item->Comment) - 1] = '\0';
+			}
+		}
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
 		const uint32 GetItemScriptID() const { return ((m_item) ? m_item->ScriptFileID : 0); }
