@@ -559,7 +559,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			EQ::SayLinkEngine linker;
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 			linker.SetItemInst(upgrade_item);
-			Message(Chat::Experience, "You channel a portion of the experience you gained into improving your [%s] (%0.04f percent until upgrade)", linker.GenerateLink().c_str(), percentage);
+			Message(Chat::Experience, "You channel a portion of the experience you gained into improving your [%s]! (%0.02f percent complete)", linker.GenerateLink().c_str(), percentage);
 			
 
 			in_add_exp *= .50;			
