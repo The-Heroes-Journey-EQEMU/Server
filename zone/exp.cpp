@@ -503,15 +503,51 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	}
 
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {
+		uint64 targ_exp = 0;
 		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		if (upgrade_item && upgrade_item->GetID() < 2000000) {
 			uint64 item_exp = Strings::ToInt(GetBucket("item-" + std::to_string(upgrade_item->GetID()) + "-upgrade-progress"));
-			uint64 targ_exp = 0;
+			
+
 			// Calculate target XP soak
-			targ_exp += upgrade_item->GetItem()->AStr * 100000;
+			targ_exp += upgrade_item->GetItem()->Damage * 10000;
+			targ_exp += upgrade_item->GetItem()->AStr * 10000;
+			targ_exp += upgrade_item->GetItem()->ASta * 10000;
+			targ_exp += upgrade_item->GetItem()->ADex * 10000;
+			targ_exp += upgrade_item->GetItem()->AAgi * 10000;
+			targ_exp += upgrade_item->GetItem()->AInt * 10000;
+			targ_exp += upgrade_item->GetItem()->AWis * 10000;
+			targ_exp += upgrade_item->GetItem()->ACha * 10000;
+			targ_exp += upgrade_item->GetItem()->MR   * 1000;
+			targ_exp += upgrade_item->GetItem()->FR   * 1000;
+			targ_exp += upgrade_item->GetItem()->CR   * 1000;
+			targ_exp += upgrade_item->GetItem()->DR   * 1000;
+			targ_exp += upgrade_item->GetItem()->PR   * 1000;
+			targ_exp += upgrade_item->GetItem()->AC   * 1000;
+			targ_exp += upgrade_item->GetItem()->HP   * 1000;
+			targ_exp += std::max(upgrade_item->GetItem()->Mana, upgrade_item->GetItem()->Endur) * 1000;
+			targ_exp += upgrade_item->GetItem()->CombatEffects  * 100000;
+			targ_exp += upgrade_item->GetItem()->Regen          * 100000;
+			targ_exp += upgrade_item->GetItem()->ManaRegen      * 100000;
+			targ_exp += upgrade_item->GetItem()->SpellShield    * 100000;
+			targ_exp += upgrade_item->GetItem()->Shielding      * 100000;
+			targ_exp += upgrade_item->GetItem()->DotShielding   * 100000;
+			targ_exp += upgrade_item->GetItem()->DamageShield   * 100000;
+			targ_exp += upgrade_item->GetItem()->DSMitigation   * 100000;
+			targ_exp += upgrade_item->GetItem()->Avoidance      * 100000;
+			targ_exp += upgrade_item->GetItem()->Accuracy       * 100000;
+			targ_exp += upgrade_item->GetItem()->SpellDmg       * 100000;
+			targ_exp += upgrade_item->GetItem()->HealAmt        * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicStr * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicSta * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicDex * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicAgi * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicInt * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicWis * 100000;
+			targ_exp += upgrade_item->GetItem()->HeroicCha * 100000;
 		}
 
-		Message(Chat::Red, "EXP: %d", in_add_exp);
+		Message(Chat::Red, "EXP: %d, Target: %d", in_add_exp, targ_exp);
 	}
 
 	EVENT_ITEM_ScriptStopReturn();
