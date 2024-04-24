@@ -1039,18 +1039,6 @@ QuestInterface* QuestParserCollection::GetQIByItemQuest(std::string item_script,
 		zone->GetShortName()
 	);
 
-<<<<<<< HEAD
-=======
-	const std::string& dotnet_path = fmt::format(
-		"dotnet_quests/{}",
-		zone->GetShortName()
-	);
-
-	const std::string& dotnet_global_path = fmt::format(
-		"dotnet_quests/global"
-	);
-
->>>>>>> df0345272 (add foundation for dynamic persisted items, better checks around concrete method in compilerbridge)
 	const std::string& zone_versioned_path = fmt::format(
 		"{}/{}/v{}/items",
 		path.GetQuestsPath(),
@@ -1061,11 +1049,6 @@ QuestInterface* QuestParserCollection::GetQIByItemQuest(std::string item_script,
 	std::vector<std::string> file_names = {
 		fmt::format("{}/{}", zone_versioned_path, item_script), // Local versioned by Item Script ./quests/zone/v0/items/10.ext
 		fmt::format("{}/{}", zone_path, item_script), // Local
-<<<<<<< HEAD
-=======
-		fmt::format("{}/{}", dotnet_path, "item"), // Dotnet
-		fmt::format("{}/{}", dotnet_global_path, "item"), // Dotnet Global
->>>>>>> df0345272 (add foundation for dynamic persisted items, better checks around concrete method in compilerbridge)
 		fmt::format("{}/{}", global_path, item_script), // Global
 		fmt::format("{}/default", zone_path), // Local Default
 		fmt::format("{}/default", global_path) // Global Default
