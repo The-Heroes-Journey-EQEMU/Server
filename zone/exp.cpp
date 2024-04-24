@@ -507,7 +507,9 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		if (upgrade_item && upgrade_item->GetID() < 2000000) {
 			auto   bucket_key = "item-" + std::to_string(upgrade_item->GetID()) + "-upgrade-progress";
-			uint64 item_exp   = Strings::ToInt(GetBucket(bucket_key), 0) + in_add_exp;			
+			uint64 item_exp   = Strings::ToInt(GetBucket(bucket_key), 0) + in_add_exp;
+
+			SetBucket(bucket_key, std::to_string(item_exp));			
 
 			// Calculate target XP soak
 			targ_exp += std::max(upgrade_item->GetItem()->Mana, upgrade_item->GetItem()->Endur) * 10000;
@@ -552,10 +554,12 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 			targ_exp *= 500;
 
+			float percentage = (float)item_exp / (float)targ_exp;
+
 			EQ::SayLinkEngine linker;
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 			linker.SetItemInst(upgrade_item);
-			Message(Chat::Experience, "You channel a portion of the experience you gained into improving [%s]", linker.GenerateLink().c_str());
+			Message(Chat::Experience, "You channel a portion of the experience you gained into improving your [%s] (%0.04f percent until upgrade)", linker.GenerateLink().c_str(), percentage);
 			
 
 			in_add_exp *= .50;			
