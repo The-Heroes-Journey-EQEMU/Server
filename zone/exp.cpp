@@ -525,26 +525,38 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			targ_exp += upgrade_item->GetItem()->PR   * 1000;
 			targ_exp += upgrade_item->GetItem()->AC   * 1000;
 			targ_exp += upgrade_item->GetItem()->HP   * 1000;
-			targ_exp += std::max(upgrade_item->GetItem()->Mana, upgrade_item->GetItem()->Endur) * 1000;
-			targ_exp += upgrade_item->GetItem()->CombatEffects  * 100000;
-			targ_exp += upgrade_item->GetItem()->Regen          * 100000;
-			targ_exp += upgrade_item->GetItem()->ManaRegen      * 100000;
-			targ_exp += upgrade_item->GetItem()->SpellShield    * 100000;
-			targ_exp += upgrade_item->GetItem()->Shielding      * 100000;
-			targ_exp += upgrade_item->GetItem()->DotShielding   * 100000;
-			targ_exp += upgrade_item->GetItem()->DamageShield   * 100000;
-			targ_exp += upgrade_item->GetItem()->DSMitigation   * 100000;
-			targ_exp += upgrade_item->GetItem()->Avoidance      * 100000;
-			targ_exp += upgrade_item->GetItem()->Accuracy       * 100000;
-			targ_exp += upgrade_item->GetItem()->SpellDmg       * 100000;
-			targ_exp += upgrade_item->GetItem()->HealAmt        * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicStr * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicSta * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicDex * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicAgi * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicInt * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicWis * 100000;
-			targ_exp += upgrade_item->GetItem()->HeroicCha * 100000;
+			targ_exp += std::max(upgrade_item->GetItem()->Mana, upgrade_item->GetItem()->Endur) * 10000;
+			targ_exp += upgrade_item->GetItem()->CombatEffects  * 1000000;
+			targ_exp += upgrade_item->GetItem()->Regen          * 1000000;
+			targ_exp += upgrade_item->GetItem()->ManaRegen      * 1000000;
+			targ_exp += upgrade_item->GetItem()->SpellShield    * 1000000;
+			targ_exp += upgrade_item->GetItem()->Shielding      * 1000000;
+			targ_exp += upgrade_item->GetItem()->DotShielding   * 1000000;
+			targ_exp += upgrade_item->GetItem()->DamageShield   * 1000000;
+			targ_exp += upgrade_item->GetItem()->DSMitigation   * 1000000;
+			targ_exp += upgrade_item->GetItem()->Avoidance      * 1000000;
+			targ_exp += upgrade_item->GetItem()->Accuracy       * 1000000;
+			targ_exp += upgrade_item->GetItem()->SpellDmg       * 1000000;
+			targ_exp += upgrade_item->GetItem()->HealAmt        * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicStr * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicSta * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicDex * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicAgi * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicInt * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicWis * 1000000;
+			targ_exp += upgrade_item->GetItem()->HeroicCha * 1000000;
+
+			if (upgrade_item->GetItem()->Focus.Effect > 0) {
+				targ_exp += 10000000;
+			}
+
+			if (upgrade_item->GetItem()->Click.Effect > 0) {
+				targ_exp += 10000000;
+			}
+
+			if (upgrade_item->GetItem()->Proc.Effect > 0) {
+				targ_exp += 10000000;
+			}
 		}
 
 		Message(Chat::Red, "EXP: %d, Target: %d", in_add_exp, targ_exp);
