@@ -800,7 +800,18 @@ bool EQ::ItemInstance::IsAmmo() const
 
 }
 
-const EQ::ItemData* EQ::ItemInstance::GetItem() const
+EQ::ItemData* EQ::ItemInstance::GetItem() const
+{
+	if (!m_item)
+		return nullptr;
+
+	if (m_scaledItem)
+		return m_scaledItem;
+
+	return m_item;
+}
+
+EQ::ItemData* EQ::ItemInstance::GetMutableItem()
 {
 	if (!m_item)
 		return nullptr;
@@ -828,10 +839,6 @@ std::string EQ::ItemInstance::GetCustomDataString() const {
 		ret_val += "^";
 		ret_val += iter->second;
 		++iter;
-
-		if (ret_val.length() > 0) {
-			ret_val += "^";
-		}
 	}
 	return ret_val;
 }

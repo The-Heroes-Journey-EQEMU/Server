@@ -161,7 +161,8 @@ namespace EQ
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
 		const uint32 GetItemScriptID() const { return ((m_item) ? m_item->ScriptFileID : 0); }
-		const ItemData* GetItem() const;
+		ItemData* GetItem() const;
+		ItemData* GetMutableItem();
 		const ItemData* GetUnscaledItem() const;
 
 		const uint8 GetItemType() const { return m_item ? m_item->ItemType : 255; } // Return 255 so you know there's no valid item
@@ -321,7 +322,7 @@ namespace EQ
 		void _PutItem(uint8 index, ItemInstance* inst) { m_contents[index] = inst; }
 
 		ItemInstTypes		m_use_type {ItemInstNormal};	// Usage type for item
-		const ItemData*		m_item {nullptr};		// Ptr to item data
+		ItemData*		    m_item {nullptr};		// Ptr to item data
 		int16				m_charges {0};	// # of charges for chargeable items
 		uint32				m_price {0};	// Bazaar /trader price
 		uint32				m_color {0};

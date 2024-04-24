@@ -771,25 +771,33 @@ bool SharedDatabase::GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is
 
 	return true;
 }
-void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
-	if (generate_cb && !inst->GetCustomDataString().empty()) {
-		std::string key = md5::digest(inst->GetCustomDataString());
 
-		if (key != inst->GetItem()->Comment) {
-			generate_cb(inst);
-			inst->SetComment(key);
-		}
+void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
+    if (!inst->GetCustomDataString().empty()) {
+        std::string key = md5::digest(inst->GetCustomDataString());
+        if (key != inst->GetItem()->Comment) {			
+			if (inst->GetCustomData("original_id").empty()) {
+				inst->SetCustomData("original_id", std::to_string(inst->GetID()));
+			}
+			if (!inst->GetCustomData("name").empty()) {
+				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("name").c_str(), sizeof(inst->GetMutableItem()->Name));
+			}
+
+			inst->GetMutableItem()->Damage += Strings::ToInt(inst->GetCustomData("damage"));
+			inst->GetMutableItem()->HP     += Strings::ToInt(inst->GetCustomData("hp"));
+
+            inst->SetComment(key);
+        }
         auto it = generated_item_cache.find(key);
         if (it != generated_item_cache.end()) {
-			inst->SetID((uint32)it->second);
+            inst->SetID((uint32)it->second);
             return;
         }
 		// If we don't have a local cached copy let's check where it's at in the items_hash or insert it for the first time
 		// And assign to our local cache. This should only happen once per zone per item that hasn't synced
 		EQ::ItemData* data = nullptr;
-
-		// Client side limit for item links, 5 bytes.
-		uint32 next_id = 0xFFFFF; 
+		
+		uint32 next_id = 0xFFFFFF;
 		// Strategy here is to assign free item ID from the upper bound with decrementing ID.
 		// This makes lookup faster for reassigning to cache.
 		// Eventually this will start overwriting *real* items but not likely unless the number of dynamic
@@ -1059,11 +1067,8 @@ bool SharedDatabase::GetInventory(uint32 account_id, char *name, EQ::InventoryPr
 
 		RunGenerateCallback(inst);
 		
-		int16 put_slot_id;
-		if (slot_id >= 8000 && slot_id <= 8999)
-			put_slot_id = inv->PushCursor(*inst);
-		else
-			put_slot_id = inv->PutItem(slot_id, *inst);
+		int16 put_slot_id;		
+		put_slot_id = inv->PutItem(slot_id, *inst);
 
 		safe_delete(inst);
 
@@ -1529,7 +1534,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 	}
 }
 
-const EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
+EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
 {
 	if (id == 0) {
 		return nullptr;
