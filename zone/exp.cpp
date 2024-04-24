@@ -564,7 +564,8 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			if (item_exp >= targ_exp) {
 				LogInventory("UPGRADING ITEM!");
 				auto new_item = database.CreateItem(upgrade_item->GetID() + 1000000);				
-				PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true);				
+				PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true);		
+				SetBucket(bucket_key, std::to_string(0));		
 			}		
 
 			in_add_exp *= .50;			
