@@ -561,9 +561,12 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			linker.SetItemInst(upgrade_item);
 			Message(Chat::Experience, "You channel a portion of the experience you gained into improving your [%s]! (%0.02f percent complete)", linker.GenerateLink().c_str(), percentage);
 
-			if (targ_exp < item_exp) {
+			if (item_exp >= targ_exp) {
+				LogInventory("UPGRADING ITEM!");
 				auto new_item = database.CreateItem(upgrade_item->GetID() + 1000000);
+				m_inv.PopItem(EQ::invslot::slotPowerSource);
 				m_inv.PutItem(EQ::invslot::slotPowerSource, *new_item);
+				
 			}		
 
 			in_add_exp *= .50;			
