@@ -1342,6 +1342,12 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 			}
 		}
 
+		if (RuleB(Custom, PowerSourceItemUpgrade)) {
+			if (item.Slots > 0 && item.Classes > 0) {
+				item.Slots |= 2097152;
+			}
+		}
+
 		try {
 			hash.insert(item.ID, item);
 		} catch (std::exception &ex) {
