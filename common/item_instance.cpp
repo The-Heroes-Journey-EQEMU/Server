@@ -849,7 +849,7 @@ void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 	}
 }
 
-std::string EQ::ItemInstance::GetCustomData(const std::string& identifier) {
+std::string EQ::ItemInstance::GetCustomData(const std::string& identifier) const {
 	std::map<std::string, std::string>::const_iterator iter = m_custom_data.find(identifier);
 	if (iter != m_custom_data.end()) {
 		return iter->second;
