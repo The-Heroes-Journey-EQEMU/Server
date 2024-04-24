@@ -189,7 +189,7 @@ namespace EQ
 		void SetAttuned(bool flag)				{ m_attuned = flag; }
 
 		std::string GetCustomDataString() const;
-		std::string GetCustomData(const std::string &identifier);
+		std::string GetCustomData(const std::string &identifier) const;
 		void SetCustomDataString(const std::string& str);
 		void SetCustomData(const std::string &identifier, const std::string& value);
 		void SetCustomData(const std::string &identifier, int value);
