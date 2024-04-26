@@ -9266,7 +9266,7 @@ void Client::Handle_OP_ItemName(const EQApplicationPacket *app)
 		auto outapp = new EQApplicationPacket(OP_ItemName, sizeof(ItemNamePacket_Struct));
 		p = (ItemNamePacket_Struct*)outapp->pBuffer;
 		memset(p, 0, sizeof(ItemNamePacket_Struct));
-		strcpy(p->name, item->Name);
+		strcpy(p->name, "This is a very long name that has no purpose other than to judge how long of a name that we can fit into this packet.");
 		FastQueuePacket(&outapp);
 	}
 	return;

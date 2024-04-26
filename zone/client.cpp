@@ -4398,7 +4398,7 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 		fmt::format(
 			"item_id = {} AND account_status = {}",
 			item_id,
-			GetSeaso
+			GetSeason()
 		)
 	);
 	
