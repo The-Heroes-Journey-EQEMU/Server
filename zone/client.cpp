@@ -4380,8 +4380,9 @@ bool Client::IsDiscovered(uint32 item_id) {
 	const auto& l = DiscoveredItemsRepository::GetWhere(
 		database,
 		fmt::format(
-			"item_id = {}",
-			item_id
+			"item_id = {} AND account_status = {}", 
+			item_id,
+			GetSeason()
 		)
 	);
 	if (l.empty()) {
@@ -4395,8 +4396,9 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 	const auto& l = DiscoveredItemsRepository::GetWhere(
 		database,
 		fmt::format(
-			"item_id = {}",
-			item_id
+			"item_id = {} AND account_status = {}",
+			item_id,
+			GetSeaso
 		)
 	);
 	
@@ -4410,7 +4412,7 @@ void Client::DiscoverItem(EQ::ItemInstance* inst) {
 		auto item_id = inst->GetItem()->ID;
 		auto e = DiscoveredItemsRepository::NewEntity();
 
-		e.account_status = Admin();
+		e.account_status = GetSeason();
 		e.char_name = GetCleanName();
 		e.discovered_date = std::time(nullptr);
 		e.item_id = item_id;
@@ -4433,9 +4435,15 @@ void Client::DiscoverItem(EQ::ItemInstance* inst) {
 			std::vector<std::any> args = { item };
 
 			if (parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args)) {
-				inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));				
-				database.RunGenerateCallback(inst);
+				std::string new_name = fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name);
 
+				if (RuleB(Custom, UseTHJItemMutations)) {
+					new_name.append(" (Artifact)");
+				}
+				
+				inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));	
+				
+				database.RunGenerateCallback(inst);
 				// Set this item as an artifact
 				inst->GetMutableItem()->ArtifactFlag = 1;
 			}
