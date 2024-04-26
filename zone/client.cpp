@@ -4412,6 +4412,9 @@ void Client::DiscoverItem(EQ::ItemInstance* inst) {
 		inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));
 		database.RunGenerateCallback(inst);
 
+		// Set this item as an artifact
+		inst->GetMutableItem()->ArtifactFlag = 1;
+
 		auto e = DiscoveredItemsRepository::NewEntity();
 
 		e.account_status = Admin();
