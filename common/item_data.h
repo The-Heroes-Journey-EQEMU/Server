@@ -360,7 +360,7 @@ namespace EQ
 
 		// Packet based fields
 		uint8	ItemClass {};		// Item Type: 0=common, 1=container, 2=book
-		char	Name[128] {};		// Name
+		char	Name[64] {};		// Name
 		char	Lore[80] {};		// Lore Name: *=lore, &=summoned, #=artifact, ~=pending lore
 		char	IDFile[30] {};		// Visible model
 		uint32	ID {};				// Unique ID (also PK for DB)

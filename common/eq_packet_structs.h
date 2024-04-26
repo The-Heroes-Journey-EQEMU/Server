@@ -587,7 +587,7 @@ struct RemoveNimbusEffect_Struct
 struct ItemNamePacket_Struct {
 /*000*/	uint32 item_id;
 /*004*/	uint32 unkown004;
-/*008*/ char name[128];
+/*008*/ char name[64];
 /*072*/
 };
 
