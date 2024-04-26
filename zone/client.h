@@ -1035,7 +1035,15 @@ public:
 	int GetEXPPercentage();
 
 	// Seasonal Helper Methods
-	bool IsSeasonal() { return (Strings::ToBool(GetBucket("SeasonalCharacter")) == RuleI(Custom, EnableSeasonalCharacters)); }
+	bool IsSeasonal() { return (Strings::ToInt(GetBucket("SeasonalCharacter")) == RuleI(Custom, EnableSeasonalCharacters)); }
+	
+	int  GetSeason() { 
+		if (IsSeasonal()) {
+			return Strings::ToInt(GetBucket("SeasonalCharacter"), 0);
+		} else {
+			return 0;
+		}
+	}
 
 	// Hardcore Helper Methods
 	bool IsHardcore() { return Strings::ToBool(GetBucket("DiscordantCharacter")); }

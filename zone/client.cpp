@@ -4408,13 +4408,6 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 void Client::DiscoverItem(EQ::ItemInstance* inst) {
 	if (inst) {
 		auto item_id = inst->GetItem()->ID;
-
-		inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));
-		database.RunGenerateCallback(inst);
-
-		// Set this item as an artifact
-		inst->GetMutableItem()->ArtifactFlag = 1;
-
 		auto e = DiscoveredItemsRepository::NewEntity();
 
 		e.account_status = Admin();
@@ -4440,7 +4433,11 @@ void Client::DiscoverItem(EQ::ItemInstance* inst) {
 			std::vector<std::any> args = { item };
 
 			if (parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args)) {
+				inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));				
+				database.RunGenerateCallback(inst);
 
+				// Set this item as an artifact
+				inst->GetMutableItem()->ArtifactFlag = 1;
 			}
 		}
 	}
