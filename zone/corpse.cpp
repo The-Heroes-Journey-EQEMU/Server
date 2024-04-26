@@ -1625,7 +1625,7 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 			!c->GetGM() &&
 			!c->IsDiscovered(inst->GetItem()->ID)
 			) {
-			c->DiscoverItem(inst->GetItem()->ID);
+			c->DiscoverItem(inst);
 		}
 
 		if (zone->adv_data) {

@@ -4405,32 +4405,41 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 	return l[0].char_name;
 }
 
-void Client::DiscoverItem(uint32 item_id) {
-	auto e = DiscoveredItemsRepository::NewEntity();
+void Client::DiscoverItem(EQ::ItemInstance* inst) {
+	if (inst) {
+		auto item_id = inst->GetItem()->ID;
 
-	e.account_status = Admin();
-	e.char_name = GetCleanName();
-	e.discovered_date = std::time(nullptr);
-	e.item_id = item_id;
+		inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));
+		database.RunGenerateCallback(inst);
 
-	auto d = DiscoveredItemsRepository::InsertOne(database, e);
+		auto e = DiscoveredItemsRepository::NewEntity();
 
-	if (player_event_logs.IsEventEnabled(PlayerEvent::DISCOVER_ITEM)) {
-		const auto* item = database.GetItem(item_id);
+		e.account_status = Admin();
+		e.char_name = GetCleanName();
+		e.discovered_date = std::time(nullptr);
+		e.item_id = item_id;
 
-		auto e = PlayerEvent::DiscoverItemEvent{
-			.item_id = item_id,
-			.item_name = item->Name,
-		};
-		RecordPlayerEventLog(PlayerEvent::DISCOVER_ITEM, e);
+		auto d = DiscoveredItemsRepository::InsertOne(database, e);
 
-	}
+		if (player_event_logs.IsEventEnabled(PlayerEvent::DISCOVER_ITEM)) {
+			const auto* item = database.GetItem(item_id);
 
-	if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
-		auto* item = database.CreateItem(item_id);
-		std::vector<std::any> args = { item };
+			auto e = PlayerEvent::DiscoverItemEvent{
+				.item_id = item_id,
+				.item_name = item->Name,
+			};
+			RecordPlayerEventLog(PlayerEvent::DISCOVER_ITEM, e);
 
-		parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);
+		}
+
+		if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
+			auto* item = database.CreateItem(item_id);
+			std::vector<std::any> args = { item };
+
+			if (parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args)) {
+
+			}
+		}
 	}
 }
 

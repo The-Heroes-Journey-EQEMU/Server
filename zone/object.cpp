@@ -658,7 +658,7 @@ bool Object::HandleClick(Client* sender, const ClickObject_Struct* click_object)
 				!sender->GetGM() &&
 				!sender->IsDiscovered(item->ID)
 			) {
-				sender->DiscoverItem(item->ID);
+				sender->DiscoverItem(m_inst);
 			}
 
 			if (cursor_delete) {    // delete the item if it's a duplicate lore. We have to do this because the client expects the item packet
