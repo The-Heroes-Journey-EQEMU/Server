@@ -800,7 +800,7 @@ bool EQ::ItemInstance::IsAmmo() const
 
 }
 
-const EQ::ItemData* EQ::ItemInstance::GetItem() const
+EQ::ItemData* EQ::ItemInstance::GetItem() const
 {
 	if (!m_item)
 		return nullptr;
