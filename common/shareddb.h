@@ -188,7 +188,7 @@ public:
 	void LoadItems(void *data, uint32 size, int32 items, uint32 max_item_id);
 	bool LoadItems(const std::string &prefix);
 	const EQ::ItemData *IterateItems(uint32 *id) const;
-	EQ::ItemData *GetItem(uint32 id) const;
+	const EQ::ItemData *GetItem(uint32 id) const;
 	const EvolveInfo *GetEvolveInfo(uint32 loregroup);
 	uint32 GetSharedItemsCount() { return m_shared_items_count; }
 	uint32 GetItemsCount();
