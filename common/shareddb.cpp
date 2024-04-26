@@ -788,6 +788,8 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->Damage += Strings::ToInt(inst->GetCustomData("damage"));
 			inst->GetMutableItem()->HP     += Strings::ToInt(inst->GetCustomData("hp"));
 
+			// Prevent items of this type from being sold to vendors.
+			inst->GetMutableItem()->Price = 0;
             inst->SetComment(key);
         }
         auto it = generated_item_cache.find(key);

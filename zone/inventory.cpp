@@ -747,6 +747,12 @@ void Client::DropItem(int16 slot_id, bool recurse)
 		return;
 	}
 
+	if (!m_inv.GetItem(slot_id)->GetCustomDataString().empty()) {
+		Message(Chat::Red, "You may not drop an item of this type.");
+		SendCursorBuffer();
+		return;
+	}
+
 	if (GetInv().CheckNoDrop(slot_id, recurse) && !CanTradeFVNoDropItem()) {
 		auto invalid_drop = m_inv.GetItem(slot_id);
 		if (!invalid_drop) {
