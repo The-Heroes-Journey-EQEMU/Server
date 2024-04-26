@@ -1538,7 +1538,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 	}
 }
 
-const EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
+EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
 {
 	if (id == 0) {
 		return nullptr;
