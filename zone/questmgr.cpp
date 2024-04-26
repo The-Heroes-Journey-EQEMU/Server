@@ -43,6 +43,7 @@
 #include "../common/repositories/tradeskill_recipe_repository.h"
 #include "../common/repositories/instance_list_repository.h"
 #include "../common/repositories/grid_entries_repository.h"
+#include "../common/repositories/items_repository.h"
 
 #include <iostream>
 #include <limits.h>
@@ -3636,6 +3637,16 @@ std::string QuestManager::getitemname(uint32 item_id) {
 
 	std::string item_name = item_data->Name;
 	return item_name;
+}
+
+bool QuestManager::IsItemDynamic(uint32 item_id) {
+	const auto item_data = ItemsRepository::FindOne(database, item_id);
+
+	if (!item_data.id) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 std::string QuestManager::getnpcnamebyid(uint32 npc_id) {

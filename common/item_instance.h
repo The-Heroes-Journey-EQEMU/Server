@@ -147,6 +147,13 @@ namespace EQ
 		bool UpdateOrnamentationInfo();
 		static bool CanTransform(const ItemData *ItemToTry, const ItemData *Container, bool AllowAll = false);
 
+		// Dynamic Item Stuff
+		ItemData* GetMutableItem();		
+		const bool IsItemDynamic() const;
+		const int  GetItemTier() const;
+		const int  GetAbsoluteBaseID() const;
+		const int  GetOriginalID() const;
+
 		// Has attack/delay?
 		bool IsWeapon() const;
 		bool IsAmmo() const;
@@ -161,8 +168,7 @@ namespace EQ
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
 		const uint32 GetItemScriptID() const { return ((m_item) ? m_item->ScriptFileID : 0); }
-		ItemData* GetItem() const;
-		ItemData* GetMutableItem();
+		const ItemData* GetItem() const;		
 		const ItemData* GetUnscaledItem() const;
 
 		const uint8 GetItemType() const { return m_item ? m_item->ItemType : 255; } // Return 255 so you know there's no valid item

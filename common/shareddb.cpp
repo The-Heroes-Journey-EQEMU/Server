@@ -1513,10 +1513,10 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 			strn0cpy(modifiedName, item.Name, sizeof(modifiedName));
 
 			if (strncmp(row[ItemField::name], "Rose Colored ", 13) == 0) {
-				snprintf(modifiedName, sizeof(modifiedName), "%s (Latent)", row[ItemField::name] + 13);
+				snprintf(modifiedName, sizeof(modifiedName), "%s (Enchanted)", row[ItemField::name] + 13);
 			}
 			else if (strncmp(row[ItemField::name], "Apocryphal ", 11) == 0) {
-				snprintf(modifiedName, sizeof(modifiedName), "%s (Awakened)", row[ItemField::name] + 11);
+				snprintf(modifiedName, sizeof(modifiedName), "%s (Legendary)", row[ItemField::name] + 11);
 			}
 
 			if (modifiedName[0] != '\0') {

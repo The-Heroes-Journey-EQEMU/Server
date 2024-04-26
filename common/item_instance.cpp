@@ -800,7 +800,7 @@ bool EQ::ItemInstance::IsAmmo() const
 
 }
 
-EQ::ItemData* EQ::ItemInstance::GetItem() const
+const EQ::ItemData* EQ::ItemInstance::GetItem() const
 {
 	if (!m_item)
 		return nullptr;
@@ -820,6 +820,43 @@ EQ::ItemData* EQ::ItemInstance::GetMutableItem()
 		return m_scaledItem;
 
 	return m_item;
+}
+
+const bool EQ::ItemInstance::IsItemDynamic() const
+{
+	if (!m_item)
+		return false;
+
+	return !GetCustomData("original_id").empty();	
+}
+
+// Returns the original ID of a dynamic item
+const int EQ::ItemInstance::GetOriginalID() const
+{
+	if (!m_item)
+		return 0;
+
+	
+	auto working_id  = m_scaledItem ? m_scaledItem->ID : m_item->ID;		
+	return Strings::ToInt(GetCustomData("original_id"), working_id);		
+}
+
+// Returns the base ID of an item.
+const int EQ::ItemInstance::GetAbsoluteBaseID() const
+{
+	if (!m_item)
+		return 0;
+
+	return GetOriginalID() % 1000000;		
+}
+
+
+const int EQ::ItemInstance::GetItemTier() const
+{
+	if (!m_item)
+		return 0;
+
+	return static_cast<int64>(m_item->ID / 1000000);
 }
 
 const EQ::ItemData* EQ::ItemInstance::GetUnscaledItem() const

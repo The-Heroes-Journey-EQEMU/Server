@@ -4398,7 +4398,7 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 		fmt::format(
 			"item_id = {} AND account_status = {}",
 			item_id,
-			GetSeaso
+			GetSeason()
 		)
 	);
 	
@@ -4412,10 +4412,10 @@ void Client::DiscoverItem(EQ::ItemInstance* inst) {
 		auto item_id = inst->GetItem()->ID;
 		auto e = DiscoveredItemsRepository::NewEntity();
 
-		e.account_status = GetSeason();
-		e.char_name = GetCleanName();
+		e.account_status  = GetSeason();
+		e.char_name       = GetCleanName();
 		e.discovered_date = std::time(nullptr);
-		e.item_id = item_id;
+		e.item_id 		  = item_id;
 
 		auto d = DiscoveredItemsRepository::InsertOne(database, e);
 
@@ -4427,12 +4427,13 @@ void Client::DiscoverItem(EQ::ItemInstance* inst) {
 				.item_name = item->Name,
 			};
 			RecordPlayerEventLog(PlayerEvent::DISCOVER_ITEM, e);
-
 		}
 
 		if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
 			auto* item = database.CreateItem(item_id);
 			std::vector<std::any> args = { item };
+
+			parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);	
 
 			if (parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args)) {
 				std::string new_name = fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name);
