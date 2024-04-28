@@ -709,6 +709,21 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 		RecordPlayerEventLog(PlayerEvent::ITEM_CREATION, e);
 	}
 
+	// discover item and any augments
+	bool artifact_discovered = CheckArtifactDiscovery(inst);
+
+	if (
+		RuleB(Character, EnableDiscoveredItems) &&
+		!GetGM() &&
+		!IsDiscovered(item_id)
+	) {
+		DiscoverItem(item_id);
+	}
+
+	if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && CheckArtifactDiscovery(inst)) {
+		DiscoverItem(inst->GetItem()->ID);
+	}
+
 	// put item into inventory
 	if (to_slot == EQ::invslot::slotCursor) {
 		PushItemOnCursor(*inst);
@@ -718,16 +733,6 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 	}
 
 	safe_delete(inst);
-
-	// discover item and any augments
-	if (
-		RuleB(Character, EnableDiscoveredItems) &&
-		!GetGM() &&
-		!IsDiscovered(item_id)
-	) {
-		DiscoverItem(item_id);
-	}
-
 	return true;
 }
 

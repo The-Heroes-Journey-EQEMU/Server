@@ -788,10 +788,8 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("name").c_str(), sizeof(inst->GetMutableItem()->Name));
 			}
 			
-			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("artifact_flag"), inst->GetItem()->ArtifactFlag);
-			inst->GetMutableItem()->Attuneable   = Strings::ToInt(inst->GetCustomData("attunable"), inst->GetItem()->Attuneable);		
-			inst->GetMutableItem()->Damage += Strings::ToInt(inst->GetCustomData("damage"));
-			inst->GetMutableItem()->HP     += Strings::ToInt(inst->GetCustomData("hp"));				
+			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("ArtifactFlag"), inst->GetItem()->ArtifactFlag);
+			inst->GetMutableItem()->Attuneable   = Strings::ToInt(inst->GetCustomData("Attuneable"), inst->GetItem()->Attuneable);	
 
 			// Prevent items of this type from being sold to vendors.
 			inst->GetMutableItem()->Price = 0;

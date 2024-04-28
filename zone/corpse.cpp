@@ -1645,7 +1645,9 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 			}
 		}
 
-		bool artifact_discovered = c->CheckArtifactDiscovery(inst);
+		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && c->CheckArtifactDiscovery(inst)) {
+			c->DiscoverItem(inst->GetItem()->ID);
+		}
 
 		/* First add it to the looter - this will do the bag contents too */
 		if (lootitem->auto_loot > 0) {
@@ -1655,10 +1657,6 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 		}
 		else {
 			c->PutLootInInventory(EQ::invslot::slotCursor, *inst, bag_item_data);
-		}
-
-		if (c && !c->GetGM() && artifact_discovered) {
-			c->DiscoverItem(inst->GetItem()->ID);
 		}
 
 		/* Update any tasks that have an activity to loot this item */
