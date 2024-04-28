@@ -784,8 +784,8 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 				inst->SetCustomData("original_id", std::to_string(inst->GetID()));
 			}
 
-			if (!inst->GetCustomData("name").empty()) {
-				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("name").c_str(), sizeof(inst->GetMutableItem()->Name));
+			if (!inst->GetCustomData("Name").empty()) {
+				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("Name").c_str(), sizeof(inst->GetMutableItem()->Name));
 			}
 			
 			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("ArtifactFlag"), inst->GetItem()->ArtifactFlag);
