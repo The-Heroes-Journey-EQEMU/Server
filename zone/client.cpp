@@ -4393,6 +4393,7 @@ bool Client::IsDiscovered(uint32 item_id) {
 }
 
 std::string Client::GetDiscoverer(uint32 item_id) {
+	LogDebug("GetDiscoverer [{}]", item_id);
 	if (item_id >= 3000000) {	
 		auto item_data  = database.GetItem(item_id);
 
