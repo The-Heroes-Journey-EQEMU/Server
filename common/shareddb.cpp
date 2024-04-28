@@ -775,6 +775,7 @@ bool SharedDatabase::GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is
 }
 
 void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
+	LogDebug("Entering RunGenerateCallback");
     if (!inst->GetCustomDataString().empty()) {
         std::string key = md5::digest(inst->GetCustomDataString());
         if (key != inst->GetItem()->Comment) {			
