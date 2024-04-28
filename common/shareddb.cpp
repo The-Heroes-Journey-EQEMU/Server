@@ -789,7 +789,8 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			}
 			
 			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("ArtifactFlag"), inst->GetItem()->ArtifactFlag);
-			inst->GetMutableItem()->Attuneable   = Strings::ToInt(inst->GetCustomData("Attuneable"), inst->GetItem()->Attuneable);	
+			inst->GetMutableItem()->Attuneable   = Strings::ToInt(inst->GetCustomData("Attuneable"), inst->GetItem()->Attuneable);
+			inst->GetMutableItem()->Season       = Strings::ToInt(inst->GetCustomData("Season"), 0);	
 
 			// Prevent items of this type from being sold to vendors.
 			inst->GetMutableItem()->Price = 0;
@@ -1240,6 +1241,8 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 
 		// Unique Identifier
 		item.ID = Strings::ToUnsignedInt(row[ItemField::id]);
+		item.OriginalID = item.ID;
+		item.Season = 0;
 
 		// Minimum Status
 		item.MinStatus = static_cast<uint8>(Strings::ToUnsignedInt(row[ItemField::minstatus]));
@@ -1549,7 +1552,7 @@ EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
 
 	if (!items_hash || id > items_hash->max_key()) {
 		return nullptr;
-	}
+	}	
 
 	if (items_hash->exists(id)) {
 		return &(items_hash->at(id));
