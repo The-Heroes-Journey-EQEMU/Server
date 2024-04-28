@@ -4437,7 +4437,8 @@ void Client::DiscoverItem(uint32 item_id) {
 }
 
 bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
-	if (inst != nullptr && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
+	LogDebug("Entering CheckArtifactDiscovery");
+	if (inst != nullptr) {
 		// Process the name change to 'Soandso's ItemName' or 'Soandso's ItemName (Artifact)'
 		std::string base_name(database.GetItem(inst->GetBaseID())->Name);
 		std::string new_name = std::string(GetCleanName()) + "'s " + base_name;		
