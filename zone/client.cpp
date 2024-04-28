@@ -4395,9 +4395,11 @@ bool Client::IsDiscovered(uint32 item_id) {
 std::string Client::GetDiscoverer(uint32 item_id) {
 	if (item_id >= 3000000) {	
 		auto item_data  = database.GetItem(item_id);
+		
+		// Try to find this as an artifact
 		auto query_str  = "artifact-" + std::to_string(item_data->OriginalID) + "-season-" + std::to_string(item_data->Season);
 		auto discoverer = DataBucket::GetData(query_str);
-		
+
 		return discoverer;
 	} else {
 		const auto& l = DiscoveredItemsRepository::GetWhere(
