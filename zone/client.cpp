@@ -4407,48 +4407,32 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 	return l[0].char_name;
 }
 
-void Client::DiscoverItem(EQ::ItemInstance* inst) {
-	if (inst) {
-		auto item_id = inst->GetItem()->ID;
-		auto e = DiscoveredItemsRepository::NewEntity();
+void Client::DiscoverItem(uint32 item_id) {
+	auto e = DiscoveredItemsRepository::NewEntity();
 
-		e.account_status  = GetSeason();
-		e.char_name       = GetCleanName();
-		e.discovered_date = std::time(nullptr);
-		e.item_id 		  = item_id;
+	e.account_status = Admin();
+	e.char_name = GetCleanName();
+	e.discovered_date = std::time(nullptr);
+	e.item_id = item_id;
 
-		auto d = DiscoveredItemsRepository::InsertOne(database, e);
+	auto d = DiscoveredItemsRepository::InsertOne(database, e);
 
-		if (player_event_logs.IsEventEnabled(PlayerEvent::DISCOVER_ITEM)) {
-			const auto* item = database.GetItem(item_id);
+	if (player_event_logs.IsEventEnabled(PlayerEvent::DISCOVER_ITEM)) {
+		const auto* item = database.GetItem(item_id);
 
-			auto e = PlayerEvent::DiscoverItemEvent{
-				.item_id = item_id,
-				.item_name = item->Name,
-			};
-			RecordPlayerEventLog(PlayerEvent::DISCOVER_ITEM, e);
-		}
+		auto e = PlayerEvent::DiscoverItemEvent{
+			.item_id = item_id,
+			.item_name = item->Name,
+		};
+		RecordPlayerEventLog(PlayerEvent::DISCOVER_ITEM, e);
 
-		if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
-			auto* item = database.CreateItem(item_id);
-			std::vector<std::any> args = { item };
+	}
 
-			parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);	
+	if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
+		auto* item = database.CreateItem(item_id);
+		std::vector<std::any> args = { item };
 
-			if (parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args)) {
-				std::string new_name = fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name);
-
-				if (RuleB(Custom, UseTHJItemMutations)) {
-					new_name.append(" (Artifact)");
-				}
-				
-				inst->SetCustomData("name", fmt::format("{}'s {}", GetCleanName(), inst->GetItem()->Name));	
-				
-				database.RunGenerateCallback(inst);
-				// Set this item as an artifact
-				inst->GetMutableItem()->ArtifactFlag = 1;
-			}
-		}
+		parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);
 	}
 }
 

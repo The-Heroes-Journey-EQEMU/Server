@@ -2142,12 +2142,11 @@ void Client::Handle_OP_AdventureMerchantPurchase(const EQApplicationPacket *app)
 	if (item->MaxCharges != 0)
 		charges = item->MaxCharges;
 
-	EQ::ItemInstance *inst = database.CreateItem(item, charges);
-
 	if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(item->ID)) {
-		DiscoverItem(inst);
+		DiscoverItem(item->ID);
 	}
-	
+
+	EQ::ItemInstance *inst = database.CreateItem(item, charges);
 	if (!AutoPutLootInInventory(*inst, true, true))
 	{
 		PutLootInInventory(EQ::invslot::slotCursor, *inst);
@@ -2698,12 +2697,11 @@ void Client::Handle_OP_AltCurrencyPurchase(const EQApplicationPacket *app)
 			RecordPlayerEventLog(PlayerEvent::MERCHANT_PURCHASE, e);
 		}
 
-		EQ::ItemInstance *inst = database.CreateItem(item, charges);
-
 		if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(item->ID)) {
-			DiscoverItem(inst);
+			DiscoverItem(item->ID);
 		}
-		
+
+		EQ::ItemInstance *inst = database.CreateItem(item, charges);
 		if (!AutoPutLootInInventory(*inst, true, true))
 		{
 			PutLootInInventory(EQ::invslot::slotCursor, *inst);
@@ -14376,7 +14374,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 	}
 
 	if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(item_id)) {
-		DiscoverItem(inst);
+		DiscoverItem(item_id);
 	}
 
 	t1.stop();

@@ -717,16 +717,16 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 		PutItemInInventory(to_slot, *inst, true);
 	}
 
+	safe_delete(inst);
+
 	// discover item and any augments
 	if (
 		RuleB(Character, EnableDiscoveredItems) &&
 		!GetGM() &&
 		!IsDiscovered(item_id)
 	) {
-		DiscoverItem(inst);
+		DiscoverItem(item_id);
 	}
-
-	safe_delete(inst);
 
 	return true;
 }
