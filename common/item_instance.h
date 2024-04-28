@@ -151,7 +151,7 @@ namespace EQ
 		ItemData* GetMutableItem();		
 		const bool IsItemDynamic() const;
 		const int  GetItemTier() const;
-		const int  GetAbsoluteBaseID() const;
+		const int  GetBaseID() const;
 		const int  GetOriginalID() const;
 
 		// Has attack/delay?

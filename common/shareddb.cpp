@@ -778,12 +778,14 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
     if (!inst->GetCustomDataString().empty()) {
         std::string key = md5::digest(inst->GetCustomDataString());
         if (key != inst->GetItem()->Comment) {			
+			// This data is important to preserve to properly track the item in inventories.
 			if (inst->GetCustomData("original_id").empty()) {
 				inst->SetCustomData("original_id", std::to_string(inst->GetID()));
 			}
+
 			if (!inst->GetCustomData("name").empty()) {
 				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("name").c_str(), sizeof(inst->GetMutableItem()->Name));
-			}
+			}	
 
 			inst->GetMutableItem()->Damage += Strings::ToInt(inst->GetCustomData("damage"));
 			inst->GetMutableItem()->HP     += Strings::ToInt(inst->GetCustomData("hp"));

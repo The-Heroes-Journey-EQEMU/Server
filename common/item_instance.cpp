@@ -842,7 +842,7 @@ const int EQ::ItemInstance::GetOriginalID() const
 }
 
 // Returns the base ID of an item.
-const int EQ::ItemInstance::GetAbsoluteBaseID() const
+const int EQ::ItemInstance::GetBaseID() const
 {
 	if (!m_item)
 		return 0;
