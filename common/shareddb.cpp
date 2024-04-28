@@ -801,7 +801,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 		// And assign to our local cache. This should only happen once per zone per item that hasn't synced
 		EQ::ItemData* data = nullptr;
 		
-		uint32 next_id = 0xFFFFFF;
+		uint32 next_id = 0xFFFFFFF;
 		// Strategy here is to assign free item ID from the upper bound with decrementing ID.
 		// This makes lookup faster for reassigning to cache.
 		// Eventually this will start overwriting *real* items but not likely unless the number of dynamic
