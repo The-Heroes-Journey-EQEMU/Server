@@ -4463,7 +4463,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("artifact_flag", 1);	
 
 			DataBucket::SetData(databucket_string, GetCleanName());
-			database.RunGenerateCallback();
+			database.RunGenerateCallback(inst);
 			return true;
 		}	
 	}
