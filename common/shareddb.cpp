@@ -785,7 +785,10 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 
 			if (!inst->GetCustomData("name").empty()) {
 				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("name").c_str(), sizeof(inst->GetMutableItem()->Name));
-			}	
+			}
+
+			
+			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("artifact_flag"), 0);		
 
 			inst->GetMutableItem()->Damage += Strings::ToInt(inst->GetCustomData("damage"));
 			inst->GetMutableItem()->HP     += Strings::ToInt(inst->GetCustomData("hp"));

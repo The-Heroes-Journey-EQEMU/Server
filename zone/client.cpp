@@ -4410,7 +4410,7 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 void Client::DiscoverItem(uint32 item_id) {
 	auto e = DiscoveredItemsRepository::NewEntity();
 
-	e.account_status = Admin();
+	e.account_status = GetSeason();
 	e.char_name = GetCleanName();
 	e.discovered_date = std::time(nullptr);
 	e.item_id = item_id;
@@ -4434,6 +4434,31 @@ void Client::DiscoverItem(uint32 item_id) {
 
 		parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);
 	}
+}
+
+bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
+	if (inst != nullptr && !IsDiscovered(inst->GetItem()->ID) && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
+		// Process the name change to 'Soandso's ItemName' or 'Soandso's ItemName (Artifact)'
+		std::string base_name(database.GetItem(inst->GetBaseID())->Name);
+		std::string new_name = std::string(GetCleanName()) + "'s " + base_name;		
+
+		if (RuleB(Custom, UseTHJItemMutations)) {
+			// Make room for ' (Artifact)' at the end of the item name, which is at most 63+nullterm
+			if (new_name.length() > 52) {
+				new_name = new_name.substr(0, 52);
+			}
+
+			new_name += " (Artifact)";
+		}
+
+		if (new_name.length() > 63) {
+			new_name = new_name.substr(0, 63);
+		}
+
+		inst->SetCustomData("name", new_name);
+		inst->SetCustomData("artifact_flag", 1);		
+	}	
+	return false;
 }
 
 void Client::UpdateLFP() {
