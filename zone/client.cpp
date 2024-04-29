@@ -4484,7 +4484,12 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("Season", GetSeason());
 			inst->SetCustomData("Discovery", "Artifact");
 
-			DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
+			if (GetSeason() > 0) {
+				DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
+			} else {
+				DataBucket::SetData(databucket_string, std::string(GetCleanName()));
+			}
+			
 			database.RunGenerateCallback(inst);
 			return true;
 		}	
