@@ -1645,7 +1645,7 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 			}
 		}
 
-		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && c->CheckArtifactDiscovery(inst)) {
+		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && c->DiscoverArtifact(inst)) {
 			c->DiscoverItem(inst->GetItem()->ID);
 		}
 

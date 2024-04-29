@@ -4448,16 +4448,30 @@ void Client::DiscoverItem(uint32 item_id) {
 	}
 }
 
-bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst, bool bypass) {
-	if (inst != nullptr && inst->GetItem()->ID > 2000000 && inst->GetItem()->ID < 3000000) {		
-		std::string databucket_string = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
+bool Client::CanDiscoverArtifact(EQ::ItemInstance* inst, bool bypass) {
+	if (!(inst->GetItem()->Classes & GetClassesBits() && inst->GetItem()->Races & GetPlayerRaceBit(GetRace()))) {			
+		return false;
+	}
 
-		if (!(inst->GetItem()->Classes & GetClassesBits() && inst->GetItem()->Races & GetPlayerRaceBit(GetRace()))) {
-			LogDebug("Artifact Creation Aborted due to unusable item");
-			return false;
-		}
+	if (inst->GetItem()->ID < 2000000 || inst->GetItem()->ID > 3000000) {
+		return false;
+	}
 
-		if ((DataBucket::GetData(databucket_string).empty() || bypass) && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
+	std::string global_string    = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
+	std::string character_string = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
+
+	if (bypass) {
+		return GetBucket(character_string).empty();
+	} else {
+		return DataBucket::GetData(global_string).empty();
+	}
+	
+	return false;
+}
+
+bool Client::DiscoverArtifact(EQ::ItemInstance* inst, bool bypass) {
+	if (inst) {
+		if (CanDiscoverArtifact(inst, bypass) && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
 			SendSound();
 			Message(Chat::Yellow, "You have discovered an Artifact!");
 
@@ -4496,10 +4510,10 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst, bool bypass) {
 			inst->SetCustomData("Customized", "true");
 
 			const float scaling_factor = 0.20;
-			inst->SetCustomData("BaneDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgAmt * scaling_factor)));
-			inst->SetCustomData("BaneDmgRaceAmt", 	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgRaceAmt * scaling_factor)));
-			inst->SetCustomData("ElemDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->ElemDmgAmt * scaling_factor)));
-			inst->SetCustomData("Damage",         	static_cast<int32>(std::ceil(inst->GetItem()->Damage * scaling_factor)));
+			inst->SetCustomData("BaneDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgAmt * (scaling_factor/2))));
+			inst->SetCustomData("BaneDmgRaceAmt", 	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgRaceAmt * (scaling_factor/2))));
+			inst->SetCustomData("ElemDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->ElemDmgAmt * (scaling_factor/2))));
+			inst->SetCustomData("Damage",         	static_cast<int32>(std::ceil(inst->GetItem()->Damage * (scaling_factor/2))));
 			inst->SetCustomData("ProcRate",       	static_cast<int32>(std::ceil(inst->GetItem()->ProcRate * scaling_factor)));
 			inst->SetCustomData("CombatEffects",  	static_cast<int32>(std::ceil(inst->GetItem()->CombatEffects * scaling_factor)));
 			inst->SetCustomData("Shielding",      	static_cast<int32>(std::ceil(inst->GetItem()->Shielding * scaling_factor)));
@@ -4559,10 +4573,15 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst, bool bypass) {
 				inst->SetCustomData("force_unlimited_charges", "true");
 			}
 
+			std::string global_string    = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
+			std::string character_string = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
+
 			if (GetSeason() > 0) {
-				DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
+				DataBucket::SetData(global_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
+				SetBucket(character_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
 			} else {
-				DataBucket::SetData(databucket_string, std::string(GetCleanName()));
+				DataBucket::SetData(global_string, std::string(GetCleanName()));
+				SetBucket(character_string, std::string(GetCleanName()));
 			}
 			
 			database.RunGenerateCallback(inst);

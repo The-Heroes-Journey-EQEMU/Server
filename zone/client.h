@@ -828,7 +828,8 @@ public:
 	void DiscoverItem(uint32 itemid);
 	std::string GetDiscoverer(uint32 itemid);
 
-	bool CheckArtifactDiscovery(EQ::ItemInstance* inst, bool bypass = false);
+	bool DiscoverArtifact(EQ::ItemInstance* inst, bool bypass = false);
+	bool CanDiscoverArtifact(EQ::ItemInstance* inst, bool bypass = false);
 
 	bool TGB() const { return tgb; }
 
