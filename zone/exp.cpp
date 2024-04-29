@@ -509,7 +509,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		if (upgrade_item) {
 			int cur_item_exp   = in_add_exp + Strings::ToInt(upgrade_item->GetCustomData("Item_Experience"));
 			int tar_item_exp   = upgrade_item->GetMutableItem()->CalculateGearScore() * 10000;
-			double epercentage = cur_item_exp / tar_item_exp;
+			double epercentage = cur_item_exp / 1;
 			
 			upgrade_item->SetCustomData("Item_Experience", cur_item_exp);
 			database.UpdateInventorySlot(CharacterID(), upgrade_item, EQ::invslot::slotPowerSource);
