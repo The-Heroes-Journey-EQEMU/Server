@@ -708,6 +708,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				}
 
 				database.RunGenerateCallback(old_item);
+				PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
 			}					
 			return;
 		}
