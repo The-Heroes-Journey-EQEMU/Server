@@ -259,13 +259,13 @@ const char* EQ::ItemData::GetActualCharmFile() const {
 }
 
 int EQ::ItemData::CalculateGearScore() const {
-	int64 gear_score = 0;
+	int gear_score = 0;
 	
 	// Basic Stats
 	gear_score += AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
 	gear_score += MR + FR + CR + DR + PR;
 	gear_score += HP + Mana + Endur;
-	gear_score += Damage * (Damage/Delay);
+	//gear_score += Damage * (Damage/Delay);
 	gear_score += Attack + SpellDmg + HealAmt;
 	gear_score += 10 * (AC + ExtraDmgAmt + BaneDmgRaceAmt + ElemDmgAmt);
 	gear_score += 100 * Haste;
