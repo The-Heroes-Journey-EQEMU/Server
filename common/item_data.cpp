@@ -258,7 +258,7 @@ const char* EQ::ItemData::GetActualCharmFile() const {
     return delimiterPos ? delimiterPos + 1 : CharmFile;
 }
 
-int EQ::ItemData::CalculateGearScore() const {
+const uint64 EQ::ItemData::CalculateGearScore() const {
 	int gear_score = 5;
 	
 	// Basic Stats

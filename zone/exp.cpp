@@ -507,11 +507,11 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {		
 		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		if (upgrade_item) {
-			int cur_item_exp   = in_add_exp + Strings::ToInt(upgrade_item->GetCustomData("Item_Experience"));
-			int tar_item_exp   = upgrade_item->GetMutableItem()->CalculateGearScore();
+			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(upgrade_item->GetCustomData("Exp"));
+			uint64 tar_item_exp   = upgrade_item->GetMutableItem()->CalculateGearScore();
 			double epercentage = cur_item_exp / tar_item_exp;
 			
-			upgrade_item->SetCustomData("Item_Experience", cur_item_exp);
+			upgrade_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
 			database.UpdateInventorySlot(CharacterID(), upgrade_item, EQ::invslot::slotPowerSource);			
 
 			EQ::SayLinkEngine linker;
