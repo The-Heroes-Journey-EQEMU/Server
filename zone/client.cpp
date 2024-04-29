@@ -4542,6 +4542,11 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("AInt", 			static_cast<int32>(std::ceil(inst->GetItem()->AInt * scaling_factor)));
 			inst->SetCustomData("AWis", 			static_cast<int32>(std::ceil(inst->GetItem()->AWis * scaling_factor)));
 
+			inst->SetCustomData("Proc.Level",       static_cast<int32>(std::ceil(inst->GetItem()->Proc.Level * -1)));
+			inst->SetCustomData("Proc.Level2",      static_cast<int32>(std::ceil(inst->GetItem()->Proc.Level * -1)));
+			inst->SetCustomData("Click.Level",      static_cast<int32>(std::ceil(inst->GetItem()->Click.Level * -1)));
+			inst->SetCustomData("Click.Level2",     static_cast<int32>(std::ceil(inst->GetItem()->Click.Level2 * -1)));
+
 			if (GetSeason() > 0) {
 				DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
 			} else {

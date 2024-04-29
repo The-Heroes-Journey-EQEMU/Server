@@ -843,7 +843,11 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->ADex             += Strings::ToInt(inst->GetCustomData("ADex"), 0);
 			inst->GetMutableItem()->ACha             += Strings::ToInt(inst->GetCustomData("ACha"), 0);
 			inst->GetMutableItem()->AInt             += Strings::ToInt(inst->GetCustomData("AInt"), 0);
-			inst->GetMutableItem()->AWis             += Strings::ToInt(inst->GetCustomData("AWis"), 0);
+			inst->GetMutableItem()->AWis             += Strings::ToInt(inst->GetCustomData("AWis"), 0);			
+			inst->GetMutableItem()->Proc.Level       += Strings::ToInt(inst->GetCustomData("Proc.Level"), 0);
+			inst->GetMutableItem()->Proc.Level2      += Strings::ToInt(inst->GetCustomData("Proc.Level2"), 0);
+			inst->GetMutableItem()->Click.Level      += Strings::ToInt(inst->GetCustomData("Click.Level"), 0);
+			inst->GetMutableItem()->Click.Level2     += Strings::ToInt(inst->GetCustomData("Click.Level2"), 0);
 
 			// Prevent items of this type from being sold to vendors.
 			inst->GetMutableItem()->Price = 0;
