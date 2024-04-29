@@ -506,8 +506,10 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {
 		EQ::ItemInstance* upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		EQ::SayLinkEngine linker;
+		LogDebug("Wtf? 1");
 
 		if (upgrade_item) {
+			LogDebug("Wtf? 2");
 			int64 cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0) + in_add_exp;
 			int64 tar_item_exp = upgrade_item->GetItem()->CalculateGearScore();
 			auto percentage   = cur_item_exp / tar_item_exp;
