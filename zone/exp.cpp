@@ -659,7 +659,7 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 			EQ::SayLinkEngine linker;
 
 			if (upgrade_item) {
-				auto cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0);
+				auto cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0) + (set_exp - current_exp);
 				auto tar_item_exp = upgrade_item->GetItem()->CalculateGearScore() * (upgrade_item->GetItem()->OriginalID % 1000000) * 1000;
 				auto percentage   = cur_item_exp / tar_item_exp;
 
