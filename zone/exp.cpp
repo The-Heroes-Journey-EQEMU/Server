@@ -500,6 +500,27 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (!IsEXPEnabled()) {
 		return;
+	}
+	
+
+	if (RuleB(Custom, PowerSourceItemUpgrade)) {
+		EQ::ItemInstance* upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+		EQ::SayLinkEngine linker;
+
+		if (upgrade_item) {
+			int64 cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0) + (set_exp - current_exp);
+			int64 tar_item_exp = upgrade_item->GetItem()->CalculateGearScore() * (upgrade_item->GetItem()->OriginalID % 1000000) * 1000;
+			auto percentage   = cur_item_exp / tar_item_exp;
+
+			LogDebug("cur_item_exp [{}], tar_item_exp [{}], percentage [{}]", cur_item_exp, tar_item_exp, percentage);				
+
+			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+			linker.SetItemInst(upgrade_item);
+			Message(Chat::Experience, "Your experience is absorbed by your [%s]!", linker.GenerateLink().c_str(), percentage);
+
+			upgrade_item->SetCustomData("Experience", fmt::to_string(cur_item_exp));
+			return;
+		}
 	}	
 
 	EVENT_ITEM_ScriptStopReturn();
@@ -509,10 +530,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 	if (m_epp.perAA < 0 || m_epp.perAA > 100) {
 		m_epp.perAA = 0;    // stop exploit with sanity check
-	}
-
-	if (RuleB(Custom, PowerSourceItemUpgrade) && m_inv.GetItem(EQ::invslot::slotPowerSource)) {
-		m_epp.perAA = 0; // force-disable AA if PowerSource is equipped.
 	}
 
 	// Calculate regular XP
@@ -653,8 +670,6 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 				}
 			}
 		}
-
-		
 	}
 	else if(total_add_exp < total_current_exp){ //only loss message if you lose exp, no message if you gained/lost nothing.
 		uint64 exp_lost = current_exp - set_exp;
