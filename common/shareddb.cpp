@@ -848,6 +848,8 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->Proc.Level2      += Strings::ToInt(inst->GetCustomData("Proc.Level2"), 0);
 			inst->GetMutableItem()->Click.Level      += Strings::ToInt(inst->GetCustomData("Click.Level"), 0);
 			inst->GetMutableItem()->Click.Level2     += Strings::ToInt(inst->GetCustomData("Click.Level2"), 0);
+			inst->GetMutableItem()->SkillModMax      += Strings::ToInt(inst->GetCustomData("SkillModMax"), 0);
+			inst->GetMutableItem()->SkillModValue    += Strings::ToInt(inst->GetCustomData("SkillModValue"), 0);
 
 			// Prevent items of this type from being sold to vendors.
 			inst->GetMutableItem()->Price = 0;

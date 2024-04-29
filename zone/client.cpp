@@ -4488,7 +4488,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("Season", GetSeason());
 			inst->SetCustomData("Discovery", "Artifact");
 
-			const float scaling_factor = 0.25;
+			const float scaling_factor = 0.20;
 			inst->SetCustomData("BaneDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgAmt * scaling_factor)));
 			inst->SetCustomData("BaneDmgRaceAmt", 	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgRaceAmt * scaling_factor)));
 			inst->SetCustomData("ElemDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->ElemDmgAmt * scaling_factor)));
@@ -4541,6 +4541,8 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("ACha", 			static_cast<int32>(std::ceil(inst->GetItem()->ACha * scaling_factor)));
 			inst->SetCustomData("AInt", 			static_cast<int32>(std::ceil(inst->GetItem()->AInt * scaling_factor)));
 			inst->SetCustomData("AWis", 			static_cast<int32>(std::ceil(inst->GetItem()->AWis * scaling_factor)));
+			inst->SetCustomData("SkillModValue",  	static_cast<int32>(std::ceil(inst->GetItem()->SkillModValue * scaling_factor)));
+			inst->SetCustomData("SkillModMax",  	static_cast<int32>(std::ceil(inst->GetItem()->SkillModMax * scaling_factor)));
 
 			inst->SetCustomData("Proc.Level",       static_cast<int32>(std::ceil(inst->GetItem()->Proc.Level * -1)));
 			inst->SetCustomData("Proc.Level2",      static_cast<int32>(std::ceil(inst->GetItem()->Proc.Level * -1)));
