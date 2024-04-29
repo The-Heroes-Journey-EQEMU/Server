@@ -553,7 +553,7 @@ namespace EQ
 
 		const char* GetActualCharmFile() const;
 
-        const int64 CalculateGearScore() const;
+        int CalculateGearScore() const;
 
         static bool CheckLoreConflict(const ItemData* l_item, const ItemData* r_item);
 		bool CheckLoreConflict(const ItemData* item) const { return CheckLoreConflict(this, item); }

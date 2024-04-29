@@ -258,9 +258,9 @@ const char* EQ::ItemData::GetActualCharmFile() const {
     return delimiterPos ? delimiterPos + 1 : CharmFile;
 }
 
-const int64 EQ::ItemData::CalculateGearScore() const {
+int EQ::ItemData::CalculateGearScore() const {
 	int64 gear_score = 0;
-
+	
 	// Basic Stats
 	gear_score += AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
 	gear_score += MR + FR + CR + DR + PR;
