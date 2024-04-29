@@ -2304,7 +2304,10 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 				}
 
 				if (RuleB(Custom, PowerSourceItemUpgrade)) {
-					Message(Chat::Experience, "You begin to focus your experience on improving your item instead of progressing your advancement.");
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+					linker.SetItemInst(dst_inst);
+					Message(Chat::Experience, "You begin to focus your experience on improving your [{}].", linker.GenerateLink().c_str());
 				}
 			}
 		}
@@ -2346,7 +2349,10 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 				}
 
 				if (RuleB(Custom, PowerSourceItemUpgrade)) {
-					Message(Chat::Experience, "You begin to focus your experience on improving your item instead of progressing your advancement.");
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+					linker.SetItemInst(dst_inst);
+					Message(Chat::Experience, "You begin to focus your experience on improving your [{}].", linker.GenerateLink().c_str());
 				}
 			}
 		}
