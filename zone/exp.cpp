@@ -514,7 +514,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			}
 
 			int tar_item_exp = 0; //upgrade_item->GetItem()->CalculateGearScore() * 10000;
-			double epercentage = 0; //cur_item_exp / tar_item_exp;
+			double epercentage = cur_item_exp / tar_item_exp;
 
 			
 			upgrade_item->SetCustomData("Item_Experience", cur_item_exp);
