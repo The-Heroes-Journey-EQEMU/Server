@@ -265,7 +265,7 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 	gear_score += 5 * AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
 	gear_score += 2 * MR + FR + CR + DR + PR;
 	gear_score += 2* HP + Mana + Endur;
-	gear_score += 5 * Damage * (Damage / (Delay + 1));
+	gear_score += 5 * Damage;
 	gear_score += 10 * Attack + SpellDmg + HealAmt;
 	gear_score += 10 * (AC + ExtraDmgAmt + BaneDmgRaceAmt + ElemDmgAmt);
 	gear_score += 100 * Haste;
