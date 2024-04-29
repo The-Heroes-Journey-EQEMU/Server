@@ -2327,8 +2327,8 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
-					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
-				}
+					Message(Chat::Experience, "You stop focusing your experience on improving your [%s].", linker.GenerateLink().c_str());
+				}				
 			}
 
 			if (src_inst) {
@@ -2342,10 +2342,15 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 						src_inst->IsStackable() ? src_inst->GetCharges() : 1,
 						dst_slot_id
 					);
-
 					std::vector<std::any> args = { src_inst };
+					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);				
+				}
 
-					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);
+				if (RuleB(Custom, PowerSourceItemUpgrade)) {
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+					linker.SetItemInst(src_inst);
+					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
 				}				
 			}
 		}
