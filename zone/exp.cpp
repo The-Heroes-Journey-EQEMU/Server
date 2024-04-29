@@ -553,18 +553,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 					return;
 				}
 				safe_delete(old_item);
-			} else if (zone->random.Roll(RuleI(Custom, ExtraPowerSourceArtifactChance))) {
-				linker.SetItemInst(old_item);
-				auto upgrade_item_lnk = linker.GenerateLink().c_str();
-				if (CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass))) {
-					PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
-					linker.SetItemInst(old_item);
-					auto  new_item_lnk = linker.GenerateLink().c_str();
-
-					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
-					SendSound();
-					return;
-				}
 			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
 				old_item->SetCustomData("Exp", 0);
 				
@@ -572,6 +560,9 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				auto stat_magnitude = zone->random.Roll0(static_cast<int>(GetLevel() / 10)) + 1;
 
 				old_item->SetCustomData("Customized", "true");
+				old_item->SetCustomData("Expanded", Strings::ToInt(old_item->GetCustomData("Expanded"), 0) + 1);
+
+				// TODO - improve this based on character wants.
 
 				switch(stat_selector) {
 					case EQ::item::Stat::AC:
