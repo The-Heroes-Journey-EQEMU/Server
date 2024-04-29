@@ -2329,6 +2329,13 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 
 					parse->EventPlayer(EVENT_UNEQUIP_ITEM_CLIENT, this, export_string, dst_inst->GetItem()->ID, &args);
 				}
+				
+				if (RuleB(Custom, PowerSourceItemUpgrade)) {
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+					linker.SetItemInst(dst_inst);
+					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
+				}
 			}
 
 			if (src_inst) {
@@ -2346,14 +2353,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					std::vector<std::any> args = { src_inst };
 
 					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);
-				}
-
-				if (RuleB(Custom, PowerSourceItemUpgrade)) {
-					EQ::SayLinkEngine linker;
-					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-					linker.SetItemInst(dst_inst);
-					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
-				}
+				}				
 			}
 		}
 	}
