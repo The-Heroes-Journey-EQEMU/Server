@@ -708,10 +708,7 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 
 		RecordPlayerEventLog(PlayerEvent::ITEM_CREATION, e);
 	}
-
-	// discover item and any augments
-	bool artifact_discovered = CheckArtifactDiscovery(inst);
-
+	
 	if (
 		RuleB(Character, EnableDiscoveredItems) &&
 		!GetGM() &&
