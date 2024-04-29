@@ -523,7 +523,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 					return;
 				}
 			}
-			
+
 			LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 
 			if (cur_item_exp <= tar_item_exp) {			
@@ -570,6 +570,8 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				
 				auto stat_selector = zone->random.Roll0(EQ::item::Stat::HeroicPR);
 				auto stat_magnitude = zone->random.Roll0(9) + 1;
+
+				old_item->SetCustomData("Customized", "true");
 
 				switch(stat_selector) {
 					case EQ::item::Stat::AC:
