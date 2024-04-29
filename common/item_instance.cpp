@@ -857,6 +857,16 @@ const int EQ::ItemInstance::GetItemTier() const
 	return static_cast<int64>(m_item->ID / 1000000);
 }
 
+EQ::ItemInstance* EQ::ItemInstance::GetUpgrade(SharedDatabase &database) {
+	// TODO - expand for Affixes, perhaps for newly created Artifacts.
+	
+	auto new_item = database.CreateItem(GetOriginalID() + 1000000);
+	
+	if (new_item) {
+		return new_item;
+	}
+}
+
 const EQ::ItemData* EQ::ItemInstance::GetUnscaledItem() const
 {
 	// No operator calls and defaults to nullptr

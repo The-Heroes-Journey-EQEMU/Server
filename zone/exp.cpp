@@ -510,15 +510,36 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(upgrade_item->GetCustomData("Exp"));
 			uint64 tar_item_exp   = upgrade_item->GetMutableItem()->CalculateGearScore();
 			double epercentage = cur_item_exp / tar_item_exp;
-			
-			upgrade_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
-			database.UpdateInventorySlot(CharacterID(), upgrade_item, EQ::invslot::slotPowerSource);			
 
 			EQ::SayLinkEngine linker;
-			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-			linker.SetItemInst(upgrade_item);
-			Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
-			LogDebug("cur_item_exp [{}], tar_item_exp [{}], epercentage [{}]", cur_item_exp, tar_item_exp, epercentage);			
+			linker.SetLinkType(EQ::saylink::SayLinkItemInst);			
+
+			if (cur_item_exp <= tar_item_exp) {			
+				upgrade_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
+				database.UpdateInventorySlot(CharacterID(), upgrade_item, EQ::invslot::slotPowerSource);
+
+				linker.SetItemInst(upgrade_item);
+				Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
+				LogDebug("cur_item_exp [{}], tar_item_exp [{}], epercentage [{}]", cur_item_exp, tar_item_exp, epercentage);
+			} else {
+				const EQ::ItemInstance* new_item = upgrade_item->GetUpgrade(database);
+				if (new_item) {
+					auto old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
+					PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true);					
+					
+					linker.SetItemInst(upgrade_item);
+					auto upgrade_item_lnk = linker.GenerateLink().c_str();
+
+					linker.SetItemInst(new_item);
+					auto  new_item_lnk = linker.GenerateLink().c_str();
+
+					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
+					safe_delete(old_item);
+				} else {
+					linker.SetItemInst(upgrade_item);
+					Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
+				}
+			}		
 			return;
 		}
 	}	

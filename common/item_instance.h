@@ -154,6 +154,8 @@ namespace EQ
 		const int  GetBaseID() const;
 		const int  GetOriginalID() const;
 
+		ItemInstance* GetUpgrade(SharedDatabase &database);
+
 		// Has attack/delay?
 		bool IsWeapon() const;
 		bool IsAmmo() const;
