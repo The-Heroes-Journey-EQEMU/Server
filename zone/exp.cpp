@@ -525,13 +525,12 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			}
 
 			LogDebug("GEAR SCORE: [{}]", tar_item_exp);
+			linker.SetItemInst(old_item);
+			Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
 
 			if (cur_item_exp <= tar_item_exp) {			
 				old_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
 				database.UpdateInventorySlot(CharacterID(), old_item, EQ::invslot::slotPowerSource);
-
-				linker.SetItemInst(old_item);
-				Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
 			} else if (new_item) {
 				old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
 				if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
@@ -558,6 +557,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				linker.SetItemInst(old_item);
 				auto upgrade_item_lnk = linker.GenerateLink().c_str();
 				if (CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass))) {
+					database.UpdateInventorySlot(CharacterID(), old_item, EQ::invslot::slotPowerSource);
 					linker.SetItemInst(old_item);
 					auto  new_item_lnk = linker.GenerateLink().c_str();
 
@@ -709,6 +709,10 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 				database.RunGenerateCallback(old_item);
 				PutItemInInventory(EQ::invslot::slotPowerSource, *m_inv.PopItem(EQ::invslot::slotPowerSource), true);
+
+				linker.SetItemInst(old_item);
+				Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
+				Message(Chat::Experience, "Your [%s] has improved!", linker.GenerateLink().c_str());
 			}					
 			return;
 		}
