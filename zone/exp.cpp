@@ -569,7 +569,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				old_item->SetCustomData("Exp", 0);
 				
 				auto stat_selector = zone->random.Roll0(EQ::item::Stat::HeroicPR);
-				auto stat_magnitude = zone->random.Roll0(9) + 1;
+				auto stat_magnitude = zone->random.Roll0(static_cast<int>(GetLevel() / 10)) + 1;
 
 				old_item->SetCustomData("Customized", "true");
 
@@ -708,7 +708,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				}
 
 				database.RunGenerateCallback(old_item);
-				PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
+				PutItemInInventory(EQ::invslot::slotPowerSource, *m_inv.PopItem(EQ::invslot::slotPowerSource), true);
 			}					
 			return;
 		}
