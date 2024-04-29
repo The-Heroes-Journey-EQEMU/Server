@@ -503,7 +503,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	}
 	
 
-	if (RuleB(Custom, PowerSourceItemUpgrade)) {
+	if (RuleB(Custom, PowerSourceItemUpgrade) && m_inv) {
 		EQ::ItemInstance* upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		EQ::SayLinkEngine linker;
 		LogDebug("Wtf? 1");
