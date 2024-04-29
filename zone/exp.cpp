@@ -500,10 +500,10 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (!IsEXPEnabled()) {
 		return;
-	}
+	}	
 	
-
-	if (RuleB(Custom, PowerSourceItemUpgrade) && m_inv) {
+	if (RuleB(Custom, PowerSourceItemUpgrade)) {
+		LogDebug("Wtf? 0");
 		EQ::ItemInstance* upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		EQ::SayLinkEngine linker;
 		LogDebug("Wtf? 1");
