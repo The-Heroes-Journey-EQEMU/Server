@@ -343,6 +343,52 @@ namespace EQ
 			//ProcRate
 		};
 
+		enum Stat {
+			AC,
+			HP, 
+			Mana,
+			Endur,
+			AStr, 
+			ASta, 
+			ADex, 
+			AAgi, 
+			AInt, 
+			AWis, 
+			ACha,
+			MR, 
+			FR, 
+			CR, 
+			DR, 
+			PR, 
+			Attack, 
+			SpellDmg, 
+			HealAmt,			
+			Regen, 
+			ManaRegen, 
+			EnduranceRegen,
+			Shielding, 
+			SpellShield, 
+			Avoidance, 
+			CombatEffects,
+			Accuracy, 
+			StunResist, 
+			StrikeThrough, 
+			DotShielding,
+			DSMitigation,
+			HeroicStr, 
+			HeroicSta, 
+			HeroicDex, 
+			HeroicAgi, 
+			HeroicInt, 
+			HeroicWis, 
+			HeroicCha,
+			HeroicMR, 
+			HeroicFR, 
+			HeroicCR, 
+			HeroicDR, 
+			HeroicPR
+		};
+
 		uint32 ConvertAugTypeToAugTypeBit(uint8 aug_type);
 		uint8 ConvertAugTypeBitToAugType(uint32 aug_type_bit);
 

@@ -864,6 +864,8 @@ EQ::ItemInstance* EQ::ItemInstance::GetUpgrade(SharedDatabase &database) {
 	
 	if (new_item) {
 		return new_item;
+	} else {
+		return nullptr;
 	}
 }
 

@@ -824,12 +824,13 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 										auto loot_drop_entry = LootdropEntriesRepository::NewNpcEntity();
 										loot_drop_entry.equip_item = 1;
 										loot_drop_entry.item_charges = static_cast<int8>(baginst->GetCharges());
-
-										tradingWith->CastToNPC()->AddLootDropFixed(
-											bagitem,
-											loot_drop_entry,
-											true
-										);
+										if (tradingWith->IsPet()) {
+											tradingWith->CastToNPC()->AddLootDropFixed(
+												bagitem,
+												loot_drop_entry,
+												true
+											);
+										}
 										// Return quest items being traded to non-quest NPC when the rule is true
 									} else if (restrict_quest_items_to_quest_npc && (!is_quest_npc && bagitem->IsQuestItem())) {
 										tradingWith->SayString(TRADE_BACK, GetCleanName());

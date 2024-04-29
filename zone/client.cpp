@@ -4448,7 +4448,7 @@ void Client::DiscoverItem(uint32 item_id) {
 	}
 }
 
-bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
+bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst, bool bypass) {
 	if (inst != nullptr && inst->GetItem()->ID > 2000000 && inst->GetItem()->ID < 3000000) {		
 		std::string databucket_string = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
 
@@ -4457,7 +4457,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			return false;
 		}
 
-		if (DataBucket::GetData(databucket_string).empty() && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
+		if ((DataBucket::GetData(databucket_string).empty() || bypass) && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
 			SendSound();
 			Message(Chat::Yellow, "You have discovered an Artifact!");
 

@@ -505,48 +505,196 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	LogDebug("Raw in_add_exp: [{}]", in_add_exp);
 
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {		
-		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
-		if (upgrade_item) {
-			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(upgrade_item->GetCustomData("Exp"));
-			uint64 tar_item_exp   = upgrade_item->GetMutableItem()->CalculateGearScore();
-			double epercentage    = cur_item_exp / tar_item_exp;
+		EQ::ItemInstance* old_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+		EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
+		EQ::SayLinkEngine linker;
 
-			EQ::SayLinkEngine linker;
-			linker.SetLinkType(EQ::saylink::SayLinkItemInst);			
+		linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+	
+		if (!RuleB(Custom, ExtraPowerSourceProgression)) {
+			if (!new_item) {
+				linker.SetItemInst(old_item);
+				Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
+				return;
+			}
+		}
+
+		if (old_item) {
+			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
+			uint64 tar_item_exp   = old_item->GetMutableItem()->CalculateGearScore();
 
 			if (cur_item_exp <= tar_item_exp) {			
-				upgrade_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
-				database.UpdateInventorySlot(CharacterID(), upgrade_item, EQ::invslot::slotPowerSource);
+				old_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
+				database.UpdateInventorySlot(CharacterID(), old_item, EQ::invslot::slotPowerSource);
 
-				linker.SetItemInst(upgrade_item);
+				linker.SetItemInst(old_item);
 				Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
-				LogDebug("cur_item_exp [{}], tar_item_exp [{}], epercentage [{}]", cur_item_exp, tar_item_exp, epercentage);
-			} else {
-				const EQ::ItemInstance* new_item = upgrade_item->GetUpgrade(database);
-				if (new_item) {
-					auto old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
-					if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
-						m_inv.GetItem(EQ::invslot::slotPowerSource)->SetAttuned(true);
-						linker.SetItemInst(upgrade_item);
-						auto upgrade_item_lnk = linker.GenerateLink().c_str();
+			} else if (new_item) {
+				old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
+				if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
+					m_inv.GetItem(EQ::invslot::slotPowerSource)->SetAttuned(true);
 
-						linker.SetItemInst(new_item);
-						auto  new_item_lnk = linker.GenerateLink().c_str();
+					linker.SetItemInst(old_item);
+					auto upgrade_item_lnk = linker.GenerateLink().c_str();
 
-						Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
-						return;				
-					} else {
+					linker.SetItemInst(new_item);
+					auto  new_item_lnk = linker.GenerateLink().c_str();
+
+					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
+					SendSound();
+					return;				
+				} else {
+					if (old_item) {
 						PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
 						Message(Chat::Red, "ERROR: Unable to upgrade item from power source, attempting to recover old item.");
-						return;
 					}
-					safe_delete(old_item);
-				} else {
-					linker.SetItemInst(upgrade_item);
-					Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
 					return;
 				}
-			}		
+				safe_delete(old_item);
+			} else if (zone->random.Roll(RuleI(Custom, ExtraPowerSourceArtifactChance))) {
+				CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifact));
+			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
+				old_item->SetCustomData("Exp", 0);
+				
+				auto stat_selector = zone->random.Roll0(EQ::item::Stat::HeroicPR);
+				auto stat_magnitude = zone->random.Roll0(9) + 1;
+
+				switch(stat_selector) {
+					case EQ::item::Stat::AC:
+						old_item->SetCustomData("AC", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AC")));
+						break;
+					case EQ::item::Stat::HP:
+						old_item->SetCustomData("HP", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HP")));
+						break;
+					case EQ::item::Stat::Mana:
+						old_item->SetCustomData("Mana", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Mana")));
+						break;
+					case EQ::item::Stat::Endur:
+						old_item->SetCustomData("Endur", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Endur")));
+						break;
+					case EQ::item::Stat::AStr:
+						old_item->SetCustomData("AStr", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AStr")));
+						break;
+					case EQ::item::Stat::ASta:
+						old_item->SetCustomData("ASta", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ASta")));
+						break;
+					case EQ::item::Stat::ADex:
+						old_item->SetCustomData("ADex", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ADex")));
+						break;
+					case EQ::item::Stat::AAgi:
+						old_item->SetCustomData("AAgi", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AAgi")));
+						break;
+					case EQ::item::Stat::AInt:
+						old_item->SetCustomData("AInt", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AInt")));
+						break;
+					case EQ::item::Stat::AWis:
+						old_item->SetCustomData("AWis", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AWis")));
+						break;
+					case EQ::item::Stat::ACha:
+						old_item->SetCustomData("ACha", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ACha")));
+						break;
+					case EQ::item::Stat::MR:
+						old_item->SetCustomData("MR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("MR")));
+						break;
+					case EQ::item::Stat::FR:
+						old_item->SetCustomData("FR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("FR")));
+						break;
+					case EQ::item::Stat::CR:
+						old_item->SetCustomData("CR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("CR")));
+						break;
+					case EQ::item::Stat::DR:
+						old_item->SetCustomData("DR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("DR")));
+						break;
+					case EQ::item::Stat::PR:
+						old_item->SetCustomData("PR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("PR")));
+						break;
+					case EQ::item::Stat::Attack:
+						old_item->SetCustomData("Attack", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Attack")));
+						break;
+					case EQ::item::Stat::SpellDmg:
+						old_item->SetCustomData("SpellDmg", stat_magnitude + Strings::ToInt(old_item->GetCustomData("SpellDmg")));
+						break;
+					case EQ::item::Stat::HealAmt:
+						old_item->SetCustomData("HealAmt", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HealAmt")));
+						break;
+					case EQ::item::Stat::Regen:
+						old_item->SetCustomData("Regen", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Regen")));
+						break;
+					case EQ::item::Stat::ManaRegen:
+						old_item->SetCustomData("ManaRegen", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ManaRegen")));
+						break;
+					case EQ::item::Stat::EnduranceRegen:
+						old_item->SetCustomData("EnduranceRegen", stat_magnitude + Strings::ToInt(old_item->GetCustomData("EnduranceRegen")));
+						break;
+					case EQ::item::Stat::Shielding:
+						old_item->SetCustomData("Shielding", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Shielding")));
+						break;
+					case EQ::item::Stat::SpellShield:
+						old_item->SetCustomData("SpellShield", stat_magnitude + Strings::ToInt(old_item->GetCustomData("SpellShield")));
+						break;
+					case EQ::item::Stat::Avoidance:
+						old_item->SetCustomData("Avoidance", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Avoidance")));
+						break;
+					case EQ::item::Stat::CombatEffects:
+						old_item->SetCustomData("CombatEffects", stat_magnitude + Strings::ToInt(old_item->GetCustomData("CombatEffects")));
+						break;
+					case EQ::item::Stat::Accuracy:
+						old_item->SetCustomData("Accuracy", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Accuracy")));
+						break;
+					case EQ::item::Stat::StunResist:
+						old_item->SetCustomData("StunResist", stat_magnitude + Strings::ToInt(old_item->GetCustomData("StunResist")));
+						break;
+					case EQ::item::Stat::StrikeThrough:
+						old_item->SetCustomData("StrikeThrough", stat_magnitude + Strings::ToInt(old_item->GetCustomData("StrikeThrough")));
+						break;
+					case EQ::item::Stat::DotShielding:
+						old_item->SetCustomData("DotShielding", stat_magnitude + Strings::ToInt(old_item->GetCustomData("DotShielding")));
+						break;
+					case EQ::item::Stat::DSMitigation:
+						old_item->SetCustomData("DSMitigation", stat_magnitude + Strings::ToInt(old_item->GetCustomData("DSMitigation")));
+						break;
+					case EQ::item::Stat::HeroicStr:
+						old_item->SetCustomData("HeroicStr", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicStr")));
+						break;
+					case EQ::item::Stat::HeroicSta:
+						old_item->SetCustomData("HeroicSta", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicSta")));
+						break;
+					case EQ::item::Stat::HeroicDex:
+						old_item->SetCustomData("HeroicDex", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicDex")));
+						break;
+					case EQ::item::Stat::HeroicAgi:
+						old_item->SetCustomData("HeroicAgi", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicAgi")));
+						break;
+					case EQ::item::Stat::HeroicInt:
+						old_item->SetCustomData("HeroicInt", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicInt")));
+						break;
+					case EQ::item::Stat::HeroicWis:
+						old_item->SetCustomData("HeroicWis", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicWis")));
+						break;
+					case EQ::item::Stat::HeroicCha:
+						old_item->SetCustomData("HeroicCha", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicCha")));
+						break;
+					case EQ::item::Stat::HeroicMR:
+						old_item->SetCustomData("HeroicMR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicMR")));
+						break;
+					case EQ::item::Stat::HeroicFR:
+						old_item->SetCustomData("HeroicFR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicFR")));
+						break;
+					case EQ::item::Stat::HeroicCR:
+						old_item->SetCustomData("HeroicCR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicCR")));
+						break;
+					case EQ::item::Stat::HeroicDR:
+						old_item->SetCustomData("HeroicDR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicDR")));
+						break;
+					case EQ::item::Stat::HeroicPR:
+						old_item->SetCustomData("HeroicPR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicPR")));
+						break;					
+					default:
+						break;
+				}
+
+				database.RunGenerateCallback(old_item);
+			}					
 			return;
 		}
 	}	
