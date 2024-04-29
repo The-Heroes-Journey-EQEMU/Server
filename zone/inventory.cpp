@@ -2286,7 +2286,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					parse->EventPlayer(EVENT_UNEQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID);
 				}
 
-				if (RuleB(Custom, PowerSourceItemUpgrade) && src_slot_id == EQ::invslot::slotPowerSource) {
+				if (RuleB(Custom, PowerSourceItemUpgrade) && dst_slot_id == EQ::invslot::slotPowerSource) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(src_inst);
@@ -2308,7 +2308,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, dst_inst->GetItem()->ID);
 				}
 
-				if (RuleB(Custom, PowerSourceItemUpgrade) && dst_slot_id == EQ::invslot::slotPowerSource) {
+				if (RuleB(Custom, PowerSourceItemUpgrade) && src_slot_id == EQ::invslot::slotPowerSource) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
@@ -2333,7 +2333,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					parse->EventPlayer(EVENT_UNEQUIP_ITEM_CLIENT, this, export_string, dst_inst->GetItem()->ID, &args);
 				}
 
-				if (RuleB(Custom, PowerSourceItemUpgrade) && dst_slot_id == EQ::invslot::slotPowerSource) {
+				if (RuleB(Custom, PowerSourceItemUpgrade) && src_slot_id == EQ::invslot::slotPowerSource) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
@@ -2356,7 +2356,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);				
 				}
 
-				if (RuleB(Custom, PowerSourceItemUpgrade) && src_slot_id == EQ::invslot::slotPowerSource) {
+				if (RuleB(Custom, PowerSourceItemUpgrade) && dst_slot_id == EQ::invslot::slotPowerSource) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(src_inst);
