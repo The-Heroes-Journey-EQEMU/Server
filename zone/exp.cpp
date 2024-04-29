@@ -670,7 +670,8 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 				Message(Chat::Experience, "Your experience is absorbed by your [%s]! (%0.02f percent complete)", linker.GenerateLink().c_str(), percentage);
 
 				upgrade_item->SetCustomData("Experience", fmt::to_string(cur_item_exp));
-				return;
+				set_exp  = current_exp;
+				set_aaxp = current_aa_exp;
 			}
 		}
 	}
