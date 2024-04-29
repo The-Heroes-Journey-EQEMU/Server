@@ -4451,6 +4451,12 @@ void Client::DiscoverItem(uint32 item_id) {
 bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 	if (inst != nullptr && inst->GetItem()->ID > 2000000 && inst->GetItem()->ID < 3000000) {		
 		std::string databucket_string = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
+
+		if (!(inst->GetItem()->Classes & GetClassesBits() && inst->GetItem()->Races & GetPlayerRaceBit(GetRace()))) {
+			LogDebug("Artifact Creation Aborted due to unusable item");
+			return false;
+		}
+
 		if (DataBucket::GetData(databucket_string).empty() && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
 			SendSound();
 			Message(Chat::Yellow, "You have discovered an Artifact!");
