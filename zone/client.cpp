@@ -2328,7 +2328,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
 	}
 
 	if (RuleB(Custom, UseDynamicItemDiscoveryTags) && book->type == 2) {
-		if (txtfileString.find("Discovered by") != std::string::npos && itemID == 0) {
+		if (txtfileString.find("Discovered by") != std::string::npos) {
 			booktxt2 += "<br>" + txtfileString;
 		} else {
 			if (itemID > 999999) {			
@@ -4461,6 +4461,13 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 		if (DataBucket::GetData(databucket_string).empty() && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
 			// Process the name change to 'Soandso's ItemName' or 'Soandso's ItemName (Artifact)'
 			std::string base_name(database.GetItem(inst->GetBaseID())->Name);
+
+			// Detect and remove existing possessive form at the beginning of the base_name
+			size_t pos = base_name.find("'s ");
+			if (pos != std::string::npos && pos < base_name.find(' ')) {
+				base_name = base_name.substr(pos + 3); // Remove the possessive part and continue from the next word
+			}
+			
 			std::string new_name = std::string(GetCleanName()) + "'s " + base_name;		
 
 			if (RuleB(Custom, UseTHJItemMutations)) {
