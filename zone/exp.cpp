@@ -505,8 +505,12 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {
 		LogDebug("Wtf? 0");
 		auto upgrade_item = GetInv().GetItem(EQ::invslot::slotPowerSource);
-		LogDebug("WTF? 1");
-		LogDebug("WTF? [{}]", upgrade_item->GetItem()->ID);
+		if (upgrade_item) {
+
+
+			LogDebug("Wtf exit");
+			return;
+		}
 	}	
 
 	EVENT_ITEM_ScriptStopReturn();
