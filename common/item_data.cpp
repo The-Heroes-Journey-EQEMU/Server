@@ -259,7 +259,7 @@ const char* EQ::ItemData::GetActualCharmFile() const {
 }
 
 int EQ::ItemData::CalculateGearScore() const {
-	int gear_score = 0;
+	int gear_score = 5;
 	
 	// Basic Stats
 	gear_score += AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
