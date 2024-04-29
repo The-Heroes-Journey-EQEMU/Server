@@ -2328,7 +2328,7 @@ void Client::ReadBook(BookRequest_Struct *book) {
 	}
 
 	if (RuleB(Custom, UseDynamicItemDiscoveryTags) && book->type == 2) {
-		if (txtfileString.find("Discovered by") != std::string::npos) {
+		if (txtfileString.find("Discovered by:") != std::string::npos) {
 			booktxt2 += "<br>" + txtfileString;
 		} else {
 			if (itemID > 999999) {			
@@ -4467,7 +4467,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			if (pos != std::string::npos && pos < base_name.find(' ')) {
 				base_name = base_name.substr(pos + 3); // Remove the possessive part and continue from the next word
 			}
-			
+
 			std::string new_name = std::string(GetCleanName()) + "'s " + base_name;		
 
 			if (RuleB(Custom, UseTHJItemMutations)) {
@@ -4486,7 +4486,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("ArtifactFlag", 1);
 			inst->SetCustomData("Attuneable", 0);
 			inst->SetCustomData("Season", GetSeason());
-			inst->SetCustomData("Discovery", "Discovered by: " + std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()) + ".");
+			inst->SetCustomData("Discovery", std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()) + ".");
 
 			DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
 			database.RunGenerateCallback(inst);
