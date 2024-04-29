@@ -425,8 +425,7 @@ bool SharedDatabase::UpdateInventorySlot(uint32 char_id, const EQ::ItemInstance*
 	}
 
 	// Update/Insert item
-	std::string customData = std::regex_replace(inst->GetCustomDataString(), std::regex("\'"), "''");
-	LogDebug("What? [{}]", customData); 
+	std::string customData = std::regex_replace(inst->GetCustomDataString(), std::regex("\'"), "''");	; 
 	const std::string query = StringFormat("REPLACE INTO inventory "
 	                                       "(charid, slotid, itemid, charges, instnodrop, custom_data, color, "
 	                                       "augslot1, augslot2, augslot3, augslot4, augslot5, augslot6, ornamenticon, ornamentidfile, ornament_hero_model) "
@@ -438,6 +437,7 @@ bool SharedDatabase::UpdateInventorySlot(uint32 char_id, const EQ::ItemInstance*
 	                                       static_cast<unsigned long>(augslot[0]), static_cast<unsigned long>(augslot[1]), static_cast<unsigned long>(augslot[2]),
 	                                       static_cast<unsigned long>(augslot[3]), static_cast<unsigned long>(augslot[4]), static_cast<unsigned long>(augslot[5]), static_cast<unsigned long>(inst->GetOrnamentationIcon()),
 	                                       static_cast<unsigned long>(inst->GetOrnamentationIDFile()), static_cast<unsigned long>(inst->GetOrnamentHeroModel()));
+	LogDebug("What? [{}]", query);
 	const auto results = QueryDatabase(query);
 
     // Save bag contents, if slot supports bag contents
