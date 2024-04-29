@@ -4459,12 +4459,12 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			std::string base_name(database.GetItem(inst->GetBaseID())->Name);
 
 			// Detect and remove the initial possessive form if it exists at the beginning of the base_name
-			size_t pos = base_name.find("'s");
-			if (pos != std::string::npos && pos < base_name.find(' ')) {
-				// Check if 's is part of the initial name and ensure it ends with a space or it's the end of the string
-				if (pos + 2 == base_name.length() || (pos + 2 < base_name.length() && base_name[pos + 2] == ' ')) {
-					// If it's a possessive form and not just part of another word, remove it
-					base_name = base_name.substr(pos + 3); // Skip past "'s " to start after the next space
+			size_t pos = base_name.find("'s ");
+			if (pos != std::string::npos) {
+				// Check if 's is part of the initial name segment before any spaces or other characters
+				if (pos < base_name.find(' ') || pos < base_name.find('-') || pos < base_name.find(',')) {
+					// Remove everything up to and including the "'s "
+					base_name = base_name.substr(pos + 3);
 				}
 			}
 
@@ -4487,6 +4487,60 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("Attuneable", 0);
 			inst->SetCustomData("Season", GetSeason());
 			inst->SetCustomData("Discovery", "Artifact");
+
+			const float scaling_factor = 0.25;
+			inst->SetCustomData("BaneDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgAmt * scaling_factor)));
+			inst->SetCustomData("BaneDmgRaceAmt", 	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgRaceAmt * scaling_factor)));
+			inst->SetCustomData("ElemDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->ElemDmgAmt * scaling_factor)));
+			inst->SetCustomData("Damage",         	static_cast<int32>(std::ceil(inst->GetItem()->Damage * scaling_factor)));
+			inst->SetCustomData("ProcRate",       	static_cast<int32>(std::ceil(inst->GetItem()->ProcRate * scaling_factor)));
+			inst->SetCustomData("CombatEffects",  	static_cast<int32>(std::ceil(inst->GetItem()->CombatEffects * scaling_factor)));
+			inst->SetCustomData("Shielding",      	static_cast<int32>(std::ceil(inst->GetItem()->Shielding * scaling_factor)));
+			inst->SetCustomData("StunResist",     	static_cast<int32>(std::ceil(inst->GetItem()->StunResist * scaling_factor)));
+			inst->SetCustomData("StrikeThrough",  	static_cast<int32>(std::ceil(inst->GetItem()->StrikeThrough * scaling_factor)));
+			inst->SetCustomData("ExtraDmgAmt",  	static_cast<int32>(std::ceil(inst->GetItem()->ExtraDmgAmt * scaling_factor)));
+			inst->SetCustomData("SpellShield",  	static_cast<int32>(std::ceil(inst->GetItem()->SpellShield * scaling_factor)));
+			inst->SetCustomData("Avoidance",  		static_cast<int32>(std::ceil(inst->GetItem()->Avoidance * scaling_factor)));
+			inst->SetCustomData("Accuracy",  		static_cast<int32>(std::ceil(inst->GetItem()->Accuracy * scaling_factor)));
+			inst->SetCustomData("DotShielding",  	static_cast<int32>(std::ceil(inst->GetItem()->DotShielding * scaling_factor)));
+			inst->SetCustomData("Attack",  			static_cast<int32>(std::ceil(inst->GetItem()->Attack * scaling_factor)));
+			inst->SetCustomData("Regen",  			static_cast<int32>(std::ceil(inst->GetItem()->Regen * scaling_factor)));
+			inst->SetCustomData("ManaRegen",  		static_cast<int32>(std::ceil(inst->GetItem()->ManaRegen * scaling_factor)));
+			inst->SetCustomData("EnduranceRegen",  	static_cast<int32>(std::ceil(inst->GetItem()->EnduranceRegen * scaling_factor)));
+			inst->SetCustomData("Haste", 			static_cast<int32>(std::ceil(inst->GetItem()->Haste * scaling_factor)));
+			inst->SetCustomData("DamageShield",  	static_cast<int32>(std::ceil(inst->GetItem()->DamageShield * scaling_factor)));
+			inst->SetCustomData("DSMitigation",  	static_cast<int32>(std::ceil(inst->GetItem()->DSMitigation * scaling_factor)));
+			inst->SetCustomData("HeroicAgi",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicAgi * scaling_factor)));
+			inst->SetCustomData("HeroicCha",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicCha * scaling_factor)));
+			inst->SetCustomData("HeroicCR",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicCR * scaling_factor)));
+			inst->SetCustomData("HeroicDex",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicDex * scaling_factor)));
+			inst->SetCustomData("HeroicDR",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicDR * scaling_factor)));
+			inst->SetCustomData("HeroicFR",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicFR * scaling_factor)));
+			inst->SetCustomData("HeroicInt",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicInt * scaling_factor)));
+			inst->SetCustomData("HeroicInt",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicInt * scaling_factor)));
+			inst->SetCustomData("HeroicMR",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicMR * scaling_factor)));
+			inst->SetCustomData("HeroicPR",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicPR * scaling_factor)));
+			inst->SetCustomData("HeroicSta",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicSta * scaling_factor)));
+			inst->SetCustomData("HeroicStr",  		static_cast<int32>(std::ceil(inst->GetItem()->HeroicStr * scaling_factor)));
+			inst->SetCustomData("HealAmt",  		static_cast<int32>(std::ceil(inst->GetItem()->HealAmt * scaling_factor)));
+			inst->SetCustomData("SpellDmg",  		static_cast<int32>(std::ceil(inst->GetItem()->SpellDmg * scaling_factor)));
+			inst->SetCustomData("Clairvoyance",  	static_cast<int32>(std::ceil(inst->GetItem()->Clairvoyance * scaling_factor)));
+			inst->SetCustomData("AC",    			static_cast<int32>(std::ceil(inst->GetItem()->AC * scaling_factor)));
+			inst->SetCustomData("HP",    			static_cast<int32>(std::ceil(inst->GetItem()->HP * scaling_factor)));
+			inst->SetCustomData("Mana",  			static_cast<int32>(std::ceil(inst->GetItem()->Mana * scaling_factor)));
+			inst->SetCustomData("Endur", 			static_cast<int32>(std::ceil(inst->GetItem()->Endur * scaling_factor)));
+			inst->SetCustomData("MR",   			static_cast<int32>(std::ceil(inst->GetItem()->MR * scaling_factor)));
+			inst->SetCustomData("FR",   			static_cast<int32>(std::ceil(inst->GetItem()->FR * scaling_factor)));
+			inst->SetCustomData("CR",   			static_cast<int32>(std::ceil(inst->GetItem()->CR * scaling_factor)));
+			inst->SetCustomData("DR",   			static_cast<int32>(std::ceil(inst->GetItem()->DR * scaling_factor)));
+			inst->SetCustomData("PR",   			static_cast<int32>(std::ceil(inst->GetItem()->PR * scaling_factor)));
+			inst->SetCustomData("AStr", 			static_cast<int32>(std::ceil(inst->GetItem()->AStr * scaling_factor)));
+			inst->SetCustomData("ASta", 			static_cast<int32>(std::ceil(inst->GetItem()->ASta * scaling_factor)));
+			inst->SetCustomData("AAgi", 			static_cast<int32>(std::ceil(inst->GetItem()->AAgi * scaling_factor)));
+			inst->SetCustomData("ADex", 			static_cast<int32>(std::ceil(inst->GetItem()->ADex * scaling_factor)));
+			inst->SetCustomData("ACha", 			static_cast<int32>(std::ceil(inst->GetItem()->ACha * scaling_factor)));
+			inst->SetCustomData("AInt", 			static_cast<int32>(std::ceil(inst->GetItem()->AInt * scaling_factor)));
+			inst->SetCustomData("AWis", 			static_cast<int32>(std::ceil(inst->GetItem()->AWis * scaling_factor)));
 
 			if (GetSeason() > 0) {
 				DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
