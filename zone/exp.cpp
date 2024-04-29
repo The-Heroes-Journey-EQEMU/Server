@@ -525,19 +525,25 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				const EQ::ItemInstance* new_item = upgrade_item->GetUpgrade(database);
 				if (new_item) {
 					auto old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
-					PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true);					
-					
-					linker.SetItemInst(upgrade_item);
-					auto upgrade_item_lnk = linker.GenerateLink().c_str();
+					if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
+						linker.SetItemInst(upgrade_item);
+						auto upgrade_item_lnk = linker.GenerateLink().c_str();
 
-					linker.SetItemInst(new_item);
-					auto  new_item_lnk = linker.GenerateLink().c_str();
+						linker.SetItemInst(new_item);
+						auto  new_item_lnk = linker.GenerateLink().c_str();
 
-					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
+						Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
+						return;				
+					} else {
+						PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
+						Message(Chat::Red, "ERROR: Unable to upgrade item from power source, attempting to recover old item.");
+						return;
+					}
 					safe_delete(old_item);
 				} else {
 					linker.SetItemInst(upgrade_item);
 					Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
+					return;
 				}
 			}		
 			return;
