@@ -836,7 +836,7 @@ const int EQ::ItemInstance::GetOriginalID() const
 	if (!m_item)
 		return 0;
 				
-	return GetItem()->OriginalID;		
+	return m_item->OriginalID;		
 }
 
 // Returns the base ID of an item.
