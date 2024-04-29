@@ -2289,6 +2289,12 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			}
 
 			if (dst_inst) {
+				if (dst_slot_id == EQ::invslot::slotPowerSource) {
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+					linker.SetItemInst(dst_inst);
+					Message(Chat::Experience, "You focus your experience toward upgrading your [{}], rather than progressing your advancement.", linker.GenerateLink().c_str());
+				}
 				if (parse->ItemHasQuestSub(dst_inst, EVENT_EQUIP_ITEM)) {
 					parse->EventItem(EVENT_EQUIP_ITEM, this, dst_inst, nullptr, "", src_slot_id);
 				}
