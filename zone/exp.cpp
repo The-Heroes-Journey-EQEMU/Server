@@ -513,8 +513,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			double epercentage = cur_item_exp / tar_item_exp;
 			
 			upgrade_item->SetCustomData("Item_Experience", cur_item_exp);
-			auto ret = database.UpdateInventorySlot(GetID(), upgrade_item, EQ::invslot::slotPowerSource);
-
+			auto ret = database.UpdateInventorySlot(CharacterID(), upgrade_item, EQ::invslot::slotPowerSource);
 
 
 			LogDebug("cur_item_exp [{}], tar_item_exp [{}], epercentage [{}], ret [{}]", cur_item_exp, tar_item_exp, epercentage, ret);			
