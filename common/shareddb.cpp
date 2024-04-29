@@ -853,12 +853,14 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 
 			if (!inst->GetCustomData("force_unlimited_charges").empty()) {
 				inst->SetCharges(-1);
+				inst->GetMutableItem()->MaxCharges = -1;
 				inst->GetMutableItem()->CastTime 	= inst->GetMutableItem()->CastTime + 5000;
 				inst->GetMutableItem()->CastTime_ 	= inst->GetMutableItem()->CastTime_ + 5000;
 			}
 
 			// Prevent items of this type from being sold to vendors.
 			inst->GetMutableItem()->Price = 0;
+			inst->GetMutableItem()->SellRate = 0;
             inst->SetComment(key);
         }
         auto it = generated_item_cache.find(key);
