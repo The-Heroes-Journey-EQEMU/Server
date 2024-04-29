@@ -262,18 +262,18 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 	int gear_score = 5;
 	
 	// Basic Stats
-	gear_score += 5 * AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
-	gear_score += 2 * MR + FR + CR + DR + PR;
-	gear_score += 2* HP + Mana + Endur;
-	gear_score += 5 * Damage;
-	gear_score += 10 * Attack + SpellDmg + HealAmt;
-	gear_score += 10 * (AC + ExtraDmgAmt + BaneDmgRaceAmt + ElemDmgAmt);
+	gear_score += 5   * AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
+	gear_score += 2   * MR + FR + CR + DR + PR;
+	gear_score += 2   * HP + Mana + Endur;
+	gear_score += 5   * Damage;
+	gear_score += 10  * Attack + SpellDmg + HealAmt;
+	gear_score += 10  * (AC + ExtraDmgAmt + BaneDmgRaceAmt + ElemDmgAmt);
 	gear_score += 100 * Haste;
-	gear_score += 10 * (ProcRate-20);
+	gear_score += 10  * (ProcRate-20);
 
 	// Heroic Stats
-	gear_score += 10 * (HeroicStr + HeroicSta + HeroicDex + HeroicAgi + HeroicInt + HeroicWis + HeroicCha);
-	gear_score += 5  * (HeroicMR + HeroicFR + HeroicCR + HeroicDR + HeroicPR);
+	gear_score += 10  * (HeroicStr + HeroicSta + HeroicDex + HeroicAgi + HeroicInt + HeroicWis + HeroicCha);
+	gear_score += 5   * (HeroicMR + HeroicFR + HeroicCR + HeroicDR + HeroicPR);
 
 	// Mod2 Stats
 	gear_score += 100 * (Shielding + SpellShield + Avoidance + CombatEffects);
