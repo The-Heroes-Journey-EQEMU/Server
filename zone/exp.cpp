@@ -506,23 +506,24 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {		
 		EQ::ItemInstance* old_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
-		EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
-		EQ::SayLinkEngine linker;
 
-		linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-	
-		if (!RuleB(Custom, ExtraPowerSourceProgression)) {
-			if (!new_item) {
-				linker.SetItemInst(old_item);
-				Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
-				return;
-			}
-		}
 
 		if (old_item) {
+			EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
+			EQ::SayLinkEngine linker;
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
 			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore();
 
+			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+		
+			if (!RuleB(Custom, ExtraPowerSourceProgression)) {
+				if (!new_item) {
+					linker.SetItemInst(old_item);
+					Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
+					return;
+				}
+			}
+			
 			LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 
 			if (cur_item_exp <= tar_item_exp) {			
