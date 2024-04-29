@@ -4438,15 +4438,13 @@ void Client::DiscoverItem(uint32 item_id) {
 			RecordPlayerEventLog(PlayerEvent::DISCOVER_ITEM, e);
 
 		}
+	}
 
-		if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
-			auto* item = database.CreateItem(item_id);
-			std::vector<std::any> args = { item };
+	if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
+		auto* item = database.CreateItem(item_id);
+		std::vector<std::any> args = { item };
 
-			parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);
-		}
-	} else {
-		parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id);
+		parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);
 	}
 }
 
