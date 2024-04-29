@@ -2307,7 +2307,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
-					Message(Chat::Experience, "You begin to focus your experience on improving your [{}].", linker.GenerateLink().c_str());
+					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
 				}
 			}
 		}
@@ -2352,7 +2352,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
-					Message(Chat::Experience, "You begin to focus your experience on improving your [{}].", linker.GenerateLink().c_str());
+					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
 				}
 			}
 		}
