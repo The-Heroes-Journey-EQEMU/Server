@@ -4461,7 +4461,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 
 			// Detect and remove existing possessive form at the beginning of the base_name
 			size_t pos = base_name.find("'s ");
-			if (pos != std::string::npos && pos < base_name.find(' ')) {
+			if (pos != std::string::npos) {
 				base_name = base_name.substr(pos + 3); // Remove the possessive part and continue from the next word
 			}
 
