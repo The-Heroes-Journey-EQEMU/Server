@@ -4487,6 +4487,7 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("Attuneable", 0);
 			inst->SetCustomData("Season", GetSeason());
 			inst->SetCustomData("Discovery", "Artifact");
+			inst->SetCustomData("Customized", "true");
 
 			const float scaling_factor = 0.20;
 			inst->SetCustomData("BaneDmgAmt",     	static_cast<int32>(std::ceil(inst->GetItem()->BaneDmgAmt * scaling_factor)));

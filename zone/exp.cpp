@@ -500,77 +500,7 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (!IsEXPEnabled()) {
 		return;
-	}
-
-	if (RuleB(Custom, PowerSourceItemUpgrade)) {
-		uint64 targ_exp = 0;
-		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
-		if (upgrade_item && upgrade_item->GetID() < 2000000) {
-			auto   bucket_key = "item-" + std::to_string(upgrade_item->GetID()) + "-upgrade-progress";
-			uint64 item_exp   = Strings::ToInt(GetBucket(bucket_key), 0) + in_add_exp;
-
-			SetBucket(bucket_key, std::to_string(item_exp));			
-
-			// Calculate target XP soak
-			targ_exp += std::max(upgrade_item->GetItem()->Mana, upgrade_item->GetItem()->Endur) * 10000;
-			targ_exp += upgrade_item->GetItem()->Damage 		* 10;
-			targ_exp += upgrade_item->GetItem()->AStr 			* 10;
-			targ_exp += upgrade_item->GetItem()->ASta 			* 10;
-			targ_exp += upgrade_item->GetItem()->ADex 			* 10;
-			targ_exp += upgrade_item->GetItem()->AAgi 			* 10;
-			targ_exp += upgrade_item->GetItem()->AInt 			* 10;
-			targ_exp += upgrade_item->GetItem()->AWis 			* 10;
-			targ_exp += upgrade_item->GetItem()->ACha 			* 10;
-			targ_exp += upgrade_item->GetItem()->MR   			* 1;
-			targ_exp += upgrade_item->GetItem()->FR   			* 1;
-			targ_exp += upgrade_item->GetItem()->CR   			* 1;
-			targ_exp += upgrade_item->GetItem()->DR   			* 1;
-			targ_exp += upgrade_item->GetItem()->PR   			* 1;
-			targ_exp += upgrade_item->GetItem()->AC   			* 1;
-			targ_exp += upgrade_item->GetItem()->HP   			* 1;			
-			targ_exp += upgrade_item->GetItem()->CombatEffects  * 1000;
-			targ_exp += upgrade_item->GetItem()->Regen          * 1000;
-			targ_exp += upgrade_item->GetItem()->ManaRegen      * 1000;
-			targ_exp += upgrade_item->GetItem()->SpellShield    * 1000;
-			targ_exp += upgrade_item->GetItem()->Shielding      * 1000;
-			targ_exp += upgrade_item->GetItem()->DotShielding   * 1000;
-			targ_exp += upgrade_item->GetItem()->DamageShield   * 1000;
-			targ_exp += upgrade_item->GetItem()->DSMitigation   * 1000;
-			targ_exp += upgrade_item->GetItem()->Avoidance      * 1000;
-			targ_exp += upgrade_item->GetItem()->Accuracy       * 1000;
-			targ_exp += upgrade_item->GetItem()->SpellDmg       * 1000;
-			targ_exp += upgrade_item->GetItem()->HealAmt        * 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicStr 		* 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicSta 		* 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicDex 		* 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicAgi 		* 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicInt 		* 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicWis 		* 1000;
-			targ_exp += upgrade_item->GetItem()->HeroicCha 		* 1000;
-
-			if (upgrade_item->GetItem()->Focus.Effect > 0) { targ_exp += 10000; }
-			if (upgrade_item->GetItem()->Click.Effect > 0) { targ_exp += 10000;	}
-			if (upgrade_item->GetItem()->Proc.Effect > 0)  { targ_exp += 10000; }
-
-			targ_exp *= 500;
-
-			float percentage = (float)item_exp / (float)targ_exp;
-
-			EQ::SayLinkEngine linker;
-			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-			linker.SetItemInst(upgrade_item);
-			Message(Chat::Experience, "You channel a portion of the experience you gained into improving your [%s]! (%0.02f percent complete)", linker.GenerateLink().c_str(), percentage);
-
-			if (item_exp >= targ_exp) {
-				LogInventory("UPGRADING ITEM!");
-				auto new_item = database.CreateItem(upgrade_item->GetID() + 1000000);				
-				PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true);		
-				SetBucket(bucket_key, std::to_string(0));		
-			}		
-
-			in_add_exp *= .50;			
-		}
-	}
+	}	
 
 	EVENT_ITEM_ScriptStopReturn();
 
@@ -579,6 +509,10 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 	if (m_epp.perAA < 0 || m_epp.perAA > 100) {
 		m_epp.perAA = 0;    // stop exploit with sanity check
+	}
+
+	if (RuleB(Custom, PowerSourceItemUpgrade) && m_inv.GetItem(EQ::invslot::slotPowerSource)) {
+		m_epp.perAA = 0; // force-disable AA if PowerSource is equipped.
 	}
 
 	// Calculate regular XP
@@ -717,6 +651,24 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 				} else {
 					MessageString(Chat::Experience, GAIN_XP);
 				}
+			}
+		}
+
+		if (RuleB(Custom, PowerSourceItemUpgrade)) {
+			EQ::ItemInstance* upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+			EQ::SayLinkEngine linker;
+
+			if (upgrade_item) {
+				auto cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0);
+				auto tar_item_exp = upgrade_item->GetItem()->CalculateGearScore() * (upgrade_item->GetItem()->OriginalID % 1000000) * 1000;
+				auto percentage   = cur_item_exp / tar_item_exp;
+
+				LogDebug("cur_item_exp [{}], tar_item_exp [{}], percentage [{}]", cur_item_exp, tar_item_exp, percentage);				
+
+				linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+				linker.SetItemInst(upgrade_item);
+				Message(Chat::Experience, "Your experience is absorbed by your [%s]! (%0.02f percent complete)", linker.GenerateLink().c_str(), percentage);
+				return;
 			}
 		}
 	}

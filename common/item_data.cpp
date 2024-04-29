@@ -257,3 +257,28 @@ const char* EQ::ItemData::GetActualCharmFile() const {
 
     return delimiterPos ? delimiterPos + 1 : CharmFile;
 }
+
+const int64 EQ::ItemData::CalculateGearScore() const {
+	int64 gear_score = 0;
+
+	// Basic Stats
+	gear_score += AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
+	gear_score += MR + FR + CR + DR + PR;
+	gear_score += HP + Mana + Endur;
+	gear_score += Damage * (Damage/Delay);
+	gear_score += Attack + SpellDmg + HealAmt;
+	gear_score += 10 * (AC + ExtraDmgAmt + BaneDmgRaceAmt + ElemDmgAmt);
+	gear_score += 100 * Haste;
+	gear_score += ProcRate;
+
+	// Heroic Stats
+	gear_score += 10 * (HeroicStr + HeroicSta + HeroicDex + HeroicAgi + HeroicInt + HeroicWis + HeroicCha);
+	gear_score += 5  * (HeroicMR + HeroicFR + HeroicCR + HeroicDR + HeroicPR);
+
+	// Mod2 Stats
+	gear_score += 100 * (Shielding + SpellShield + Avoidance + CombatEffects);
+	gear_score += 50  * (Accuracy + StunResist + StrikeThrough + DotShielding);
+	gear_score += 25  * (Regen + ManaRegen + EnduranceRegen + DSMitigation);	
+
+	return gear_score;
+}

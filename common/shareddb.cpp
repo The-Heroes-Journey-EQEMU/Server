@@ -773,57 +773,9 @@ bool SharedDatabase::GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is
 
 	return true;
 }
-void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
-	if (generate_cb && !inst->GetCustomDataString().empty()) {
-		std::string key = md5::digest(inst->GetCustomDataString());
-
-		if (key != inst->GetItem()->Comment) {
-			generate_cb(inst);
-			inst->SetComment(key);
-		}
-        auto it = generated_item_cache.find(key);
-        if (it != generated_item_cache.end()) {
-			inst->SetID((uint32)it->second);
-            return;
-        }
-		// If we don't have a local cached copy let's check where it's at in the items_hash or insert it for the first time
-		// And assign to our local cache. This should only happen once per zone per item that hasn't synced
-		EQ::ItemData* data = nullptr;
-
-		// Client side limit for item links, 5 bytes.
-		uint32 next_id = 0xFFFFF; 
-		// Strategy here is to assign free item ID from the upper bound with decrementing ID.
-		// This makes lookup faster for reassigning to cache.
-		// Eventually this will start overwriting *real* items but not likely unless the number of dynamic
-		// Items is over 800k. These are all ephemeral values anyway that are purged when shared_memory is run.
-		// It would be essential to run that on high volume servers.
-		for (;;) {
-			if (items_hash->exists(next_id)) {
-				if (items_hash->at(next_id).Comment == key) {
-					data = &items_hash->at(next_id);
-					break;
-				}
-				next_id--;
-			} else if (next_id == 0) {
-				return;
-			} else {
-				break;
-			}
-		}
-		if (data != nullptr) {
-			inst->SetID(data->ID);
-			generated_item_cache[key] = data->ID;
-		} else {
-			inst->SetID((uint32)next_id);
-			items_hash->insert(next_id, *inst->GetItem());
-			generated_item_cache[key] = next_id;
-		}
-	}
-}
 
 void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
-	LogDebug("Entering RunGenerateCallback");
-    if (!inst->GetCustomDataString().empty()) {
+    if (inst->GetCustomData("Customized") == "true") {
         std::string key = md5::digest(inst->GetCustomDataString());
         if (key != inst->GetItem()->Comment) {			
 			// This data is important to preserve to properly track the item in inventories.
@@ -1659,7 +1611,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 		}
 
 		if (RuleB(Custom, PowerSourceItemUpgrade)) {
-			if (item.Slots > 0 && item.Classes > 0 && item.ID < 2000000) {
+			if (item.Slots > 0 && item.Classes > 0) {
 				item.Slots |= 2097152;
 			}
 		}

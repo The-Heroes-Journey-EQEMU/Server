@@ -835,10 +835,8 @@ const int EQ::ItemInstance::GetOriginalID() const
 {
 	if (!m_item)
 		return 0;
-
-	
-	auto working_id  = m_scaledItem ? m_scaledItem->ID : m_item->ID;		
-	return Strings::ToInt(GetCustomData("original_id"), working_id);		
+				
+	return GetItem()->OriginalID;		
 }
 
 // Returns the base ID of an item.
