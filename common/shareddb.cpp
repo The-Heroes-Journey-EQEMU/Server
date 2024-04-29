@@ -776,7 +776,7 @@ bool SharedDatabase::GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is
 }
 
 void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
-    if (inst->GetCustomData("Customized") == "true") {
+    if (!inst->GetCustomData("Customized").empty()) {
         std::string key = md5::digest(inst->GetCustomDataString());
         if (key != inst->GetItem()->Comment) {			
 			// This data is important to preserve to properly track the item in inventories.
