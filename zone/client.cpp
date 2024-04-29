@@ -4419,9 +4419,7 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 }
 
 void Client::DiscoverItem(uint32 item_id) {
-	LogDebug("DiscoverItem Check 1");
 	if (item_id < 3000000) {
-		LogDebug("DiscoverItem Check 2");
 		auto e = DiscoveredItemsRepository::NewEntity();
 
 		e.account_status = GetSeason();
@@ -4442,7 +4440,6 @@ void Client::DiscoverItem(uint32 item_id) {
 		}
 	}
 
-	LogDebug("DiscoverItem Check 3");
 	if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
 		auto* item = database.CreateItem(item_id);
 		std::vector<std::any> args = { item };
@@ -4452,10 +4449,12 @@ void Client::DiscoverItem(uint32 item_id) {
 }
 
 bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
-	LogDebug("Entering CheckArtifactDiscovery");
 	if (inst != nullptr && inst->GetItem()->ID > 2000000 && inst->GetItem()->ID < 3000000) {		
 		std::string databucket_string = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
 		if (DataBucket::GetData(databucket_string).empty() && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
+			SendSound();
+			Message(Chat::Yellow, "You have discovered an Artifact!");
+
 			// Process the name change to 'Soandso's ItemName' or 'Soandso's ItemName (Artifact)'
 			std::string base_name(database.GetItem(inst->GetBaseID())->Name);
 
