@@ -521,7 +521,9 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 		if (old_item) {
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
-			uint64 tar_item_exp   = old_item->GetMutableItem()->CalculateGearScore();
+			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore();
+
+			LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 
 			if (cur_item_exp <= tar_item_exp) {			
 				old_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
@@ -552,7 +554,16 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				}
 				safe_delete(old_item);
 			} else if (zone->random.Roll(RuleI(Custom, ExtraPowerSourceArtifactChance))) {
-				CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass));
+				linker.SetItemInst(old_item);
+				auto upgrade_item_lnk = linker.GenerateLink().c_str();
+				if (CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass))) {
+					linker.SetItemInst(old_item);
+					auto  new_item_lnk = linker.GenerateLink().c_str();
+
+					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
+					SendSound();
+					return;
+				}
 			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
 				old_item->SetCustomData("Exp", 0);
 				
