@@ -552,7 +552,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				}
 				safe_delete(old_item);
 			} else if (zone->random.Roll(RuleI(Custom, ExtraPowerSourceArtifactChance))) {
-				CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifact));
+				CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass));
 			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
 				old_item->SetCustomData("Exp", 0);
 				
