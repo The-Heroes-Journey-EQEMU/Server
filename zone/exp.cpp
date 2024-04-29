@@ -509,7 +509,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		if (upgrade_item) {
 			int cur_item_exp = in_add_exp + Strings::ToInt(m_inv.GetCustomItemData(EQ::invslot::slotPowerSource, "Item_Experience"));
 
-			int tar_item_exp = 1000000; //upgrade_item->GetItem()->CalculateGearScore() * 10000;
+			int tar_item_exp = upgrade_item->GetItem()->CalculateGearScore() * 10000;
 			double epercentage = cur_item_exp / tar_item_exp;
 
 			
