@@ -4458,10 +4458,14 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			// Process the name change to 'Soandso's ItemName' or 'Soandso's ItemName (Artifact)'
 			std::string base_name(database.GetItem(inst->GetBaseID())->Name);
 
-			// Detect and remove existing possessive form at the beginning of the base_name
-			size_t pos = base_name.find("'s ");
-			if (pos != std::string::npos) {
-				base_name = base_name.substr(pos + 3); // Remove the possessive part and continue from the next word
+			// Detect and remove the initial possessive form if it exists at the beginning of the base_name
+			size_t pos = base_name.find("'s");
+			if (pos != std::string::npos && pos < base_name.find(' ')) {
+				// Check if 's is part of the initial name and ensure it ends with a space or it's the end of the string
+				if (pos + 2 == base_name.length() || (pos + 2 < base_name.length() && base_name[pos + 2] == ' ')) {
+					// If it's a possessive form and not just part of another word, remove it
+					base_name = base_name.substr(pos + 3); // Skip past "'s " to start after the next space
+				}
 			}
 
 			std::string new_name = std::string(GetCleanName()) + "'s " + base_name;		
