@@ -654,26 +654,7 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 			}
 		}
 
-		if (RuleB(Custom, PowerSourceItemUpgrade)) {
-			EQ::ItemInstance* upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
-			//EQ::SayLinkEngine linker;
-
-			if (upgrade_item) {
-				int64 cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0) + (set_exp - current_exp);
-				int64 tar_item_exp = upgrade_item->GetItem()->CalculateGearScore() * (upgrade_item->GetItem()->OriginalID % 1000000) * 1000;
-				auto percentage   = cur_item_exp / tar_item_exp;
-
-				LogDebug("cur_item_exp [{}], tar_item_exp [{}], percentage [{}]", cur_item_exp, tar_item_exp, percentage);				
-
-				//linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-				//linker.SetItemInst(upgrade_item);
-				//Message(Chat::Experience, "Your experience is absorbed by your [%s]! (%0.02f percent complete)", linker.GenerateLink().c_str(), percentage);
-
-				upgrade_item->SetCustomData("Experience", fmt::to_string(cur_item_exp));
-				set_exp  = current_exp;
-				set_aaxp = current_aa_exp;
-			}
-		}
+		
 	}
 	else if(total_add_exp < total_current_exp){ //only loss message if you lose exp, no message if you gained/lost nothing.
 		uint64 exp_lost = current_exp - set_exp;
