@@ -557,7 +557,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				linker.SetItemInst(old_item);
 				auto upgrade_item_lnk = linker.GenerateLink().c_str();
 				if (CheckArtifactDiscovery(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass))) {
-					database.UpdateInventorySlot(CharacterID(), old_item, EQ::invslot::slotPowerSource);
+					PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
 					linker.SetItemInst(old_item);
 					auto  new_item_lnk = linker.GenerateLink().c_str();
 
