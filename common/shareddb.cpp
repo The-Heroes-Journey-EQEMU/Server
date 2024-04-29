@@ -841,7 +841,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 
 			if (hash_pos++ != std::string::npos) {
 				if (hash_pos < book_tag.length() && std::isdigit(book_tag[hash_pos])) {
-					book_tag = book_tag.substr(0, hash_pos) + std::to_string(inst->GetItem()->ID);
+					book_tag = book_tag.substr(0, hash_pos - 1) + std::to_string(inst->GetItem()->ID);
 					strn0cpy(inst->GetMutableItem()->CharmFile, book_tag.c_str(), sizeof(inst->GetItem()->CharmFile));
 				}
 			}
