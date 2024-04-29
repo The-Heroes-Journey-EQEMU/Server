@@ -280,5 +280,8 @@ int EQ::ItemData::CalculateGearScore() const {
 	gear_score += 50  * (Accuracy + StunResist + StrikeThrough + DotShielding);
 	gear_score += 25  * (Regen + ManaRegen + EnduranceRegen + DSMitigation);
 
+	// Tier Modifier
+	gear_score *= ((OriginalID % 1000000) + 1);
+
 	return 1 + gear_score;
 }
