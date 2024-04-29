@@ -4548,6 +4548,8 @@ bool Client::CheckArtifactDiscovery(EQ::ItemInstance* inst) {
 			inst->SetCustomData("Click.Level",      static_cast<int32>(std::ceil(inst->GetItem()->Click.Level * -1)));
 			inst->SetCustomData("Click.Level2",     static_cast<int32>(std::ceil(inst->GetItem()->Click.Level2 * -1)));
 
+			inst->SetCustomData("force_unlimited_charges", "true");
+
 			if (GetSeason() > 0) {
 				DataBucket::SetData(databucket_string, std::string(GetCleanName()) + " in Season " + std::to_string(GetSeason()));
 			} else {
