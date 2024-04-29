@@ -2313,6 +2313,9 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
 					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
+
+					uint64 tar_item_exp   = dst_inst->GetItem()->CalculateGearScore();
+					LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 				}
 			}
 		}
@@ -2361,6 +2364,9 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(src_inst);
 					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
+
+					uint64 tar_item_exp   = dst_inst->GetItem()->CalculateGearScore();
+					LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 				}				
 			}
 		}
