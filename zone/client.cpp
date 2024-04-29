@@ -4446,7 +4446,7 @@ void Client::DiscoverItem(uint32 item_id) {
 			parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id, &args);
 		}
 	} else {
-		// TODO side-channel dynamic discos
+		parse->EventPlayer(EVENT_DISCOVER_ITEM, this, "", item_id);
 	}
 }
 
