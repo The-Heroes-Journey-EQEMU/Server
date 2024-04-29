@@ -854,8 +854,12 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			if (!inst->GetCustomData("force_unlimited_charges").empty()) {
 				inst->SetCharges(-1);
 				inst->GetMutableItem()->MaxCharges = -1;
-				inst->GetMutableItem()->CastTime 	= inst->GetMutableItem()->CastTime + 5000;
-				inst->GetMutableItem()->CastTime_ 	= inst->GetMutableItem()->CastTime_ + 5000;
+				inst->GetMutableItem()->CastTime	= inst->GetMutableItem()->CastTime + 5000;
+				inst->GetMutableItem()->CastTime_	= inst->GetMutableItem()->CastTime_ + 5000;
+
+				if (inst->GetItem()->Classes && inst->GetItem()->Races) {
+					inst->GetMutableItem()->Click.Type = 4; // Must Equip
+				}				
 			}
 
 			// Prevent items of this type from being sold to vendors.
