@@ -784,18 +784,6 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 				inst->SetCustomData("original_id", std::to_string(inst->GetID()));
 			}
 
-			if (!inst->GetCustomData("Discovery").empty()) {
-				std::string book_tag = inst->GetItem()->CharmFile;
-				size_t      hash_pos = book_tag.find('#');
-
-				if (hash_pos++ != std::string::npos) {
-					if (hash_pos < book_tag.length() && std::isdigit(book_tag[hash_pos])) {
-						book_tag = book_tag.substr(0, hash_pos) + std::to_string(inst->GetItem()->ID);
-						strn0cpy(inst->GetMutableItem()->CharmFile, book_tag.c_str(), sizeof(inst->GetItem()->CharmFile));
-					}
-				}
-			}
-
 			char* disco_tag = inst->GetItem()->CharmFile;
 
 			if (!inst->GetCustomData("Name").empty()) {
@@ -845,6 +833,18 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->SetID((uint32)next_id);
 			items_hash->insert(next_id, *inst->GetItem());
 			generated_item_cache[key] = next_id;
+		}
+
+		if (!inst->GetCustomData("Discovery").empty()) {
+			std::string book_tag = inst->GetItem()->CharmFile;
+			size_t      hash_pos = book_tag.find('#');
+
+			if (hash_pos++ != std::string::npos) {
+				if (hash_pos < book_tag.length() && std::isdigit(book_tag[hash_pos])) {
+					book_tag = book_tag.substr(0, hash_pos) + std::to_string(inst->GetItem()->ID);
+					strn0cpy(inst->GetMutableItem()->CharmFile, book_tag.c_str(), sizeof(inst->GetItem()->CharmFile));
+				}
+			}
 		}
 	}
 }
