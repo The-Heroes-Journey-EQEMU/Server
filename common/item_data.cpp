@@ -262,14 +262,14 @@ int EQ::ItemData::CalculateGearScore() const {
 	int gear_score = 5;
 	
 	// Basic Stats
-	gear_score += AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
-	gear_score += MR + FR + CR + DR + PR;
-	gear_score += HP + Mana + Endur;
-	gear_score += Damage * (Damage / (Delay + 1)) + Damage;
-	gear_score += Attack + SpellDmg + HealAmt;
+	gear_score += 10 * AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
+	gear_score += 5 * MR + FR + CR + DR + PR;
+	gear_score += 5* HP + Mana + Endur;
+	gear_score += 10 * Damage * (Damage / (Delay + 1)) + Damage;
+	gear_score += 5 * Attack + SpellDmg + HealAmt;
 	gear_score += 10 * (AC + ExtraDmgAmt + BaneDmgRaceAmt + ElemDmgAmt);
 	gear_score += 100 * Haste;
-	gear_score += ProcRate;
+	gear_score += 100 * ProcRate;
 
 	// Heroic Stats
 	gear_score += 10 * (HeroicStr + HeroicSta + HeroicDex + HeroicAgi + HeroicInt + HeroicWis + HeroicCha);
