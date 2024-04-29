@@ -508,7 +508,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		EQ::SayLinkEngine linker;
 
 		if (upgrade_item) {
-			int64 cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0) + (set_exp - current_exp);
+			int64 cur_item_exp = Strings::ToBigInt(upgrade_item->GetCustomData("Experience"), 0) + in_add_exp;
 			int64 tar_item_exp = upgrade_item->GetItem()->CalculateGearScore() * (upgrade_item->GetItem()->OriginalID % 1000000) * 1000;
 			auto percentage   = cur_item_exp / tar_item_exp;
 
