@@ -784,13 +784,19 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 				inst->SetCustomData("original_id", std::to_string(inst->GetID()));
 			}
 
+			if (!inst->GetCustomData("Discovery").empty()) {
+				strn0cpy(inst->GetMutableItem()->CharmFile, std::string("Discovered by: " + inst->GetCustomData("Discovery")).c_str(), sizeof(inst->GetMutableItem()->CharmFile));
+			}
+
+			char* disco_tag = inst->GetItem()->CharmFile;
+
 			if (!inst->GetCustomData("Name").empty()) {
 				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("Name").c_str(), sizeof(inst->GetMutableItem()->Name));
 			}
 			
 			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("ArtifactFlag"), inst->GetItem()->ArtifactFlag);
 			inst->GetMutableItem()->Attuneable   = Strings::ToInt(inst->GetCustomData("Attuneable"), inst->GetItem()->Attuneable);
-			inst->GetMutableItem()->Season       = Strings::ToInt(inst->GetCustomData("Season"), 0);	
+			inst->GetMutableItem()->Season       = Strings::ToInt(inst->GetCustomData("Season"), 0);
 
 			// Prevent items of this type from being sold to vendors.
 			inst->GetMutableItem()->Price = 0;
