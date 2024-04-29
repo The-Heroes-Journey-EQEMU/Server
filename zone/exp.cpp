@@ -505,7 +505,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	LogDebug("Raw in_add_exp: [{}]", in_add_exp);
 
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {		
-		auto upgrade_item = GetInv().GetItem(EQ::invslot::slotPowerSource);
+		auto upgrade_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 		if (upgrade_item) {
 			int cur_item_exp = in_add_exp;
 
@@ -513,7 +513,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				cur_item_exp += Strings::ToInt(upgrade_item->GetCustomData("Item_Experience"));
 			}
 
-			int tar_item_exp = 0; //upgrade_item->GetItem()->CalculateGearScore() * 10000;
+			int tar_item_exp = 1000000; //upgrade_item->GetItem()->CalculateGearScore() * 10000;
 			double epercentage = cur_item_exp / tar_item_exp;
 
 			
