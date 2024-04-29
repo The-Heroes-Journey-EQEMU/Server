@@ -509,7 +509,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 		if (upgrade_item) {
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(upgrade_item->GetCustomData("Exp"));
 			uint64 tar_item_exp   = upgrade_item->GetMutableItem()->CalculateGearScore();
-			double epercentage = cur_item_exp / tar_item_exp;
+			double epercentage    = cur_item_exp / tar_item_exp;
 
 			EQ::SayLinkEngine linker;
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);			
@@ -526,6 +526,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				if (new_item) {
 					auto old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
 					if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
+						m_inv.GetItem(EQ::invslot::slotPowerSource)->SetAttuned(true);
 						linker.SetItemInst(upgrade_item);
 						auto upgrade_item_lnk = linker.GenerateLink().c_str();
 
