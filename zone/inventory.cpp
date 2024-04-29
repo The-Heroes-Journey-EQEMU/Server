@@ -2302,6 +2302,10 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 
 					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, dst_inst->GetItem()->ID);
 				}
+
+				if (RuleB(Custom, PowerSourceItemUpgrade)) {
+					Message(Chat::Experience, "You begin to focus your experience on improving your item instead of progressing your advancement.");
+				}
 			}
 		}
 
@@ -2328,7 +2332,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 				if (parse->ItemHasQuestSub(src_inst, EVENT_EQUIP_ITEM)) {
 					parse->EventItem(EVENT_EQUIP_ITEM, this, src_inst, nullptr, "", dst_slot_id);
 				}
-
+								
 				if (parse->PlayerHasQuestSub(EVENT_EQUIP_ITEM_CLIENT)) {
 					const auto& export_string = fmt::format(
 						"{} {}",
@@ -2339,6 +2343,10 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					std::vector<std::any> args = { src_inst };
 
 					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);
+				}
+
+				if (RuleB(Custom, PowerSourceItemUpgrade)) {
+					Message(Chat::Experience, "You begin to focus your experience on improving your item instead of progressing your advancement.");
 				}
 			}
 		}
