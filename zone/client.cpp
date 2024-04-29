@@ -2327,27 +2327,23 @@ void Client::ReadBook(BookRequest_Struct *book) {
 		booktxt2 = content_db.GetBook(bookString.c_str(), &book_language);
 	}
 
-	if (RuleB(Custom, UseDynamicItemDiscoveryTags) && book->type == 2) {
-		if (txtfileString.find("Discovered by:") != std::string::npos) {
-			booktxt2 += "<br>" + txtfileString;
-		} else {
-			if (itemID > 999999) {			
-				auto discover_charname = GetDiscoverer(itemID);
+	if (RuleB(Custom, UseDynamicItemDiscoveryTags) && book->type == 2) {		
+		if (itemID > 999999) {			
+			auto discover_charname = GetDiscoverer(itemID);
 
-				if (!discover_charname.empty()) {
-					// Append the discovery information to booktxt2
-					booktxt2 += "<br>Discovered by: " + discover_charname;
-				}
-			} else {
-				const auto* item_data = database.GetItem(itemID);			
-				if (item_data) {
-					std::string item_name = item_data->Name;
-					if (item_name.find("Fine Steel") == 0) {
-						booktxt2 += "<br>Discovered by: Enchanted Loom";
-					}
+			if (!discover_charname.empty()) {
+				// Append the discovery information to booktxt2
+				booktxt2 += "<br>Discovered by: " + discover_charname;
+			}
+		} else {
+			const auto* item_data = database.GetItem(itemID);			
+			if (item_data) {
+				std::string item_name = item_data->Name;
+				if (item_name.find("Fine Steel") == 0) {
+					booktxt2 += "<br>Discovered by: Enchanted Loom";
 				}
 			}
-		}
+		}		
 	}
 
 	if (booktxt2[0] != '\0') {
@@ -4398,7 +4394,7 @@ bool Client::IsDiscovered(uint32 item_id) {
 
 std::string Client::GetDiscoverer(uint32 item_id) {
 	LogDebug("GetDiscoverer [{}]", item_id);
-	if (item_id >= 3000000) {	
+	if (item_id > 3000000) {	
 		auto item_data  = database.GetItem(item_id);
 
 		// Try to find this as an artifact

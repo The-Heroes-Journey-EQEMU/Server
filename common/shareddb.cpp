@@ -785,7 +785,15 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			}
 
 			if (!inst->GetCustomData("Discovery").empty()) {
-				strn0cpy(inst->GetMutableItem()->CharmFile, std::string("Discovered by: " + inst->GetCustomData("Discovery")).c_str(), sizeof(inst->GetMutableItem()->CharmFile));
+				std::string book_tag = inst->GetItem()->CharmFile;
+				size_t      hash_pos = book_tag.find('#');
+
+				if (hash_pos++ != std::string::npos) {
+					if (hash_pos < book_tag.length() && std::isdigit(book_tag[hash_pos])) {
+						book_tag = book_tag.substr(0, hash_pos) + inst->GetCustomData("Discovery");
+						strn0cpy(inst->GetMutableItem()->CharmFile, book_tag.c_str(), sizeof(inst->GetItem()->CharmFile));
+					}
+				}
 			}
 
 			char* disco_tag = inst->GetItem()->CharmFile;
