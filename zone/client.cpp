@@ -4419,7 +4419,9 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 }
 
 void Client::DiscoverItem(uint32 item_id) {
+	LogDebug("DiscoverItem Check 1");
 	if (item_id < 3000000) {
+		LogDebug("DiscoverItem Check 2");
 		auto e = DiscoveredItemsRepository::NewEntity();
 
 		e.account_status = GetSeason();
@@ -4440,6 +4442,7 @@ void Client::DiscoverItem(uint32 item_id) {
 		}
 	}
 
+	LogDebug("DiscoverItem Check 3");
 	if (parse->PlayerHasQuestSub(EVENT_DISCOVER_ITEM)) {
 		auto* item = database.CreateItem(item_id);
 		std::vector<std::any> args = { item };
