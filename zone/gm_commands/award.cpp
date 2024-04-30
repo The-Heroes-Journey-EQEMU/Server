@@ -1,7 +1,7 @@
 #include "../client.h"
 #include "../zone.h"
 #include "../../common/repositories/character_data_repository.h"
-#include "questmgr.h"
+#include "../questmgr.h"
 
 void command_award(Client *c, const Seperator *sep)
 {
