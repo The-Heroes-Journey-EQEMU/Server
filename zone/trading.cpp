@@ -1157,7 +1157,8 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 	}
 
 	EQ::InventoryProfile TraderInv = Trader->GetInv();
-	EQ::ItemInstance*    remote_inst = TraderInv.GetItem(TraderInv.HasItem(ItemID, Quantity));
+	auto remote_slot = TraderInv.HasItem(ItemID, Quantity);
+	//EQ::ItemInstance*    remote_inst = TraderInv.GetItem();
 	EQ::ItemInstance*    inst = database.CreateItem(item, Quantity);
 
 	/*
