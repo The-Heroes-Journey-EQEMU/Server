@@ -1,4 +1,5 @@
 #include "../client.h"
+#include "../zone.h"
 #include "../../common/repositories/character_data_repository.h"
 
 void command_award(Client *c, const Seperator *sep)
@@ -29,7 +30,8 @@ void command_award(Client *c, const Seperator *sep)
 	k.key = "EoM-Award";
 	k.value = sep->arg[2];
 
-	DataBucket::SetData(k);
+	DataBucket::SetData(k);	
 
-	c->Message(Chat::White, "Awarded %d EoM to %s.", Strings::ToInt(sep->arg[1]), sep->arg[2]);
+	c->Message(Chat::White, "Awarded %d EoM to %s.", Strings::ToInt(sep->arg[2]), sep->arg[1]);
+	zone->SendDiscordMessage("admin", fmt::to_string(c->GetCleanName()) + " awarded " + sep->arg[2] + " EoM to " + sep->arg[1] + ".");
 }
