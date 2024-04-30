@@ -1144,10 +1144,12 @@ void Client::Trader_EndTrader() {
 	Trader = false;
 }
 
-void Client::SendTraderItem(EQ::ItemInstance* inst, uint16 Quantity) {
+void Client::SendTraderItem(const EQ::ItemInstance* inst, uint16 Quantity) {
 
 	std::string Packet;
-	int16 FreeSlotID=0;	
+	int16 FreeSlotID=0;
+
+	
 
 	/*
 	if (remote_inst && !remote_inst->GetCustomDataString().empty()) {
