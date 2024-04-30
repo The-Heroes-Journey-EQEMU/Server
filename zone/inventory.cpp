@@ -1787,19 +1787,12 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	uint32 stack_count_check = move_in->number_in_stack;
 
 	if (IsSeasonal()) {
-		if (src_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && src_slot_check <= EQ::invslot::SHARED_BANK_END) {
-			return false;
-		}
-
-		if (src_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && src_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
-			return false;
-		}
-		
-		if (dst_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_check <= EQ::invslot::SHARED_BANK_END) {
-			return false;
-		}
-
-		if (dst_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && dst_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
+		if ((src_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && src_slot_check <= EQ::invslot::SHARED_BANK_END) ||
+			(src_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && src_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) ||
+			(dst_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_check <= EQ::invslot::SHARED_BANK_END) ||
+			(dst_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && dst_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END))
+		{			
+			Message(Chat::Red, "Seasonal characters may not access the shared bank.");
 			return false;
 		}
 	} 
@@ -2460,7 +2453,9 @@ void Client::SwapItemResync(MoveItem_Struct* move_slots) {
 				safe_delete(outapp);
 			}
 			safe_delete(token_inst);
-			Message(Chat::Lime, "Source slot %i resyncronized.", move_slots->from_slot);
+			if (GetGM()) {
+				Message(Chat::Lime, "Source slot %i resyncronized.", move_slots->from_slot);
+			}
 		}
 		else { Message(Chat::Red, "Could not resyncronize source slot %i.", move_slots->from_slot); }
 	}
@@ -2475,7 +2470,9 @@ void Client::SwapItemResync(MoveItem_Struct* move_slots) {
 				SendItemPacket(resync_slot, m_inv[resync_slot], ItemPacketTrade);
 
 				safe_delete(token_inst);
-				Message(Chat::Lime, "Source slot %i resyncronized.", move_slots->from_slot);
+				if (GetGM()) {
+					Message(Chat::Lime, "Source slot %i resyncronized.", move_slots->from_slot);
+				}
 			}
 			else { Message(Chat::Red, "Could not resyncronize source slot %i.", move_slots->from_slot); }
 		}
@@ -2502,7 +2499,9 @@ void Client::SwapItemResync(MoveItem_Struct* move_slots) {
 				safe_delete(outapp);
 			}
 			safe_delete(token_inst);
-			Message(Chat::Lime, "Destination slot %i resyncronized.", move_slots->to_slot);
+			if (GetGM()) {
+				Message(Chat::Lime, "Destination slot %i resyncronized.", move_slots->to_slot);
+			}
 		}
 		else { Message(Chat::Red, "Could not resyncronize destination slot %i.", move_slots->to_slot); }
 	}
@@ -2517,7 +2516,9 @@ void Client::SwapItemResync(MoveItem_Struct* move_slots) {
 				SendItemPacket(resync_slot, m_inv[resync_slot], ItemPacketTrade);
 
 				safe_delete(token_inst);
-				Message(Chat::Lime, "Destination slot %i resyncronized.", move_slots->to_slot);
+				if (GetGM()) {
+					Message(Chat::Lime, "Destination slot %i resyncronized.", move_slots->to_slot);
+				}
 			}
 			else { Message(Chat::Red, "Could not resyncronize destination slot %i.", move_slots->to_slot); }
 		}
