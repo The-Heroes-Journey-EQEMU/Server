@@ -4471,6 +4471,7 @@ bool Client::CanDiscoverArtifact(EQ::ItemInstance* inst, bool bypass) {
 
 bool Client::DiscoverArtifact(EQ::ItemInstance* inst, bool bypass) {
 	if (inst) {
+		LogDebug("Checking if we can discover an artifact here...");
 		if (CanDiscoverArtifact(inst, bypass) && zone->random.Roll(RuleI(Custom, ArtifactDiscoveryChance))) {
 			SendSound();
 			Message(Chat::Yellow, "You have discovered an Artifact!");
