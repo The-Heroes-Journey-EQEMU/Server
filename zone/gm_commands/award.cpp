@@ -1,5 +1,4 @@
 #include "../client.h"
-#include "../../common/repositories/character_data_repository.h"
 
 void command_award(Client *c, const Seperator *sep)
 {
