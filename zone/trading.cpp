@@ -1156,8 +1156,7 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 		return;
 	}
 
-	EQ::ItemInstance* inst = database.CreateItem(item, Quantity);
-
+	EQ::ItemInstance* inst = nullptr;
 
 	LogDebug("ItemID: [{}], OriginalID [{}]", ItemID, item->OriginalID);
 	if (ItemID != item->OriginalID) {
@@ -1173,6 +1172,8 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 			inst->SetCustomDataString(source_inst->GetCustomDataString());			
 			database.RunGenerateCallback(inst);
 		}
+	} else {
+		inst = database.CreateItem(item, Quantity);
 	}
 
 	if (inst)
