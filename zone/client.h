@@ -1038,8 +1038,14 @@ public:
 	int GetEXPPercentage();
 
 	// Seasonal Helper Methods
-	bool IsSeasonal() { return (Strings::ToInt(GetBucket("SeasonalCharacter")) == RuleI(Custom, EnableSeasonalCharacters)); }
-	
+	bool IsSeasonal() {
+		if (RuleI(Custom, EnableSeasonalCharacters) == 0) {
+			return false;
+		} else {
+			return (Strings::ToInt(GetBucket("SeasonalCharacter")) == RuleI(Custom, EnableSeasonalCharacters));
+		}
+	}
+		
 	int  GetSeason() { 
 		if (IsSeasonal()) {
 			return Strings::ToInt(GetBucket("SeasonalCharacter"), 0);
