@@ -280,7 +280,7 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 	gear_score += 25  * (Regen + ManaRegen + EnduranceRegen + DSMitigation);
 
 	// Tier Modifier
-	gear_score *= ((int)ceil((OriginalID / 1000000)) + 1) * 4;
+	gear_score *= ((int)std::round((OriginalID / 1000000)) + 1) * 4;
 
 	return 1 + gear_score;
 }
