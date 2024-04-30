@@ -791,6 +791,7 @@ void command_bot(Client *c, const Seperator *sep)
 #include "gm_commands/appearance.cpp"
 #include "gm_commands/appearanceeffects.cpp"
 #include "gm_commands/attack.cpp"
+#include "gm_commands/award.cpp"
 #include "gm_commands/augmentitem.cpp"
 #include "gm_commands/ban.cpp"
 #include "gm_commands/bugs.cpp"
