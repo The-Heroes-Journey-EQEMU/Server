@@ -558,7 +558,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				old_item->SetCustomData("Customized", "true");
 				old_item->SetCustomData("Expanded", Strings::ToInt(old_item->GetCustomData("Expanded"), 0) + 1);
 
-				auto new_name = std::string(old_item->GetItem()->Name) + " +" + fmt::to_string(Strings::ToInt(old_item->GetCustomData("Expanded"), 0) + 1);
+				auto new_name = std::string(old_item->GetItem()->Name) + " +" + fmt::to_string(Strings::ToInt(old_item->GetCustomData("Expanded")));
 
 				old_item->SetCustomData("Name", new_name);		
 
