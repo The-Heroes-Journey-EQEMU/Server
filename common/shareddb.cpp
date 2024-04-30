@@ -852,7 +852,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->SkillModValue    += Strings::ToInt(inst->GetCustomData("SkillModValue"), 0);
 
 			if (!inst->GetCustomData("force_unlimited_charges").empty() && inst->IsCharged()) {
-				auto new_cast_time = spells[inst->GetItem()->Click.Effect].cast_time;
+				auto new_cast_time = Strings::ToInt(inst->GetCustomData("force_unlimited_charges"));
 
 				inst->SetCharges(-1);
 				inst->GetMutableItem()->MaxCharges = -1;

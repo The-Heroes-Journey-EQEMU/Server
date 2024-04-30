@@ -4570,7 +4570,7 @@ bool Client::DiscoverArtifact(EQ::ItemInstance* inst, bool bypass) {
 			inst->SetCustomData("Click.Level2",     static_cast<int32>(std::ceil(inst->GetItem()->Click.Level2 * -1)));
 
 			if (inst->IsCharged()) {
-				inst->SetCustomData("force_unlimited_charges", "true");
+				inst->SetCustomData("force_unlimited_charges", static_cast<int>(spells[inst->GetItem()->Click.Effect].cast_time));
 			}
 
 			std::string global_string    = "artifact-" + std::to_string(inst->GetItem()->ID) + "-season-" + std::to_string(GetSeason());
