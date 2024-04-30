@@ -1034,6 +1034,7 @@ void Client::Trader_CustomerBrowsing(Client *Customer) {
 	safe_delete(outapp);
 }
 
+
 void Client::Trader_StartTrader() {
 
 	Trader=true;
@@ -1144,20 +1145,19 @@ void Client::Trader_EndTrader() {
 	Trader = false;
 }
 
-void Client::SendTraderItem(const EQ::ItemInstance* inst, uint16 Quantity) {
+void Client::SendTraderItem(uint32 ItemID, uint16 Quantity) {
 
 	std::string Packet;
 	int16 FreeSlotID=0;
 
-	
+	const EQ::ItemData* item = database.GetItem(ItemID);
 
-	/*
-	if (remote_inst && !remote_inst->GetCustomDataString().empty()) {
-		inst->SetCustomDataString(remote_inst->GetCustomDataString());
-		inst->GetMutableItem()->ID = remote_inst->GetItem()->OriginalID;
-		database.RunGenerateCallback(inst);
+	if(!item){
+		LogTrading("Bogus item deleted in Client::SendTraderItem!\n");
+		return;
 	}
-	*/
+
+	EQ::ItemInstance* inst = database.CreateItem(item, Quantity);
 
 	if (inst)
 	{
@@ -1264,6 +1264,7 @@ EQ::ItemInstance* Client::FindTraderItemBySerialNumber(int32 SerialNumber){
 	return nullptr;
 }
 
+
 GetItems_Struct* Client::GetTraderItems(){
 
 	const EQ::ItemInstance* item = nullptr;
@@ -1308,7 +1309,7 @@ uint16 Client::FindTraderItem(int32 SerialNumber, uint16 Quantity){
 		item = GetInv().GetItem(i);
 		if (item && item->GetItem()->BagType == EQ::item::BagTypeTradersSatchel){
 			for (int x = EQ::invbag::SLOT_BEGIN; x <= EQ::invbag::SLOT_END; x++){
-				SlotID = GetInv().CalcSlotId(i, x);
+				SlotID = EQ::InventoryProfile::CalcSlotId(i, x);
 
 				item = GetInv().GetItem(SlotID);
 
@@ -1522,6 +1523,7 @@ void Client::TradeRequestFailed(const EQApplicationPacket* app) {
 	safe_delete(outapp);
 }
 
+
 static void BazaarAuditTrail(const char *seller, const char *buyer, const char *itemName, int quantity, int totalCost, int tranType) {
 
 	const std::string& query = fmt::format(
@@ -1688,9 +1690,9 @@ void Client::BuyTraderItem(TraderBuy_Struct* tbs, Client* Trader, const EQApplic
 	int TraderSlot = 0;
 
 	if(BuyItem->IsStackable())
-		SendTraderItem(BuyItem, outtbs->Quantity);
+		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity);
 	else
-		SendTraderItem(BuyItem, BuyItem->GetCharges());
+		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges());
 
 	TraderSlot = Trader->FindTraderItem(tbs->ItemID, outtbs->Quantity);
 
