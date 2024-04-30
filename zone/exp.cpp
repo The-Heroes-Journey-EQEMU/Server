@@ -600,17 +600,18 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 						if (old_item->GetItemElementalFlag()) {
 							StatSelectors.push_back("ElemDmgType");
 						}
-					}
-					if (!StatSelectors.empty()) {
-						auto selected_stat  = StatSelectors.at(zone->random.Roll0(StatSelectors.size()));
-						auto target_value   = zone->random.Roll0(3 + ceil(GetLevel() / 10) + Strings::ToInt(old_item->GetCustomData(selected_stat)));
+					}					
+				}
 
-						if (selected_stat == "Delay") {
-							target_value = -1;
-						}
+				if (!StatSelectors.empty()) {
+					auto selected_stat  = StatSelectors.at(zone->random.Roll0(StatSelectors.size()));
+					auto target_value   = zone->random.Roll0(3 + ceil(GetLevel() / 10) + Strings::ToInt(old_item->GetCustomData(selected_stat)));
 
-						old_item->SetCustomData(selected_stat, target_value);
+					if (selected_stat == "Delay") {
+						target_value = -1;
 					}
+
+					old_item->SetCustomData(selected_stat, target_value);
 				}				
 
 				database.RunGenerateCallback(old_item);
