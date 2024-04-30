@@ -838,7 +838,7 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 										auto loot_drop_entry = LootdropEntriesRepository::NewNpcEntity();
 										loot_drop_entry.equip_item = 1;
 										loot_drop_entry.item_charges = static_cast<int8>(baginst->GetCharges());
-										if (tradingWith->IsPet() && tradingWith->IsPetOwnerClient()) {
+										if (tradingWith->IsPet() && tradingWith->GetOwner() && tradingWith->GetOwner()->IsClient()) {
 											tradingWith->CastToNPC()->AddLootDropFixed(
 												bagitem,
 												loot_drop_entry,
@@ -868,7 +868,7 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 							}
 						}
 
-						if (tradingWith->IsPet()) {
+						if (tradingWith->IsPet() && tradingWith->GetOwner() && tradingWith->GetOwner()->IsClient()) {
 							auto new_loot_drop_entry = LootdropEntriesRepository::NewNpcEntity();
 							new_loot_drop_entry.equip_item = 1;
 							new_loot_drop_entry.item_charges = static_cast<int8>(inst->GetCharges());
