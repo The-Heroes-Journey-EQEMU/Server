@@ -603,7 +603,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				if (old_item->GetItemElementalFlag()) {
 					StatSelectors.push_back("ElemDmgType");
 				}
-
 				if (old_item->GetItem()->AStr) {
 					StatSelectors.insert(StatSelectors.end(), {"AStr", "HeroicStr"});
 				}
@@ -640,7 +639,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				if (old_item->GetItem()->PR) {
 					StatSelectors.insert(StatSelectors.end(), {"PR", "HeroicPR"});
 				}
-
 				if (old_item->GetItem()->HP) {
 					StatSelectors.push_back("HP");
 				}
@@ -659,7 +657,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				if (old_item->GetItem()->EnduranceRegen) {
 					StatSelectors.push_back("EnduranceRegen");
 				}
-
 				if (old_item->GetItem()->Shielding) {
 					StatSelectors.push_back("Shielding");
 				}
@@ -681,7 +678,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				if (old_item->GetItem()->StunResist) {
 					StatSelectors.push_back("StunResist");
 				}
-
 				if (old_item->GetItem()->SpellDmg) {
 					StatSelectors.push_back("SpellDmg");
 				}
