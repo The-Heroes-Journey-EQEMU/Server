@@ -751,10 +751,10 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 
 				EQ::SayLinkEngine linker;
 				linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-				linker.SetItemInst(insts[i - EQ::invslot::TRADE_BEGIN]);
+				linker.SetItemInst(insts[i - EQ::invslot::TRADE_BEGIN]);				
 				
-				insts[i - EQ::invslot::TRADE_BEGIN] = nullptr;
 				Message(Chat::Red, "[%s] is not eligible to be traded to an NPC.", linker.GenerateLink().c_str());
+				insts[i - EQ::invslot::TRADE_BEGIN] = nullptr;
 			}
 		}
 
