@@ -512,7 +512,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
 			EQ::SayLinkEngine linker;
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
-			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * Strings::ToInt(old_item->GetCustomData("Expanded"), 1);
+			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * Strings::ToInt(old_item->GetCustomData("Expanded"), 1) * RuleR(Custom, PowerSourceItemUpgradeExpRateScale);
 
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 		
@@ -553,6 +553,10 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 					return;
 				}
 				safe_delete(old_item);
+			} else if (RuleI(Custom, ExtraPowerSourceArtifactChance) && CanDiscoverArtifact(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass))) {
+				if (zone->random.Roll(RuleI(Custom, ExtraPowerSourceArtifactChance))) {
+					DiscoverArtifact(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass));
+				}
 			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
 				old_item->SetCustomData("Exp", 0);		
 				old_item->SetCustomData("Customized", "true");

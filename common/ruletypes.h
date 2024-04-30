@@ -996,6 +996,7 @@ RULE_BOOL(Custom, PowerSourceItemUpgrade, false, "Enable to add Power Source to 
 RULE_BOOL(Custom, ExtraPowerSourceProgression, false, "Enable to allow fully-upgraded items in Power Source to accumulate new stats with experience.")
 RULE_INT(Custom, ExtraPowerSourceArtifactChance, 0, "Percentage chance of a Tier 2 item in Power Source to upgrade to artifact with XP.")
 RULE_BOOL(Custom, ExtraPowerSourceArtifactBypass, false, "Allow Power Source upgraded artifacts to bypass server discovery limits.")
+RULE_REAL(Custom, PowerSourceItemUpgradeExpRateScale, 1.0, "Scale XP needed to level up items via Power Source")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Parcel)
