@@ -4453,6 +4453,10 @@ bool Client::CanDiscoverArtifact(EQ::ItemInstance* inst, bool bypass) {
 		return false;
 	}
 
+	if (inst->IsScaling()) {
+		return false;
+	}
+
 	if (inst->GetItem()->ID < 2000000 || inst->GetItem()->ID > 3000000) {
 		return false;
 	}
