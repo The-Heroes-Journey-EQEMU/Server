@@ -512,7 +512,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
 			EQ::SayLinkEngine linker;
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
-			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore();
+			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * Strings::ToInt(old_item->GetCustomData("Expanded"), 1);
 
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 		
@@ -554,156 +554,67 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				}
 				safe_delete(old_item);
 			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
-				old_item->SetCustomData("Exp", 0);
-				
-				auto stat_selector = zone->random.Roll0(EQ::item::Stat::HeroicPR);
-				auto stat_magnitude = zone->random.Roll0(static_cast<int>(GetLevel() / 10)) + 1;
-
+				old_item->SetCustomData("Exp", 0);		
 				old_item->SetCustomData("Customized", "true");
 				old_item->SetCustomData("Expanded", Strings::ToInt(old_item->GetCustomData("Expanded"), 0) + 1);
 
-				// TODO - improve this based on character wants.
+				std::vector<std::string> StatSelectors;
+				int class_count = 0;
 
-				switch(stat_selector) {
-					case EQ::item::Stat::AC:
-						old_item->SetCustomData("AC", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AC")));
-						break;
-					case EQ::item::Stat::HP:
-						old_item->SetCustomData("HP", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HP")));
-						break;
-					case EQ::item::Stat::Mana:
-						old_item->SetCustomData("Mana", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Mana")));
-						break;
-					case EQ::item::Stat::Endur:
-						old_item->SetCustomData("Endur", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Endur")));
-						break;
-					case EQ::item::Stat::AStr:
-						old_item->SetCustomData("AStr", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AStr")));
-						break;
-					case EQ::item::Stat::ASta:
-						old_item->SetCustomData("ASta", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ASta")));
-						break;
-					case EQ::item::Stat::ADex:
-						old_item->SetCustomData("ADex", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ADex")));
-						break;
-					case EQ::item::Stat::AAgi:
-						old_item->SetCustomData("AAgi", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AAgi")));
-						break;
-					case EQ::item::Stat::AInt:
-						old_item->SetCustomData("AInt", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AInt")));
-						break;
-					case EQ::item::Stat::AWis:
-						old_item->SetCustomData("AWis", stat_magnitude + Strings::ToInt(old_item->GetCustomData("AWis")));
-						break;
-					case EQ::item::Stat::ACha:
-						old_item->SetCustomData("ACha", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ACha")));
-						break;
-					case EQ::item::Stat::MR:
-						old_item->SetCustomData("MR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("MR")));
-						break;
-					case EQ::item::Stat::FR:
-						old_item->SetCustomData("FR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("FR")));
-						break;
-					case EQ::item::Stat::CR:
-						old_item->SetCustomData("CR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("CR")));
-						break;
-					case EQ::item::Stat::DR:
-						old_item->SetCustomData("DR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("DR")));
-						break;
-					case EQ::item::Stat::PR:
-						old_item->SetCustomData("PR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("PR")));
-						break;
-					case EQ::item::Stat::Attack:
-						old_item->SetCustomData("Attack", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Attack")));
-						break;
-					case EQ::item::Stat::SpellDmg:
-						old_item->SetCustomData("SpellDmg", stat_magnitude + Strings::ToInt(old_item->GetCustomData("SpellDmg")));
-						break;
-					case EQ::item::Stat::HealAmt:
-						old_item->SetCustomData("HealAmt", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HealAmt")));
-						break;
-					case EQ::item::Stat::Regen:
-						old_item->SetCustomData("Regen", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Regen")));
-						break;
-					case EQ::item::Stat::ManaRegen:
-						old_item->SetCustomData("ManaRegen", stat_magnitude + Strings::ToInt(old_item->GetCustomData("ManaRegen")));
-						break;
-					case EQ::item::Stat::EnduranceRegen:
-						old_item->SetCustomData("EnduranceRegen", stat_magnitude + Strings::ToInt(old_item->GetCustomData("EnduranceRegen")));
-						break;
-					case EQ::item::Stat::Shielding:
-						old_item->SetCustomData("Shielding", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Shielding")));
-						break;
-					case EQ::item::Stat::SpellShield:
-						old_item->SetCustomData("SpellShield", stat_magnitude + Strings::ToInt(old_item->GetCustomData("SpellShield")));
-						break;
-					case EQ::item::Stat::Avoidance:
-						old_item->SetCustomData("Avoidance", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Avoidance")));
-						break;
-					case EQ::item::Stat::CombatEffects:
-						old_item->SetCustomData("CombatEffects", stat_magnitude + Strings::ToInt(old_item->GetCustomData("CombatEffects")));
-						break;
-					case EQ::item::Stat::Accuracy:
-						old_item->SetCustomData("Accuracy", stat_magnitude + Strings::ToInt(old_item->GetCustomData("Accuracy")));
-						break;
-					case EQ::item::Stat::StunResist:
-						old_item->SetCustomData("StunResist", stat_magnitude + Strings::ToInt(old_item->GetCustomData("StunResist")));
-						break;
-					case EQ::item::Stat::StrikeThrough:
-						old_item->SetCustomData("StrikeThrough", stat_magnitude + Strings::ToInt(old_item->GetCustomData("StrikeThrough")));
-						break;
-					case EQ::item::Stat::DotShielding:
-						old_item->SetCustomData("DotShielding", stat_magnitude + Strings::ToInt(old_item->GetCustomData("DotShielding")));
-						break;
-					case EQ::item::Stat::DSMitigation:
-						old_item->SetCustomData("DSMitigation", stat_magnitude + Strings::ToInt(old_item->GetCustomData("DSMitigation")));
-						break;
-					case EQ::item::Stat::HeroicStr:
-						old_item->SetCustomData("HeroicStr", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicStr")));
-						break;
-					case EQ::item::Stat::HeroicSta:
-						old_item->SetCustomData("HeroicSta", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicSta")));
-						break;
-					case EQ::item::Stat::HeroicDex:
-						old_item->SetCustomData("HeroicDex", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicDex")));
-						break;
-					case EQ::item::Stat::HeroicAgi:
-						old_item->SetCustomData("HeroicAgi", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicAgi")));
-						break;
-					case EQ::item::Stat::HeroicInt:
-						old_item->SetCustomData("HeroicInt", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicInt")));
-						break;
-					case EQ::item::Stat::HeroicWis:
-						old_item->SetCustomData("HeroicWis", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicWis")));
-						break;
-					case EQ::item::Stat::HeroicCha:
-						old_item->SetCustomData("HeroicCha", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicCha")));
-						break;
-					case EQ::item::Stat::HeroicMR:
-						old_item->SetCustomData("HeroicMR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicMR")));
-						break;
-					case EQ::item::Stat::HeroicFR:
-						old_item->SetCustomData("HeroicFR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicFR")));
-						break;
-					case EQ::item::Stat::HeroicCR:
-						old_item->SetCustomData("HeroicCR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicCR")));
-						break;
-					case EQ::item::Stat::HeroicDR:
-						old_item->SetCustomData("HeroicDR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicDR")));
-						break;
-					case EQ::item::Stat::HeroicPR:
-						old_item->SetCustomData("HeroicPR", stat_magnitude + Strings::ToInt(old_item->GetCustomData("HeroicPR")));
-						break;					
-					default:
-						break;
-				}
+				for (const auto& class_bitmask : player_class_bitmasks) {
+					uint8 class_id = class_bitmask.first;
+					uint16 class_bit = class_bitmask.second;
+					if ((old_item->GetItem()->Classes & class_bit) != 0) {
+						class_count++;
+						StatSelectors.insert(StatSelectors.end(), {"MR", "FR", "CR", "DR", "PR"});
+						StatSelectors.insert(StatSelectors.end(), {"HeroicMR", "HeroicFR", "HeroicCR", "HeroicDR", "HeroicPR", "SpellDmg", "HealAmt"});
+
+						if (IsCasterClass(class_id)) {
+							StatSelectors.insert(StatSelectors.end(), {"Mana", "ManaRegen", "SpellDmg", "Spellshield", "StunResist"});
+						}
+						if (IsWarriorClass(class_id)) {
+							StatSelectors.insert(StatSelectors.end(), {"AStr", "ADex", "AAgi", "HP", "Shielding", "Strikethrough", "EnduranceRegen", "Regen", "Avoidance", "CombatEffects"});
+						}
+						if (IsLeatherClass(class_id)) {
+							StatSelectors.insert(StatSelectors.end(), {"Avoidance", "AAgi"});
+						}
+						if (IsClothClass(class_id)) {
+							StatSelectors.insert(StatSelectors.end(), {"Spellshield", "AInt", "HeroicInt", "SpellDmg", "ManaRegen", "Mana"});
+						}
+						if (IsPlateClass(class_id)) {
+							StatSelectors.insert(StatSelectors.end(), {"ASta", "HeroicSta", "Shielding", "HealAmt", "StunResist", "HP", "Regen"});
+						}
+						if (IsWisdomCasterClass(class_id)) {
+							StatSelectors.insert(StatSelectors.end(), {"HealAmt", "AWis", "HeroicWis", "Mana", "ManaRegen"});
+						}
+						if (old_item->IsWeapon()) {
+							StatSelectors.insert(StatSelectors.end(), {"Damage", "ProcRate"});
+							if (old_item->GetItem()->Delay > 15) {
+								StatSelectors.push_back("Delay");
+							}
+						}
+						if (old_item->GetItemElementalFlag()) {
+							StatSelectors.push_back("ElemDmgType");
+						}
+					}
+					if (!StatSelectors.empty()) {
+						auto selected_stat  = StatSelectors.at(zone->random.Roll0(StatSelectors.size()));
+						auto target_value   = zone->random.Roll0(3 + ceil(GetLevel() / 10) + Strings::ToInt(old_item->GetCustomData(selected_stat)));
+
+						if (selected_stat == "Delay") {
+							target_value = -1;
+						}
+
+						old_item->SetCustomData(selected_stat, target_value);
+					}
+				}				
 
 				database.RunGenerateCallback(old_item);
 				PutItemInInventory(EQ::invslot::slotPowerSource, *m_inv.PopItem(EQ::invslot::slotPowerSource), true);
 
 				linker.SetItemInst(old_item);
-				Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
 				Message(Chat::Experience, "Your [%s] has improved!", linker.GenerateLink().c_str());
+				SendSound();
 			}					
 			return;
 		}
