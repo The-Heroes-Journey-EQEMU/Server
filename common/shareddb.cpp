@@ -797,7 +797,6 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->BaneDmgRaceAmt   += Strings::ToInt(inst->GetCustomData("BaneDmgRaceAmt"), 0);
 			inst->GetMutableItem()->ElemDmgAmt       += Strings::ToInt(inst->GetCustomData("ElemDmgAmt"), 0);
 			inst->GetMutableItem()->Damage           += Strings::ToInt(inst->GetCustomData("Damage"), 0);
-			inst->GetMutableItem()->Delay            += Strings::ToInt(inst->GetCustomData("Delay"), 0);
 			inst->GetMutableItem()->ProcRate         += Strings::ToInt(inst->GetCustomData("ProcRate"), 0);
 			inst->GetMutableItem()->CombatEffects    += Strings::ToInt(inst->GetCustomData("CombatEffects"), 0);
 			inst->GetMutableItem()->Shielding        += Strings::ToInt(inst->GetCustomData("Shielding"), 0);
@@ -851,6 +850,9 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->Click.Level2     += Strings::ToInt(inst->GetCustomData("Click.Level2"), 0);
 			inst->GetMutableItem()->SkillModMax      += Strings::ToInt(inst->GetCustomData("SkillModMax"), 0);
 			inst->GetMutableItem()->SkillModValue    += Strings::ToInt(inst->GetCustomData("SkillModValue"), 0);
+
+			// Delay is weird, we want to set a hard floor on how low we can go.
+			inst->GetMutableItem()->Delay = std::max((uint8)(inst->GetMutableItem()->Delay + Strings::ToInt(inst->GetCustomData("Delay"), 0)), std::min((uint8)15, GetItem(inst->GetItem()->OriginalID)->Delay));			
 
 			if (!inst->GetCustomData("force_unlimited_charges").empty() && inst->IsCharged()) {
 				uint32 new_cast_time = Strings::ToUnsignedInt(inst->GetCustomData("force_unlimited_charges"));

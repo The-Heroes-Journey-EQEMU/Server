@@ -569,9 +569,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 					uint8 class_id = class_bitmask.first;
 					uint16 class_bit = class_bitmask.second;
 					if ((old_item->GetItem()->Classes & class_bit) != 0) {
-						class_count++;
-						StatSelectors.insert(StatSelectors.end(), {"MR", "FR", "CR", "DR", "PR"});
-						StatSelectors.insert(StatSelectors.end(), {"HeroicMR", "HeroicFR", "HeroicCR", "HeroicDR", "HeroicPR", "SpellDmg", "HealAmt"});
+						class_count++;					
 
 						if (IsCasterClass(class_id)) {
 							StatSelectors.insert(StatSelectors.end(), {"Mana", "ManaRegen", "SpellDmg", "Spellshield", "StunResist"});
@@ -583,36 +581,138 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 							StatSelectors.insert(StatSelectors.end(), {"Avoidance", "AAgi"});
 						}
 						if (IsClothClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"Spellshield", "AInt", "HeroicInt", "SpellDmg", "ManaRegen", "Mana"});
+							StatSelectors.insert(StatSelectors.end(), {"Spellshield", "AInt", "SpellDmg", "ManaRegen", "Mana"});
 						}
 						if (IsPlateClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"ASta", "HeroicSta", "Shielding", "HealAmt", "StunResist", "HP", "Regen"});
+							StatSelectors.insert(StatSelectors.end(), {"ASta", "Shielding", "HealAmt", "StunResist", "HP", "Regen"});
 						}
 						if (IsWisdomCasterClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"HealAmt", "AWis", "HeroicWis", "Mana", "ManaRegen"});
-						}
-						if (old_item->IsWeapon()) {
-							StatSelectors.insert(StatSelectors.end(), {"Damage", "ProcRate"});
-							if (old_item->GetItem()->Delay > 15) {
-								StatSelectors.push_back("Delay");
-							}
-						}
-						if (old_item->GetItemElementalFlag()) {
-							StatSelectors.push_back("ElemDmgType");
+							StatSelectors.insert(StatSelectors.end(), {"HealAmt", "AWis", "Mana", "ManaRegen"});
 						}
 					}					
 				}
 
-				if (!StatSelectors.empty()) {
-					auto selected_stat  = StatSelectors.at(zone->random.Roll0(StatSelectors.size()));
-					auto target_value   = zone->random.Roll0(3 + ceil(GetLevel() / 10) + Strings::ToInt(old_item->GetCustomData(selected_stat)));
+				StatSelectors.insert(StatSelectors.end(), {"MR", "FR", "CR", "DR", "PR"});
 
-					if (selected_stat == "Delay") {
-						target_value = -1;
+				if (old_item->IsWeapon()) {
+					StatSelectors.insert(StatSelectors.end(), {"Damage", "ProcRate"});
+					if (old_item->GetItem()->Delay > 15) {
+						StatSelectors.push_back("Delay");
 					}
+				}
+				if (old_item->GetItemElementalFlag()) {
+					StatSelectors.push_back("ElemDmgType");
+				}
 
-					old_item->SetCustomData(selected_stat, target_value);
-				}				
+				if (old_item->GetItem()->AStr) {
+					StatSelectors.insert(StatSelectors.end(), {"AStr", "HeroicStr"});
+				}
+				if (old_item->GetItem()->ASta) {
+					StatSelectors.insert(StatSelectors.end(), {"ASta", "HeroicSta"});
+				}
+				if (old_item->GetItem()->ADex) {
+					StatSelectors.insert(StatSelectors.end(), {"ADex", "HeroicDex"});
+				}
+				if (old_item->GetItem()->AAgi) {
+					StatSelectors.insert(StatSelectors.end(), {"AAgi", "HeroicAgi"});
+				}
+				if (old_item->GetItem()->AInt) {
+					StatSelectors.insert(StatSelectors.end(), {"AInt", "HeroicInt"});
+				}
+				if (old_item->GetItem()->AWis) {
+					StatSelectors.insert(StatSelectors.end(), {"AWis", "HeroicWis"});
+				}
+				if (old_item->GetItem()->ACha) {
+					StatSelectors.insert(StatSelectors.end(), {"ACha", "HeroicCha"});
+				}
+				if (old_item->GetItem()->FR) {
+					StatSelectors.insert(StatSelectors.end(), {"FR", "HeroicFR"});
+				}
+				if (old_item->GetItem()->CR) {
+					StatSelectors.insert(StatSelectors.end(), {"CR", "HeroicCR"});
+				}
+				if (old_item->GetItem()->MR) {
+					StatSelectors.insert(StatSelectors.end(), {"MR", "HeroicMR"});
+				}
+				if (old_item->GetItem()->DR) {
+					StatSelectors.insert(StatSelectors.end(), {"DR", "HeroicDR"});
+				}
+				if (old_item->GetItem()->PR) {
+					StatSelectors.insert(StatSelectors.end(), {"PR", "HeroicPR"});
+				}
+
+				if (old_item->GetItem()->HP) {
+					StatSelectors.push_back("HP");
+				}
+				if (old_item->GetItem()->Mana) {
+					StatSelectors.push_back("Mana");
+				}
+				if (old_item->GetItem()->Endur) {
+					StatSelectors.push_back("Endur");
+				}
+				if (old_item->GetItem()->Regen) {
+					StatSelectors.push_back("Regen");
+				}
+				if (old_item->GetItem()->ManaRegen) {
+					StatSelectors.push_back("ManaRegen");
+				}
+				if (old_item->GetItem()->EnduranceRegen) {
+					StatSelectors.push_back("EnduranceRegen");
+				}
+
+				if (old_item->GetItem()->Shielding) {
+					StatSelectors.push_back("Shielding");
+				}
+				if (old_item->GetItem()->DotShielding) {
+					StatSelectors.push_back("DotShielding");
+				}
+				if (old_item->GetItem()->SpellShield) {
+					StatSelectors.push_back("SpellShield");
+				}
+				if (old_item->GetItem()->DSMitigation) {
+					StatSelectors.push_back("DSMitigation");
+				}
+				if (old_item->GetItem()->Avoidance) {
+					StatSelectors.push_back("ManAvoidanceaRegen");
+				}
+				if (old_item->GetItem()->AC) {
+					StatSelectors.push_back("AC");
+				}
+				if (old_item->GetItem()->StunResist) {
+					StatSelectors.push_back("StunResist");
+				}
+
+				if (old_item->GetItem()->SpellDmg) {
+					StatSelectors.push_back("SpellDmg");
+				}
+				if (old_item->GetItem()->HealAmt) {
+					StatSelectors.push_back("HealAmt");
+				}
+				if (old_item->GetItem()->CombatEffects) {
+					StatSelectors.push_back("CombatEffects");
+				}
+				if (old_item->GetItem()->Accuracy) {
+					StatSelectors.push_back("Accuracy");
+				}
+				if (old_item->GetItem()->Attack) {
+					StatSelectors.push_back("Attack");
+				}
+				if (old_item->GetItem()->StrikeThrough) {
+					StatSelectors.push_back("StrikeThrough");
+				}
+
+				for (int i = 0; i < 3; i++) {
+					if (!StatSelectors.empty()) {
+						auto selected_stat  = StatSelectors.at(zone->random.Roll0(StatSelectors.size()));
+						auto target_value   = zone->random.Roll0(ceil(GetLevel() / 10)) + zone->random.Roll0(ceil(GetLevel() / 10) + Strings::ToInt(old_item->GetCustomData(selected_stat)));
+
+						if (selected_stat == "Delay") {
+							target_value = -1;
+						}
+
+						old_item->SetCustomData(selected_stat, target_value);
+					}
+				}			
 
 				database.RunGenerateCallback(old_item);
 				PutItemInInventory(EQ::invslot::slotPowerSource, *m_inv.PopItem(EQ::invslot::slotPowerSource), true);
