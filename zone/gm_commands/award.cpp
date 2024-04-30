@@ -10,7 +10,7 @@ void command_award(Client *c, const Seperator *sep)
 	}
 
 	const auto& l = CharacterDataRepository::GetWhere(
-		*this,
+		database,
 		fmt::format(
 			"`name` = '{}'",
 			Strings::Escape(sep->arg[1])
