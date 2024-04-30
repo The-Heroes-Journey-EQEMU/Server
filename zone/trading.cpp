@@ -748,8 +748,14 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 		for (int i = EQ::invslot::TRADE_BEGIN; i <= EQ::invslot::TRADE_NPC_END; ++i) {
 			if (insts[i - EQ::invslot::TRADE_BEGIN]->GetItem()->ID != insts[i - EQ::invslot::TRADE_BEGIN]->GetItem()->OriginalID) {
 				PushItemOnCursor(*insts[i - EQ::invslot::TRADE_BEGIN], true);
+
+				EQ::SayLinkEngine linker;
+				linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+				linker.SetItemInst(insts[i - EQ::invslot::TRADE_BEGIN]);
+				
+				insts[i - EQ::invslot::TRADE_BEGIN] = nullptr;
+				Message(Chat::Red, "[%s] is not eligible to be traded to an NPC.", linker.GenerateLink().c_str());
 			}
-			return;
 		}
 
 		// copy to be filtered by task updates, null trade slots preserved for quest event arg
