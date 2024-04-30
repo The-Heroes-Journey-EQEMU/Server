@@ -1166,8 +1166,6 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 		database.RunGenerateCallback(inst);
 	}
 
-	//EQ::ItemInstance* inst = TraderInv.PopItem(*TraderInv.GetItem(TraderInv.HasItem(ItemID, Quantity)));
-
 	if (inst)
 	{
 		bool is_arrow = (inst->GetItem()->ItemType == EQ::item::ItemTypeArrow) ? true : false;
@@ -1317,7 +1315,7 @@ uint16 Client::FindTraderItem(int32 SerialNumber, uint16 Quantity){
 		item = GetInv().GetItem(i);
 		if (item && item->GetItem()->BagType == EQ::item::BagTypeTradersSatchel){
 			for (int x = EQ::invbag::SLOT_BEGIN; x <= EQ::invbag::SLOT_END; x++){
-				SlotID = EQ::InventoryProfile::CalcSlotId(i, x);
+				SlotID = GetInv().CalcSlotId(i, x);
 
 				item = GetInv().GetItem(SlotID);
 
