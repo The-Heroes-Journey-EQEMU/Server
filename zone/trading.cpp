@@ -744,6 +744,14 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 			database.SaveInventory(CharacterID(), nullptr, i);
 		}
 
+		// We are going to abort the trade if any of them are dynamic
+		for (int i = EQ::invslot::TRADE_BEGIN; i <= EQ::invslot::TRADE_NPC_END; ++i) {
+			if (insts[i - EQ::invslot::TRADE_BEGIN]->GetItem()->ID != insts[i - EQ::invslot::TRADE_BEGIN]->GetItem()->OriginalID) {
+				PushItemOnCursor(*insts[i - EQ::invslot::TRADE_BEGIN], true);
+			}
+			return;
+		}
+
 		// copy to be filtered by task updates, null trade slots preserved for quest event arg
 		std::vector<EQ::ItemInstance*> items(insts, insts + std::size(insts));
 

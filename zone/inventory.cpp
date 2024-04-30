@@ -1795,7 +1795,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			Message(Chat::Red, "Seasonal characters may not access the shared bank.");
 			return false;
 		}
-	} 
+	}
 
 	if(!IsValidSlot(src_slot_check)){
 		// SoF+ sends a Unix timestamp (should be int32) for src and dst slots every 10 minutes for some reason.
