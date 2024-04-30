@@ -705,6 +705,18 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 							target_value = -1;
 						}
 
+						if (selected_stat == "Damage") {
+							target_value = 1;
+						}
+
+						if (selected_stat == "HP" || selected_stat == "Mana" || selected_stat == "Endur") {
+							target_value *= 2;
+						}
+
+						if (selected_stat == "ManaRegen" || selected_stat == "EndurRegen") {
+							target_value = 1;
+						}
+
 						old_item->SetCustomData(selected_stat, target_value);
 					}
 				}			

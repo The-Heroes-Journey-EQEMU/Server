@@ -1787,19 +1787,19 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	uint32 stack_count_check = move_in->number_in_stack;
 
 	if (IsSeasonal()) {
-		if (src_slot_check >= EQ::invslot::SHARED_BANK_BEGIN || src_slot_check <= EQ::invslot::SHARED_BANK_END) {
+		if (src_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && src_slot_check <= EQ::invslot::SHARED_BANK_END) {
 			return false;
 		}
 
-		if (src_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN || src_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
+		if (src_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && src_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
 			return false;
 		}
 		
-		if (dst_slot_check >= EQ::invslot::SHARED_BANK_BEGIN || dst_slot_check <= EQ::invslot::SHARED_BANK_END) {
+		if (dst_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_check <= EQ::invslot::SHARED_BANK_END) {
 			return false;
 		}
 
-		if (dst_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN || dst_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
+		if (dst_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && dst_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
 			return false;
 		}
 	} 
