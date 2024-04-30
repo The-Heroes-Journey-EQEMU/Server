@@ -1034,7 +1034,6 @@ void Client::Trader_CustomerBrowsing(Client *Customer) {
 	safe_delete(outapp);
 }
 
-
 void Client::Trader_StartTrader() {
 
 	Trader=true;
@@ -1145,7 +1144,7 @@ void Client::Trader_EndTrader() {
 	Trader = false;
 }
 
-void Client::SendTraderItem(uint32 ItemID, uint16 Quantity) {
+void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 
 	std::string Packet;
 	int16 FreeSlotID=0;
@@ -1158,6 +1157,10 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity) {
 	}
 
 	EQ::ItemInstance* inst = database.CreateItem(item, Quantity);
+
+	if (ItemID > 3000000) {
+		EQ::ItemInstance* source_inst = Trader->FindTraderItemBySerialNumber(ItemID);
+	}
 
 	if (inst)
 	{
@@ -1263,7 +1266,6 @@ EQ::ItemInstance* Client::FindTraderItemBySerialNumber(int32 SerialNumber){
 
 	return nullptr;
 }
-
 
 GetItems_Struct* Client::GetTraderItems(){
 
@@ -1523,7 +1525,6 @@ void Client::TradeRequestFailed(const EQApplicationPacket* app) {
 	safe_delete(outapp);
 }
 
-
 static void BazaarAuditTrail(const char *seller, const char *buyer, const char *itemName, int quantity, int totalCost, int tranType) {
 
 	const std::string& query = fmt::format(
@@ -1690,9 +1691,9 @@ void Client::BuyTraderItem(TraderBuy_Struct* tbs, Client* Trader, const EQApplic
 	int TraderSlot = 0;
 
 	if(BuyItem->IsStackable())
-		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity);
+		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity, Client* Trader);
 	else
-		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges());
+		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges(), Client* Trader);
 
 	TraderSlot = Trader->FindTraderItem(tbs->ItemID, outtbs->Quantity);
 
