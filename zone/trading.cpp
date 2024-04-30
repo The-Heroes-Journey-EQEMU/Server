@@ -1034,7 +1034,6 @@ void Client::Trader_CustomerBrowsing(Client *Customer) {
 	safe_delete(outapp);
 }
 
-
 void Client::Trader_StartTrader() {
 
 	Trader=true;
@@ -1145,7 +1144,7 @@ void Client::Trader_EndTrader() {
 	Trader = false;
 }
 
-void Client::SendTraderItem(uint32 ItemID, uint16 Quantity) {
+void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 
 	std::string Packet;
 	int16 FreeSlotID=0;
@@ -1157,7 +1156,8 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity) {
 		return;
 	}
 
-	EQ::ItemInstance* inst = database.CreateItem(item, Quantity);
+	auto TraderInv = Trader->GetInv();
+	EQ::ItemInstance* inst = TraderInv.PopItem(*TraderInv.GetItem(TraderInv.HasItem(ItemID, Quantity)));
 
 	if (inst)
 	{
@@ -1170,6 +1170,8 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity) {
 		SendItemPacket(FreeSlotID, inst, ItemPacketTrade);
 
 		safe_delete(inst);
+	} else {
+		Message(Chat::Red, "The trader does not have that item, or does not have enough of that item in a single stack.");
 	}
 }
 
@@ -1523,7 +1525,6 @@ void Client::TradeRequestFailed(const EQApplicationPacket* app) {
 	safe_delete(outapp);
 }
 
-
 static void BazaarAuditTrail(const char *seller, const char *buyer, const char *itemName, int quantity, int totalCost, int tranType) {
 
 	const std::string& query = fmt::format(
@@ -1690,9 +1691,9 @@ void Client::BuyTraderItem(TraderBuy_Struct* tbs, Client* Trader, const EQApplic
 	int TraderSlot = 0;
 
 	if(BuyItem->IsStackable())
-		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity);
+		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity, Trader);
 	else
-		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges());
+		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges(), Trader);
 
 	TraderSlot = Trader->FindTraderItem(tbs->ItemID, outtbs->Quantity);
 
