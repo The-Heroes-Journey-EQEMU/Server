@@ -40,6 +40,7 @@
 #include "rulesys.h"
 #include "shareddb.h"
 #include "strings.h"
+#include "spdat.h"
 #include "eqemu_config.h"
 #include "data_verification.h"
 #include "repositories/criteria/content_filter_criteria.h"
