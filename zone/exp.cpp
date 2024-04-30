@@ -557,6 +557,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				old_item->SetCustomData("Exp", 0);		
 				old_item->SetCustomData("Customized", "true");
 				old_item->SetCustomData("Expanded", Strings::ToInt(old_item->GetCustomData("Expanded"), 0) + 1);
+				old_item->				
 
 				std::vector<std::string> StatSelectors;
 				int class_count = 0;

@@ -797,6 +797,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->BaneDmgRaceAmt   += Strings::ToInt(inst->GetCustomData("BaneDmgRaceAmt"), 0);
 			inst->GetMutableItem()->ElemDmgAmt       += Strings::ToInt(inst->GetCustomData("ElemDmgAmt"), 0);
 			inst->GetMutableItem()->Damage           += Strings::ToInt(inst->GetCustomData("Damage"), 0);
+			inst->GetMutableItem()->Delay            += Strings::ToInt(inst->GetCustomData("Delay"), 0);
 			inst->GetMutableItem()->ProcRate         += Strings::ToInt(inst->GetCustomData("ProcRate"), 0);
 			inst->GetMutableItem()->CombatEffects    += Strings::ToInt(inst->GetCustomData("CombatEffects"), 0);
 			inst->GetMutableItem()->Shielding        += Strings::ToInt(inst->GetCustomData("Shielding"), 0);
