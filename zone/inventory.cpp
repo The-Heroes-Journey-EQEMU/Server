@@ -1786,6 +1786,24 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	uint32 dst_slot_check = move_in->to_slot;
 	uint32 stack_count_check = move_in->number_in_stack;
 
+	if (IsSeasonal()) {
+		if (src_slot_check >= EQ::invslot::SHARED_BANK_BEGIN || src_slot_check <= EQ::invslot::SHARED_BANK_END) {
+			return false;
+		}
+
+		if (src_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN || src_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
+			return false;
+		}
+		
+		if (dst_slot_check >= EQ::invslot::SHARED_BANK_BEGIN || dst_slot_check <= EQ::invslot::SHARED_BANK_END) {
+			return false;
+		}
+
+		if (dst_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN || dst_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) {
+			return false;
+		}
+	} 
+
 	if(!IsValidSlot(src_slot_check)){
 		// SoF+ sends a Unix timestamp (should be int32) for src and dst slots every 10 minutes for some reason.
 		if(src_slot_check < 2147483647)

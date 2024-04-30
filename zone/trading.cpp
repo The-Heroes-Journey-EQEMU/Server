@@ -1158,17 +1158,10 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 
 	EQ::ItemInstance* inst = nullptr;
 
-	LogDebug("ItemID: [{}], OriginalID [{}]", ItemID, item->OriginalID);
-	if (ItemID != item->OriginalID) {
-		LogDebug("Check 1");
-		auto TraderSlot = Trader->FindTraderItem(Trader->FindTraderItemSerialNumber(ItemID), Quantity);
-		LogDebug("Check 2 [{}]", TraderSlot);
-		EQ::ItemInstance* source_inst = Trader->GetInv().GetItem(TraderSlot);
-		LogDebug("Check 3");		
+	if (ItemID != item->OriginalID) {			
+		EQ::ItemInstance* source_inst = Trader->GetInv().GetItem(Trader->FindTraderItem(Trader->FindTraderItemSerialNumber(ItemID), Quantity));			
 		if (source_inst) {
 			inst = database.CreateItem(item->OriginalID, Quantity);
-			LogDebug("[{}]", source_inst->GetCustomDataString());
-			LogDebug("S: [{}]", source_inst->GetCustomDataString());
 			inst->GetMutableItem()->ID = source_inst->GetItem()->OriginalID;
 			inst->SetCustomDataString(source_inst->GetCustomDataString());			
 			database.RunGenerateCallback(inst);

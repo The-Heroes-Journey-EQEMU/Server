@@ -426,7 +426,7 @@ bool SharedDatabase::UpdateInventorySlot(uint32 char_id, const EQ::ItemInstance*
 	}
 
 	// Update/Insert item
-	std::string customData = std::regex_replace(inst->GetCustomDataString(), std::regex("\'"), "''");	; 
+	std::string customData = std::regex_replace(inst->GetCustomDataString(), std::regex("\'"), "''");
 	const std::string query = StringFormat("REPLACE INTO inventory "
 	                                       "(charid, slotid, itemid, charges, instnodrop, custom_data, color, "
 	                                       "augslot1, augslot2, augslot3, augslot4, augslot5, augslot6, ornamenticon, ornamentidfile, ornament_hero_model) "
@@ -475,13 +475,14 @@ bool SharedDatabase::UpdateSharedBankSlot(uint32 char_id, const EQ::ItemInstance
     else
         charges = 0x7FFF;
 
+	std::string customData = std::regex_replace(inst->GetCustomDataString(), std::regex("\'"), "''");
 	const std::string query = StringFormat("REPLACE INTO sharedbank "
 	                                       "(acctid, slotid, itemid, charges, custom_data, "
 	                                       "augslot1, augslot2, augslot3, augslot4, augslot5, augslot6) "
 	                                       "VALUES( %lu, %lu, %lu, %lu, '%s', "
 	                                       "%lu, %lu, %lu, %lu, %lu, %lu)",
 	                                       static_cast<unsigned long>(account_id), static_cast<unsigned long>(slot_id), static_cast<unsigned long>(inst->GetItem()->ID),
-	                                       static_cast<unsigned long>(charges), inst->GetCustomDataString().c_str(), static_cast<unsigned long>(augslot[0]),
+	                                       static_cast<unsigned long>(charges), customData.c_str(), static_cast<unsigned long>(augslot[0]),
 	                                       static_cast<unsigned long>(augslot[1]), static_cast<unsigned long>(augslot[2]), static_cast<unsigned long>(augslot[3]), static_cast<unsigned long>(augslot[4]),
 	                                       static_cast<unsigned long>(augslot[5]));
 	const auto results = QueryDatabase(query);
