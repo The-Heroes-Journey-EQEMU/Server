@@ -1160,6 +1160,10 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 
 	if (ItemID > 3000000) {
 		EQ::ItemInstance* source_inst = Trader->FindTraderItemBySerialNumber(ItemID);
+		if (source_inst) {
+			inst->SetCustomDataString(source_inst->GetCustomDataString());
+			database.RunGenerateCallback(inst);
+		}
 	}
 
 	if (inst)
