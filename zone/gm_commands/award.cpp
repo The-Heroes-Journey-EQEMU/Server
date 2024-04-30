@@ -1,6 +1,7 @@
 #include "../client.h"
 #include "../zone.h"
 #include "../../common/repositories/character_data_repository.h"
+#include "questmgr.h"
 
 void command_award(Client *c, const Seperator *sep)
 {
@@ -34,4 +35,6 @@ void command_award(Client *c, const Seperator *sep)
 
 	c->Message(Chat::White, "Awarded %d EoM to %s.", Strings::ToInt(sep->arg[2]), sep->arg[1]);
 	zone->SendDiscordMessage("admin", fmt::to_string(c->GetCleanName()) + " awarded " + sep->arg[2] + " EoM to " + sep->arg[1] + ".");
+
+	quest_manager.WorldWideSignal(WWSignalUpdateType_Character, 666);
 }
