@@ -1164,9 +1164,9 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 		auto TraderSlot = Trader->FindTraderItem(ItemID, Quantity);
 		LogDebug("Check 2");
 		EQ::ItemInstance* source_inst = Trader->GetInv().GetItem(TraderSlot);
-		LogDebug("Check 3");
-		LogDebug("[{}]", source_inst->GetCustomDataString());
+		LogDebug("Check 3");		
 		if (source_inst) {
+			LogDebug("[{}]", source_inst->GetCustomDataString());
 			LogDebug("S: [{}]", source_inst->GetCustomDataString());
 			inst->GetMutableItem()->ID = source_inst->GetItem()->OriginalID;
 			inst->SetCustomDataString(source_inst->GetCustomDataString());			
