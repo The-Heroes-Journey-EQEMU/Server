@@ -1,4 +1,5 @@
 #include "../client.h"
+#include "../../common/repositories/character_data_repository.h"
 
 void command_award(Client *c, const Seperator *sep)
 {
@@ -27,6 +28,8 @@ void command_award(Client *c, const Seperator *sep)
 	k.character_id = e.id;
 	k.key = "EoM-Award";
 	k.value = sep->arg[2];
+
+	DataBucket::SetData(k);
 
 	c->Message(Chat::White, "Awarded %d EoM to %s.", sep->arg[1], sep->arg[2]);
 }
