@@ -1144,22 +1144,10 @@ void Client::Trader_EndTrader() {
 	Trader = false;
 }
 
-void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
+void Client::SendTraderItem(EQ::ItemInstance* inst, uint16 Quantity) {
 
 	std::string Packet;
-	int16 FreeSlotID=0;
-
-	const EQ::ItemData* item = database.GetItem(ItemID);
-
-	if(!item){
-		LogTrading("Bogus item deleted in Client::SendTraderItem!\n");
-		return;
-	}
-
-	EQ::InventoryProfile TraderInv = Trader->GetInv();
-	auto remote_slot = TraderInv.HasItem(ItemID, Quantity);
-	//EQ::ItemInstance*    remote_inst = TraderInv.GetItem();
-	EQ::ItemInstance*    inst = database.CreateItem(item, Quantity);
+	int16 FreeSlotID=0;	
 
 	/*
 	if (remote_inst && !remote_inst->GetCustomDataString().empty()) {
@@ -1698,9 +1686,9 @@ void Client::BuyTraderItem(TraderBuy_Struct* tbs, Client* Trader, const EQApplic
 	int TraderSlot = 0;
 
 	if(BuyItem->IsStackable())
-		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity, Trader);
+		SendTraderItem(BuyItem, outtbs->Quantity);
 	else
-		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges(), Trader);
+		SendTraderItem(BuyItem, BuyItem->GetCharges());
 
 	TraderSlot = Trader->FindTraderItem(tbs->ItemID, outtbs->Quantity);
 
