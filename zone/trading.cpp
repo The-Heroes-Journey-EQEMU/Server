@@ -1156,8 +1156,18 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 		return;
 	}
 
-	auto TraderInv = Trader->GetInv();
-	EQ::ItemInstance* inst = TraderInv.PopItem(*TraderInv.GetItem(TraderInv.HasItem(ItemID, Quantity)));
+	EQ::InventoryProfile TraderInv = Trader->GetInv();
+	EQ::ItemInstance* remote_inst = TraderInv.GetItem(TraderInv.HasItem(ItemID, Quantity));
+
+	EQ::ItemInstance* inst = database.CreateItem(item, Quantity);
+
+	if (!remote_inst->GetCustomDataString().empty()) {
+		inst->SetCustomDataString(remote_inst->GetCustomDataString());
+		inst->GetMutableItem()->ID = remote_inst->GetMutableItem()->OriginalID;
+		database.RunGenerateCallback(inst);
+	}
+
+	//EQ::ItemInstance* inst = TraderInv.PopItem(*TraderInv.GetItem(TraderInv.HasItem(ItemID, Quantity)));
 
 	if (inst)
 	{
@@ -1170,8 +1180,6 @@ void Client::SendTraderItem(uint32 ItemID, uint16 Quantity, Client* Trader) {
 		SendItemPacket(FreeSlotID, inst, ItemPacketTrade);
 
 		safe_delete(inst);
-	} else {
-		Message(Chat::Red, "The trader does not have that item, or does not have enough of that item in a single stack.");
 	}
 }
 
