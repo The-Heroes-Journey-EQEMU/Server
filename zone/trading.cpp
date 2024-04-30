@@ -1695,9 +1695,9 @@ void Client::BuyTraderItem(TraderBuy_Struct* tbs, Client* Trader, const EQApplic
 	int TraderSlot = 0;
 
 	if(BuyItem->IsStackable())
-		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity, Client* Trader);
+		SendTraderItem(BuyItem->GetItem()->ID, outtbs->Quantity, Trader);
 	else
-		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges(), Client* Trader);
+		SendTraderItem(BuyItem->GetItem()->ID, BuyItem->GetCharges(), Trader);
 
 	TraderSlot = Trader->FindTraderItem(tbs->ItemID, outtbs->Quantity);
 
