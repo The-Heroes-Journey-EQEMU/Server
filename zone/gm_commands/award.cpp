@@ -31,5 +31,5 @@ void command_award(Client *c, const Seperator *sep)
 
 	DataBucket::SetData(k);
 
-	c->Message(Chat::White, "Awarded %d EoM to %s.", sep->arg[1], sep->arg[2]);
+	c->Message(Chat::White, "Awarded %d EoM to %s.", Strings::ToInt(sep->arg[1]), sep->arg[2]);
 }
