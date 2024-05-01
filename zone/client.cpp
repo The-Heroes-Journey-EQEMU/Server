@@ -4419,7 +4419,7 @@ std::string Client::GetDiscoverer(uint32 item_id) {
 }
 
 void Client::DiscoverItem(uint32 item_id) {
-	if (item_id < 3000000) {
+	if (item_id < 3000000 && !IsDiscovered()) {
 		auto e = DiscoveredItemsRepository::NewEntity();
 
 		e.account_status = GetSeason();

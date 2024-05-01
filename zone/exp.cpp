@@ -534,12 +534,12 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
 					m_inv.GetItem(EQ::invslot::slotPowerSource)->SetAttuned(true);
 
-					if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(new_item->GetItem()->ID)) {
-						DiscoverItem(new_item->GetItem()->ID);
+					if (!GetGM()) {
+						DiscoverArtifact(new_item);
 					}
 
-					if (GetGM()) {
-						DiscoverArtifact(new_item);
+					if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(new_item->GetItem()->ID)) {
+						DiscoverItem(new_item->GetItem()->ID);
 					}
 
 					linker.SetItemInst(old_item);

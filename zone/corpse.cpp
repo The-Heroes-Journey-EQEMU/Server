@@ -1645,12 +1645,12 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 			}
 		}
 
-		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && !c->IsDiscovered(inst->GetItem()->ID)) {
-			c->DiscoverItem(inst->GetItem()->ID);
-		}
-
 		if (!c->GetGM()) {
 			c->DiscoverArtifact(inst);
+		}
+
+		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && !c->IsDiscovered(inst->GetItem()->ID)) {
+			c->DiscoverItem(inst->GetItem()->ID);
 		}
 
 		/* First add it to the looter - this will do the bag contents too */
