@@ -283,5 +283,5 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 	// Tier Modifier
 	gear_score *= ((int)(OriginalID / 1000000) + 1) * 4;
 
-	return 100000 * gear_score;
+	return static_cast<uint64>(std::pow(gear_score, 3));
 }
