@@ -538,8 +538,8 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 						DiscoverItem(new_item->GetItem()->ID);
 					}
 
-					if (!c->GetGM()) {
-						c->DiscoverArtifact(inst);
+					if (GetGM()) {
+						DiscoverArtifact(new_item);
 					}
 
 					linker.SetItemInst(old_item);
