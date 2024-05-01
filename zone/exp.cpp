@@ -513,7 +513,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
 			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * RuleR(Custom, PowerSourceItemUpgradeRateScale);
 
-			float percentage = std::min(100.0f, std::ceil((cur_item_exp / tar_item_exp) * 10000.0f) / 100.0f);
+			double percentage = std::min(100.0f, std::ceil((cur_item_exp / tar_item_exp) * 10000.0f) / 100.0f);
 
 			LogDebug("cur: [{}], tar: [{}], per[{}]", cur_item_exp, tar_item_exp, (percentage*1000));
 
