@@ -993,6 +993,7 @@ RULE_BOOL(Custom, LessStrictSpellStacking, true, "Don't check songs and buffs or
 RULE_INT(Custom, EnableSeasonalCharacters, 0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")
 RULE_INT(Custom, ArtifactDiscoveryChance, 0, "Percentage chance that a looted Tier 2 item will be discovered as an Artifact, 0 to disable.")
 RULE_BOOL(Custom, PowerSourceItemUpgrade, false, "Enable to add Power Source to all items which can be equipped by some race and class.")
+RULE_REAL(Custom, PowerSourceItemUpgradeRateScale, 1.0, "Scale XP rate of items using this value.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Parcel)

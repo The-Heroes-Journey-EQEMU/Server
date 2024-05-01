@@ -268,7 +268,7 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 	gear_score += 5   * Damage;
 	gear_score += 10  * Attack + SpellDmg + HealAmt;
 	gear_score += 10  * AC;
-	//gear_score += 100 * Haste;
+	gear_score += 10  * Haste;
 
 	// Heroic Stats
 	gear_score += 10  * (HeroicStr + HeroicSta + HeroicDex + HeroicAgi + HeroicInt + HeroicWis + HeroicCha);
@@ -282,5 +282,5 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 	// Tier Modifier
 	gear_score *= ((int)(OriginalID / 1000000) + 1) * 4;
 
-	return 1 + gear_score;
+	return 10000 * gear_score;
 }

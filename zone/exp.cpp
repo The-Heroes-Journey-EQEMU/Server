@@ -512,7 +512,9 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
 			EQ::SayLinkEngine linker;
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
-			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * Strings::ToInt(old_item->GetCustomData("Expanded"), 1) * RuleR(Custom, PowerSourceItemUpgradeExpRateScale);
+			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * RuleR(Custom, PowerSourceItemUpgradeRateScale);
+
+			float percentage = std::min(100.0f, (cur_item_exp / tar_item_exp) * 100.0f);
 
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);	
 			
@@ -520,11 +522,10 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				linker.SetItemInst(old_item);
 				Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
 				return;
-			}			
+			}
 
-			LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 			linker.SetItemInst(old_item);
-			Message(Chat::Experience, "Your [%s] has gained experience!", linker.GenerateLink().c_str());
+			Message(Chat::Experience, "Your [%s] has gained experience! (%.2f%%)", linker.GenerateLink().c_str(), percentage);
 
 			if (cur_item_exp <= tar_item_exp) {			
 				old_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
@@ -541,15 +542,14 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 					auto  new_item_lnk = linker.GenerateLink().c_str();
 
 					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
-					SendSound();
-					return;				
+					SendSound();		
 				} else {
 					if (old_item) {
 						PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
 						Message(Chat::Red, "ERROR: Unable to upgrade item from power source, attempting to recover old item.");
 					}
-					return;
 				}
+
 				safe_delete(old_item);
 			}			
 			return;
