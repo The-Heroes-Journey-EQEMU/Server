@@ -993,10 +993,6 @@ RULE_BOOL(Custom, LessStrictSpellStacking, true, "Don't check songs and buffs or
 RULE_INT(Custom, EnableSeasonalCharacters, 0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")
 RULE_INT(Custom, ArtifactDiscoveryChance, 0, "Percentage chance that a looted Tier 2 item will be discovered as an Artifact, 0 to disable.")
 RULE_BOOL(Custom, PowerSourceItemUpgrade, false, "Enable to add Power Source to all items which can be equipped by some race and class.")
-RULE_BOOL(Custom, ExtraPowerSourceProgression, false, "Enable to allow fully-upgraded items in Power Source to accumulate new stats with experience.")
-RULE_INT(Custom, ExtraPowerSourceArtifactChance, 0, "Percentage chance of a Tier 2 item in Power Source to upgrade to artifact with XP.")
-RULE_BOOL(Custom, ExtraPowerSourceArtifactBypass, false, "Allow Power Source upgraded artifacts to bypass server discovery limits.")
-RULE_REAL(Custom, PowerSourceItemUpgradeExpRateScale, 1.0, "Scale XP needed to level up items via Power Source")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Parcel)

@@ -514,15 +514,13 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));
 			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * Strings::ToInt(old_item->GetCustomData("Expanded"), 1) * RuleR(Custom, PowerSourceItemUpgradeExpRateScale);
 
-			linker.SetLinkType(EQ::saylink::SayLinkItemInst);
-		
-			if (!RuleB(Custom, ExtraPowerSourceProgression)) {
-				if (!new_item) {
-					linker.SetItemInst(old_item);
-					Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
-					return;
-				}
-			}
+			linker.SetLinkType(EQ::saylink::SayLinkItemInst);	
+			
+			if (!new_item) {
+				linker.SetItemInst(old_item);
+				Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
+				return;
+			}			
 
 			LogDebug("GEAR SCORE: [{}]", tar_item_exp);
 			linker.SetItemInst(old_item);
@@ -553,185 +551,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 					return;
 				}
 				safe_delete(old_item);
-			} else if (RuleI(Custom, ExtraPowerSourceArtifactChance) && CanDiscoverArtifact(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass))) {
-				if (zone->random.Roll(RuleI(Custom, ExtraPowerSourceArtifactChance))) {
-					DiscoverArtifact(old_item, RuleB(Custom, ExtraPowerSourceArtifactBypass));
-				}
-			} else if (RuleB(Custom, ExtraPowerSourceProgression)) {
-				old_item->SetCustomData("Exp", 0);		
-				old_item->SetCustomData("Customized", "true");
-				old_item->SetCustomData("Expanded", Strings::ToInt(old_item->GetCustomData("Expanded"), 0) + 1);
-
-				auto new_name = std::regex_replace(old_item->GetItem()->Name, std::regex(R"(\s*\+\d+$)"), "") + " +" + std::to_string(Strings::ToInt(old_item->GetCustomData("Expanded")));
-				old_item->SetCustomData("Name", new_name);	
-
-				std::vector<std::string> StatSelectors;
-				int class_count = 0;
-
-				for (const auto& class_bitmask : player_class_bitmasks) {
-					uint8 class_id = class_bitmask.first;
-					uint16 class_bit = class_bitmask.second;
-					if ((old_item->GetItem()->Classes & class_bit) != 0) {
-						class_count++;					
-
-						if (IsCasterClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"Mana", "ManaRegen", "SpellDmg", "Spellshield", "StunResist"});
-						}
-						if (IsWarriorClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"AStr", "ADex", "AAgi", "HP", "Shielding", "Strikethrough", "EnduranceRegen", "Regen", "Avoidance", "CombatEffects"});
-						}
-						if (IsLeatherClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"Avoidance", "AAgi"});
-						}
-						if (IsClothClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"Spellshield", "AInt", "SpellDmg", "ManaRegen", "Mana"});
-						}
-						if (IsPlateClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"ASta", "Shielding", "HealAmt", "StunResist", "HP", "Regen"});
-						}
-						if (IsWisdomCasterClass(class_id)) {
-							StatSelectors.insert(StatSelectors.end(), {"HealAmt", "AWis", "Mana", "ManaRegen"});
-						}
-					}					
-				}
-
-				StatSelectors.insert(StatSelectors.end(), {"MR", "FR", "CR", "DR", "PR"});
-
-				if (old_item->IsWeapon()) {
-					StatSelectors.insert(StatSelectors.end(), {"Damage", "ProcRate"});
-					if (old_item->GetItem()->Delay > 15) {
-						StatSelectors.push_back("Delay");
-					}
-				}
-				if (old_item->GetItemElementalFlag()) {
-					StatSelectors.push_back("ElemDmgType");
-				}
-				if (old_item->GetItem()->AStr) {
-					StatSelectors.insert(StatSelectors.end(), {"AStr", "HeroicStr"});
-				}
-				if (old_item->GetItem()->ASta) {
-					StatSelectors.insert(StatSelectors.end(), {"ASta", "HeroicSta"});
-				}
-				if (old_item->GetItem()->ADex) {
-					StatSelectors.insert(StatSelectors.end(), {"ADex", "HeroicDex"});
-				}
-				if (old_item->GetItem()->AAgi) {
-					StatSelectors.insert(StatSelectors.end(), {"AAgi", "HeroicAgi"});
-				}
-				if (old_item->GetItem()->AInt) {
-					StatSelectors.insert(StatSelectors.end(), {"AInt", "HeroicInt"});
-				}
-				if (old_item->GetItem()->AWis) {
-					StatSelectors.insert(StatSelectors.end(), {"AWis", "HeroicWis"});
-				}
-				if (old_item->GetItem()->ACha) {
-					StatSelectors.insert(StatSelectors.end(), {"ACha", "HeroicCha"});
-				}
-				if (old_item->GetItem()->FR) {
-					StatSelectors.insert(StatSelectors.end(), {"FR", "HeroicFR"});
-				}
-				if (old_item->GetItem()->CR) {
-					StatSelectors.insert(StatSelectors.end(), {"CR", "HeroicCR"});
-				}
-				if (old_item->GetItem()->MR) {
-					StatSelectors.insert(StatSelectors.end(), {"MR", "HeroicMR"});
-				}
-				if (old_item->GetItem()->DR) {
-					StatSelectors.insert(StatSelectors.end(), {"DR", "HeroicDR"});
-				}
-				if (old_item->GetItem()->PR) {
-					StatSelectors.insert(StatSelectors.end(), {"PR", "HeroicPR"});
-				}
-				if (old_item->GetItem()->HP) {
-					StatSelectors.push_back("HP");
-				}
-				if (old_item->GetItem()->Mana) {
-					StatSelectors.push_back("Mana");
-				}
-				if (old_item->GetItem()->Endur) {
-					StatSelectors.push_back("Endur");
-				}
-				if (old_item->GetItem()->Regen) {
-					StatSelectors.push_back("Regen");
-				}
-				if (old_item->GetItem()->ManaRegen) {
-					StatSelectors.push_back("ManaRegen");
-				}
-				if (old_item->GetItem()->EnduranceRegen) {
-					StatSelectors.push_back("EnduranceRegen");
-				}
-				if (old_item->GetItem()->Shielding) {
-					StatSelectors.push_back("Shielding");
-				}
-				if (old_item->GetItem()->DotShielding) {
-					StatSelectors.push_back("DotShielding");
-				}
-				if (old_item->GetItem()->SpellShield) {
-					StatSelectors.push_back("SpellShield");
-				}
-				if (old_item->GetItem()->DSMitigation) {
-					StatSelectors.push_back("DSMitigation");
-				}
-				if (old_item->GetItem()->Avoidance) {
-					StatSelectors.push_back("ManAvoidanceaRegen");
-				}
-				if (old_item->GetItem()->AC) {
-					StatSelectors.push_back("AC");
-				}
-				if (old_item->GetItem()->StunResist) {
-					StatSelectors.push_back("StunResist");
-				}
-				if (old_item->GetItem()->SpellDmg) {
-					StatSelectors.push_back("SpellDmg");
-				}
-				if (old_item->GetItem()->HealAmt) {
-					StatSelectors.push_back("HealAmt");
-				}
-				if (old_item->GetItem()->CombatEffects) {
-					StatSelectors.push_back("CombatEffects");
-				}
-				if (old_item->GetItem()->Accuracy) {
-					StatSelectors.push_back("Accuracy");
-				}
-				if (old_item->GetItem()->Attack) {
-					StatSelectors.push_back("Attack");
-				}
-				if (old_item->GetItem()->StrikeThrough) {
-					StatSelectors.push_back("StrikeThrough");
-				}
-
-				for (int i = 0; i < 3; i++) {
-					if (!StatSelectors.empty()) {
-						auto selected_stat  = StatSelectors.at(zone->random.Roll0(StatSelectors.size()));
-						auto target_value   = zone->random.Roll0(ceil(GetLevel() / 10)) + zone->random.Roll0(ceil(GetLevel() / 10) + Strings::ToInt(old_item->GetCustomData(selected_stat)));
-
-						if (selected_stat == "Delay") {
-							target_value = -1;
-						}
-
-						if (selected_stat == "Damage") {
-							target_value = 1;
-						}
-
-						if (selected_stat == "HP" || selected_stat == "Mana" || selected_stat == "Endur") {
-							target_value *= 2;
-						}
-
-						if (selected_stat == "ManaRegen" || selected_stat == "EndurRegen") {
-							target_value = 1;
-						}
-
-						old_item->SetCustomData(selected_stat, target_value);
-					}
-				}			
-
-				database.RunGenerateCallback(old_item);
-				PutItemInInventory(EQ::invslot::slotPowerSource, *m_inv.PopItem(EQ::invslot::slotPowerSource), true);
-
-				linker.SetItemInst(old_item);
-				Message(Chat::Experience, "Your [%s] has improved!", linker.GenerateLink().c_str());
-				SendSound();
-			}					
+			}			
 			return;
 		}
 	}	
