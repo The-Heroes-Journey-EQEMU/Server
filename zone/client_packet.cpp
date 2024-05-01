@@ -807,8 +807,8 @@ void Client::CompleteConnect()
 
 		// We need to set this here before any of the scripts run.
 		if (RuleI(Custom, EnableSeasonalCharacters)) {
-			if (Strings::ToInt(GetBucket("SeasonalCharacter")) > 0) {
-				SetBucket("SeasonalCharacter", "1");
+			if (GetBucket("SeasonalCharacter").empty()) {
+				SetBucket("SeasonalCharacter", fmt::to_string(RuleI(Custom, EnableSeasonalCharacters)));
 			}
 		}
 
