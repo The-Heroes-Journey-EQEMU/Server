@@ -1618,10 +1618,6 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 		// safe to ACK now
 		c->QueuePacket(app);
 
-		if (!IsPlayerCorpse() && RuleB(Character, EnableDiscoveredItems) &&	c && !c->GetGM() && !c->IsDiscovered(inst->GetItem()->ID)) {
-			c->DiscoverItem(inst->GetItem()->ID);
-		}
-
 		if (zone->adv_data) {
 			auto *ad = (ServerZoneAdventureDataReply_Struct *) zone->adv_data;
 			if (ad->type == Adventure_Collect && !IsPlayerCorpse()) {
