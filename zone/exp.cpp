@@ -515,6 +515,11 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 
 			float percentage = (cur_item_exp / tar_item_exp) * 100.0f;
 
+			percentage = std::ceil(percentage * 100.0f) / 100.0f;
+			if (percentage > 100) {
+				percentage = 100.00f;
+			}
+
 			LogDebug("cur: [{}], tar: [{}], per[{}]", cur_item_exp, tar_item_exp, percentage);
 
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);	
