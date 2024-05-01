@@ -810,7 +810,8 @@ void Client::CompleteConnect()
 			if (GetBucket("SeasonalCharacter").empty()) {
 				SetBucket("SeasonalCharacter", fmt::to_string(RuleI(Custom, EnableSeasonalCharacters)));
 			}
-		}
+			DataBucket::GetDataBuckets(this);
+		}		
 
 		if (parse->PlayerHasQuestSub(EVENT_CONNECT)) {
 			parse->EventPlayer(EVENT_CONNECT, this, "", 0);
