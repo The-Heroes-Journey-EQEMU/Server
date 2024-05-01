@@ -514,9 +514,7 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * RuleR(Custom, PowerSourceItemUpgradeRateScale);
 			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));			
 
-			double percentage = ((double)cur_item_exp / (double)tar_item_exp) * 100;
-
-			LogDebug("cur: [{}], tar: [{}], per[{}]", cur_item_exp, tar_item_exp, (percentage*1000));
+			double percentage = (static_cast<double>(cur_item_exp) / static_cast<double>(tar_item_exp)) * 100;
 
 			linker.SetLinkType(EQ::saylink::SayLinkItemInst);	
 			
