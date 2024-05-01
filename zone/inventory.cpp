@@ -721,12 +721,12 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 	}
 	
 	if (!GetGM()) {
-		if (RuleB(Character, EnableDiscoveredItems)) {
-			DiscoverItem(inst->GetItem()->ID);
-		}
-
 		if (artifact_disco) {
 			DiscoverArtifact(inst);
+		}
+
+		if (RuleB(Character, EnableDiscoveredItems)) {
+			DiscoverItem(inst->GetItem()->ID);
 		}
 	}
 
