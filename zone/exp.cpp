@@ -507,7 +507,6 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (RuleB(Custom, PowerSourceItemUpgrade)) {		
 		EQ::ItemInstance* old_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 
-
 		if (old_item) {
 			EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
 			EQ::SayLinkEngine linker;
@@ -534,6 +533,14 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 				old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
 				if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
 					m_inv.GetItem(EQ::invslot::slotPowerSource)->SetAttuned(true);
+
+					if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(new_item->GetItem()->ID)) {
+						DiscoverItem(new_item->GetItem()->ID);
+					}
+
+					if (!c->GetGM()) {
+						c->DiscoverArtifact(inst);
+					}
 
 					linker.SetItemInst(old_item);
 					auto upgrade_item_lnk = linker.GenerateLink().c_str();

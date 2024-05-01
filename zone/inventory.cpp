@@ -720,12 +720,14 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 		DiscoverItem(item_id);
 	}
 	
-	if (artifact_disco) {
-		if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && DiscoverArtifact(inst)) {
+	if (!GetGM()) {
+		if (RuleB(Character, EnableDiscoveredItems)) {
 			DiscoverItem(inst->GetItem()->ID);
 		}
-	} else {
-		LogDebug("Prevented discovering an artifact due to returning an item.");
+
+		if (artifact_disco) {
+			DiscoverArtifact(inst)
+		}
 	}
 
 	// put item into inventory
