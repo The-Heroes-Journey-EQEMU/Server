@@ -805,6 +805,13 @@ void Client::CompleteConnect()
 	if (firstlogon == 1) {
 		RecordPlayerEventLog(PlayerEvent::WENT_ONLINE, PlayerEvent::EmptyEvent{});
 
+		// We need to set this here before any of the scripts run.
+		if (RuleI(Custom, EnableSeasonalCharacters)) {
+			if (Strings::ToInt(GetBucket("SeasonalCharacter")) > 0) {
+				SetBucket("SeasonalCharacter", "1");
+			}
+		}
+
 		if (parse->PlayerHasQuestSub(EVENT_CONNECT)) {
 			parse->EventPlayer(EVENT_CONNECT, this, "", 0);
 		}
