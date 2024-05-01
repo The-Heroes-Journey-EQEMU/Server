@@ -1641,11 +1641,11 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 			}
 		}
 
-		if (!c->GetGM()) {
-			c->DiscoverArtifact(inst);
+		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && !c->IsDiscovered(inst->GetItem()->ID)) {
+			c->DiscoverItem(inst->GetItem()->ID);
 		}
 
-		if (RuleB(Character, EnableDiscoveredItems) && c && !c->GetGM() && !c->IsDiscovered(inst->GetItem()->ID)) {
+		if (!c->GetGM() && c->DiscoverArtifact(inst)) {
 			c->DiscoverItem(inst->GetItem()->ID);
 		}
 
