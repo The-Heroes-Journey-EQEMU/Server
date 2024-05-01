@@ -796,7 +796,7 @@ void Client::RangedAttack(Mob* other, bool CanDoubleAttack) {
 		return;
 	else if (other == this)
 		return;
-	if (CheckLosFN(other)) {
+	if (!CheckLosFN(other)) {
 		MessageString(Chat::Red, CANT_SEE_TARGET); //Should force client to cry like a bitch 
 		return;
 	}
@@ -1112,7 +1112,7 @@ bool Mob::TryProjectileAttack(Mob *other, const EQ::ItemData *item, EQ::skills::
 {
 	if (!other)
 		return false;
-	if (CheckLosFN(other)) {
+	if (!CheckLosFN(other)) {
 		MessageString(Chat::Red, CANT_SEE_TARGET); //Should force client to cry like a bitch 
 		return;
 	}
@@ -1561,7 +1561,7 @@ void Mob::DoThrowingAttackDmg(Mob *other, const EQ::ItemInstance *RangeWeapon, c
 		HasDied() || (!IsAttackAllowed(other)) || (other->GetInvul() || other->GetSpecialAbility(IMMUNE_MELEE)))) {
 		return;
 	}
-	if (CheckLosFN(other)) {
+	if (!CheckLosFN(other)) {
 		MessageString(Chat::Red, CANT_SEE_TARGET); //Should force client to cry like a bitch 
 		return;
 	}
