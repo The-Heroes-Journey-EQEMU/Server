@@ -141,15 +141,9 @@ void NPC::SpellProcess()
 
 uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {	
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
-		// Shortcut Pet-Only spells, these only have one potential valid target
-		if (spells[spell_id].target_type == ST_Pet) {
-			if (GetPet()) {
-				return GetPet()->GetID();
-			} else {
-				Message(Chat::SpellFailure, "You must have a pet in order to cast this spell or ability (%s).", spells[spell_id].name);
-				InterruptSpell(spell_id);
-				return 0;
-			}
+		//Shortcut Corpse-Only spells
+		if(spells[spell_id].target_type == ST_Corpse) {
+			return target_id;
 		}
 
 		// Shortcut PBAoE, we don't care what the target is here
@@ -160,7 +154,19 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 		// Shortcut Self, these have only one potential valid target
 		if (spells[spell_id].target_type == ST_Self) {
 			return GetID();
-		}	
+		}
+
+		// Shortcut Pet-Only spells, these only have one potential valid target
+		// This is necessary because we're lying to the Client that this type of spell
+		if (spells[spell_id].target_type == ST_Pet) {
+			if (GetPet()) {
+				return GetPet()->GetID();
+			} else {
+				Message(Chat::SpellFailure, "You must have a pet in order to cast this spell or ability (%s).", spells[spell_id].name);
+				InterruptSpell(spell_id);
+				return 0;
+			}
+		}
 		
 		// Targeting ourselves, hit ourselves with beneficials, otherwise traverse as pet target
 		if (target_id == GetID()) {
@@ -176,10 +182,16 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 		}
 
 		Mob* target_mob = entity_list.GetMob(target_id);
+
+		//Sanity check for NULL
 		if (!target_mob || target_id == 0) {
+			//If beneficial, then go ahead and pass to self
 			if (IsBeneficialSpell(spell_id)) {
 				return GetID();
 			} else {
+				//this should *never* happen, but if it does, interrupt it I guess?
+				Message(Chat::SpellFailure, "Target not found for this spell or ability (%s).", spells[spell_id].name);
+				InterruptSpell();
 				return 0;
 			}			
 		}
