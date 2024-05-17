@@ -1806,7 +1806,8 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 				}
 
 				if (!weapon_selector.empty()) {
-					EQ::ItemInstance* selected_weapon = weapon_selector[zone->random.Roll0(weapon_selector.size() - 1)];
+					//I think Roll0 already does max-1, so this was previously never able to pick ranged slot. If crash, revert here.
+					EQ::ItemInstance* selected_weapon = weapon_selector[zone->random.Roll0(weapon_selector.size())];
 					uint16 probability = spells[spell_id].cast_time * RuleI(Custom, CombatProcsOnSpellCastProbability);
 					TryWeaponProc(selected_weapon, selected_weapon->GetItem(), target, IsBardSong(spell_id) ? (probability / 4) : probability);
 				}
