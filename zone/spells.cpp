@@ -139,7 +139,7 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
-uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {	
+uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, Mob* target_mob) {	
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
 		//Shortcut Corpse-Only spells
 		if(spells[spell_id].target_type == ST_Corpse) {
@@ -181,8 +181,10 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 			}
 		}
 
-		Mob* target_mob = entity_list.GetMob(target_id);
-
+		if(target_mob == nullptr) {
+			target_mob = entity_list.GetMob(target_id);
+		}
+		
 		//Sanity check for NULL
 		if (!target_mob || target_id == 0) {
 			//If beneficial, then go ahead and pass to self

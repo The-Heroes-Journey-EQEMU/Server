@@ -6470,7 +6470,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 		}
 
 		if (proc_target) {
-			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID()));
+			proc_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, proc_target->GetID(), proc_target));
 			
 			if ((proc_target->IsClient() || proc_target->IsPetOwnerClient()) && IsDetrimentalSpell(proc_spellid)) {
 				return false; // Cancel this if, after implied targeting, we are still trying to proc a detrimental ability on a client or client pet
