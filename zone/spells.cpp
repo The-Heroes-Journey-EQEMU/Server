@@ -1789,7 +1789,9 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		}
 
 		if (RuleB(Custom, CombatProcsOnSpellCast) && IsClient()) {
-			if (IsHealthSpell(spell_id) || IsDamageSpell(spell_id)) {
+			//only proc on nukes or heals; only proc detrimental procs on non-friendlies
+			if ((IsHealthSpell(spell_id) || IsDamageSpell(spell_id)) &&
+				(!IsDetrimentalSpell(spell_id) || (IsDetrimentalSpell(spell_id) && IsAttackAllowed(target, true)))) {
 				std::vector<EQ::ItemInstance*> weapon_selector;
 				Client* c = CastToClient();			
 
@@ -1800,7 +1802,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 				if (c->GetInv().GetItem(EQ::invslot::slotSecondary) && c->GetInv().GetItem(EQ::invslot::slotSecondary)->HasProc()) {
 					weapon_selector.push_back(c->GetInv().GetItem(EQ::invslot::slotSecondary));
 				}
-				
+
 				if (c->GetInv().GetItem(EQ::invslot::slotRange) && c->GetInv().GetItem(EQ::invslot::slotRange)->HasProc()) {
 					weapon_selector.push_back(c->GetInv().GetItem(EQ::invslot::slotRange));
 				}
