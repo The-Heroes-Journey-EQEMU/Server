@@ -139,17 +139,11 @@ void NPC::SpellProcess()
 	Mob::SpellProcess();
 }
 
-uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {	
+uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id, Mob* target_mob) {	
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
-		// Shortcut Pet-Only spells, these only have one potential valid target
-		if (spells[spell_id].target_type == ST_Pet) {
-			if (GetPet()) {
-				return GetPet()->GetID();
-			} else {
-				Message(Chat::SpellFailure, "You must have a pet in order to cast this spell or ability (%s).", spells[spell_id].name);
-				InterruptSpell(spell_id);
-				return 0;
-			}
+		//Shortcut Corpse-Only spells
+		if(spells[spell_id].target_type == ST_Corpse) {
+			return target_id;
 		}
 
 		// Shortcut PBAoE, we don't care what the target is here
@@ -160,7 +154,19 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 		// Shortcut Self, these have only one potential valid target
 		if (spells[spell_id].target_type == ST_Self) {
 			return GetID();
-		}	
+		}
+
+		// Shortcut Pet-Only spells, these only have one potential valid target
+		// This is necessary because we're lying to the Client that this type of spell
+		if (spells[spell_id].target_type == ST_Pet) {
+			if (GetPet()) {
+				return GetPet()->GetID();
+			} else {
+				Message(Chat::SpellFailure, "You must have a pet in order to cast this spell or ability (%s).", spells[spell_id].name);
+				InterruptSpell(spell_id);
+				return 0;
+			}
+		}
 		
 		// Targeting ourselves, hit ourselves with beneficials, otherwise traverse as pet target
 		if (target_id == GetID()) {
@@ -175,11 +181,19 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 			}
 		}
 
-		Mob* target_mob = entity_list.GetMob(target_id);
+		if(target_mob == nullptr) {
+			target_mob = entity_list.GetMob(target_id);
+		}
+		
+		//Sanity check for NULL
 		if (!target_mob || target_id == 0) {
+			//If beneficial, then go ahead and pass to self
 			if (IsBeneficialSpell(spell_id)) {
 				return GetID();
 			} else {
+				//this should *never* happen, but if it does, interrupt it I guess?
+				Message(Chat::SpellFailure, "Target not found for this spell or ability (%s).", spells[spell_id].name);
+				InterruptSpell();
 				return 0;
 			}			
 		}
@@ -1775,7 +1789,9 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 		}
 
 		if (RuleB(Custom, CombatProcsOnSpellCast) && IsClient()) {
-			if (IsHealthSpell(spell_id) || IsDamageSpell(spell_id)) {
+			//only proc on nukes or heals; only proc detrimental procs on non-friendlies
+			if ((IsHealthSpell(spell_id) || IsDamageSpell(spell_id)) &&
+				(!IsDetrimentalSpell(spell_id) || (IsDetrimentalSpell(spell_id) && IsAttackAllowed(target, true)))) {
 				std::vector<EQ::ItemInstance*> weapon_selector;
 				Client* c = CastToClient();			
 
@@ -1786,13 +1802,14 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 				if (c->GetInv().GetItem(EQ::invslot::slotSecondary) && c->GetInv().GetItem(EQ::invslot::slotSecondary)->HasProc()) {
 					weapon_selector.push_back(c->GetInv().GetItem(EQ::invslot::slotSecondary));
 				}
-				
+
 				if (c->GetInv().GetItem(EQ::invslot::slotRange) && c->GetInv().GetItem(EQ::invslot::slotRange)->HasProc()) {
 					weapon_selector.push_back(c->GetInv().GetItem(EQ::invslot::slotRange));
 				}
 
 				if (!weapon_selector.empty()) {
-					EQ::ItemInstance* selected_weapon = weapon_selector[zone->random.Roll0(weapon_selector.size() - 1)];
+					//I think Roll0 already does max-1, so this was previously never able to pick ranged slot. If crash, revert here.
+					EQ::ItemInstance* selected_weapon = weapon_selector[zone->random.Roll0(weapon_selector.size())];
 					uint16 probability = spells[spell_id].cast_time * RuleI(Custom, CombatProcsOnSpellCastProbability);
 					TryWeaponProc(selected_weapon, selected_weapon->GetItem(), target, IsBardSong(spell_id) ? (probability / 4) : probability);
 				}

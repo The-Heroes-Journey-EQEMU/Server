@@ -5366,9 +5366,14 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 
 	LogSpells("Entered ExecWeaponProc 3");
 	if (IsClient()) {
-		Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, on->GetID()));
-		if (new_target) {
-			on = new_target;
+		//check implied targetting to redirect stuff
+		uint16 new_targetID = GetSpellImpliedTargetID(spell_id, on->GetID(), on);
+		if(new_targetID == 0) { return; } //this proc was cancelled/interrupted
+		if(new_targetID != on->GetID()) {
+			Mob* new_target = entity_list.GetMob(new_targetID);
+			if (new_target) {
+				on = new_target;
+			}
 		}
 	}
 
@@ -6362,33 +6367,11 @@ void Mob::TrySympatheticProc(Mob* target, uint32 spell_id)
 		return;
 	}
 
-	Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, target->GetID()));
+	Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, target->GetID(), target));
 
 	if (new_target) {
 		target = new_target;
 	}
-
-	if (RuleB(Custom, CombatProcsOnSpellCast)) {
-		std::vector<EQ::ItemInstance*> weapon_selector;
-
-		if (m_inv.GetItem(EQ::invslot::slotPrimary) != nullptr) {
-			weapon_selector.push_back(m_inv.GetItem(EQ::invslot::slotPrimary));
-		}
-
-		if (m_inv.GetItem(EQ::invslot::slotSecondary) != nullptr) {
-			weapon_selector.push_back(m_inv.GetItem(EQ::invslot::slotSecondary));
-		}
-		
-		if (m_inv.GetItem(EQ::invslot::slotRange) != nullptr) {
-			weapon_selector.push_back(m_inv.GetItem(EQ::invslot::slotRange));
-		}
-
-		if (!weapon_selector.empty()) {
-			EQ::ItemInstance* selected_weapon = weapon_selector[zone->random.Roll0(weapon_selector.size() - 1)];
-
-			TryWeaponProc(selected_weapon, selected_weapon->GetItem(), target, spells[spell_id].cast_time);
-		}
-	} 
 
 	const uint16 focus_trigger = GetSympatheticSpellProcID(focus_spell);
 
