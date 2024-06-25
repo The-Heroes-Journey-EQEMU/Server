@@ -1000,6 +1000,7 @@ RULE_BOOL(Custom, PowerSourceItemUpgrade, false, "Enable to add Power Source to 
 RULE_REAL(Custom, PowerSourceItemUpgradeRateScale, 1.0, "Scale XP rate of items using this value.")
 RULE_BOOL(Custom, CombatProcsOnSpellCast, false, "Allow combat procs to happen on spell cast. Only one weapon with procs will be chosen from primary, secondary, ranged")
 RULE_INT(Custom, CombatProcsOnSpellCastProbability, 1, "Adjust the proc rate of weapons based on spell cast time")
+RULE_BOOL(Custom, FullImpliedTargeting, false, "EQ2-Like Implied Targeting for spells, melee, pet commands")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Parcel)

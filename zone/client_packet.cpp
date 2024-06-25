@@ -11186,6 +11186,9 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 	case PET_ATTACK: {
 		if (!target)
 			break;
+
+		target = GetMeleeImpliedTarget(target);		
+
 		if (target->IsMezzed()) {
 			MessageString(Chat::NPCQuestSay, CANNOT_WAKE, mypet->GetCleanName(), target->GetCleanName());
 			break;

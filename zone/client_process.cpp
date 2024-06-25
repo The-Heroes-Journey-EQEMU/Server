@@ -316,7 +316,9 @@ bool Client::Process() {
 		}
 
 		if (AutoFireEnabled()) {
-			if (GetTarget() == this) {
+			Mob *auto_fire_target = GetMeleeImpliedTarget(GetTarget());
+
+			if (auto_fire_target == this) {
 				MessageString(Chat::TooFarAway, TRY_ATTACKING_SOMEONE);
 				auto_fire = false;
 			}
@@ -325,13 +327,13 @@ bool Client::Process() {
 			{
 				if (ranged->GetItem() && ranged->GetItem()->ItemType == EQ::item::ItemTypeBow) {
 					if (ranged_timer.Check(false)) {
-						if (GetTarget() && (GetTarget()->IsNPC() || GetTarget()->IsClient()) && IsAttackAllowed(GetTarget())) {
-							if (GetTarget()->InFrontMob(this, GetTarget()->GetX(), GetTarget()->GetY())) {
-								if (CheckLosFN(GetTarget()) && CheckWaterAutoFireLoS(GetTarget())) {
+						if (auto_fire_target && (auto_fire_target->IsNPC() || auto_fire_target->IsClient()) && IsAttackAllowed(auto_fire_target)) {
+							if (auto_fire_target->InFrontMob(this, auto_fire_target->GetX(), auto_fire_target->GetY())) {
+								if (CheckLosFN(auto_fire_target) && CheckWaterAutoFireLoS(auto_fire_target)) {
 									//client has built in los check, but auto fire does not.. done last.
-									RangedAttack(GetTarget());
+									RangedAttack(auto_fire_target);
 									if (CheckDoubleRangedAttack())
-										RangedAttack(GetTarget(), true);
+										RangedAttack(auto_fire_target, true);
 								}
 								else
 									ranged_timer.Start();
@@ -345,11 +347,11 @@ bool Client::Process() {
 				}
 				else if (ranged->GetItem() && (ranged->GetItem()->ItemType == EQ::item::ItemTypeLargeThrowing || ranged->GetItem()->ItemType == EQ::item::ItemTypeSmallThrowing)) {
 					if (ranged_timer.Check(false)) {
-						if (GetTarget() && (GetTarget()->IsNPC() || GetTarget()->IsClient()) && IsAttackAllowed(GetTarget())) {
-							if (GetTarget()->InFrontMob(this, GetTarget()->GetX(), GetTarget()->GetY())) {
-								if (CheckLosFN(GetTarget()) && CheckWaterAutoFireLoS(GetTarget())) {
+						if (auto_fire_target && (auto_fire_target->IsNPC() || auto_fire_target->IsClient()) && IsAttackAllowed(auto_fire_target)) {
+							if (auto_fire_target->InFrontMob(this, auto_fire_target->GetX(), auto_fire_target->GetY())) {
+								if (CheckLosFN(auto_fire_target) && CheckWaterAutoFireLoS(auto_fire_target)) {
 									//client has built in los check, but auto fire does not.. done last.
-									ThrowingAttack(GetTarget());
+									ThrowingAttack(auto_fire_target);
 								}
 								else
 									ranged_timer.Start();
@@ -364,7 +366,7 @@ bool Client::Process() {
 			}
 		}
 
-		Mob *auto_attack_target = GetTarget();
+		Mob *auto_attack_target = GetMeleeImpliedTarget(GetTarget());
 
 		if (auto_attack && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
 			//check if change

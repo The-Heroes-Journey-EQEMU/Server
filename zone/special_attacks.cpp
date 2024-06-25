@@ -292,6 +292,8 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		return;
 	}
 
+	Mob* ca_target = GetMeleeImpliedTarget(GetTarget());
+	
 	// make sure were actually able to use such an attack. (Bards can throw while casting. ~Kayen confirmed on live 1/22)
 	if (
 		(spellend_timer.Enabled() && GetClass() != Class::Bard && !RuleB(Custom,MulticlassingEnabled)) || 
@@ -330,11 +332,11 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		return;
 	}
 
-	if (GetTarget()->GetID() != ca_atk->m_target) { // invalid packet.
+	if (ca_target->GetID() != ca_atk->m_target) { // invalid packet.
 		return;
 	}
 
-	if (!IsAttackAllowed(GetTarget())) {
+	if (!IsAttackAllowed(ca_target)) {
 		return;
 	}
 
@@ -344,10 +346,10 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 	if (ca_atk->m_atk == EQ::invslot::slotRange) {
 		if (ca_atk->m_skill == EQ::skills::SkillThrowing) {
 			SetAttackTimer();
-			ThrowingAttack(GetTarget());
+			ThrowingAttack(ca_target);
 
 			if (CheckDoubleRangedAttack()) {
-				ThrowingAttack(GetTarget(), true);
+				ThrowingAttack(ca_target, true);
 			}
 
 			return;
@@ -356,10 +358,10 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		// ranged attack (archery)
 		if (ca_atk->m_skill == EQ::skills::SkillArchery) {
 			SetAttackTimer();
-			RangedAttack(GetTarget());
+			RangedAttack(ca_target);
 
 			if (CheckDoubleRangedAttack()) {
-				RangedAttack(GetTarget(), true);
+				RangedAttack(ca_target, true);
 			}
 
 			return;
@@ -367,7 +369,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 	}
 
 	// check range for all these abilities, they are all close combat stuff
-	if (!CombatRange(GetTarget())) {
+	if (!CombatRange(ca_target)) {
 		return;
 	}
 
@@ -394,24 +396,24 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		ca_atk->m_atk == 100 &&
 		ca_atk->m_skill == EQ::skills::SkillBash
 	) { // SLAM - Bash without a shield equipped
-		if (GetTarget() != this) {
-			CheckIncreaseSkill(EQ::skills::SkillBash, GetTarget(), 10);
+		if (ca_target != this) {
+			CheckIncreaseSkill(EQ::skills::SkillBash, ca_target, 10);
 			DoAnim(animTailRake, 0, false);
 
 			int hate_override = 0;
 
 			if (
-				GetWeaponDamage(GetTarget(), GetInv().GetItem(EQ::invslot::slotSecondary)) <= 0 &&
-				GetWeaponDamage(GetTarget(), GetInv().GetItem(EQ::invslot::slotShoulders)) <= 0
+				GetWeaponDamage(ca_target, GetInv().GetItem(EQ::invslot::slotSecondary)) <= 0 &&
+				GetWeaponDamage(ca_target, GetInv().GetItem(EQ::invslot::slotShoulders)) <= 0
 			) {
 				damage = -5;
 			} else {
-				hate_override = damage = GetBaseSkillDamage(EQ::skills::SkillBash, GetTarget());
+				hate_override = damage = GetBaseSkillDamage(EQ::skills::SkillBash, ca_target);
 			}
 
 			reuse_time = BashReuseTime - 1 - skill_reduction;
 			reuse_time = (reuse_time * haste_modifier) / 100;
-			DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillBash, damage, 0, hate_override, reuse_time);
+			DoSpecialAttackDamage(ca_target, EQ::skills::SkillBash, damage, 0, hate_override, reuse_time);
 
 			if (reuse_time) {
 				p_timers.Start(timer, reuse_time);
@@ -423,9 +425,9 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 
 	if (ca_atk->m_atk == 100 && ca_atk->m_skill == EQ::skills::SkillFrenzy) {
 		int attack_rounds = 1;
-		int max_dmg       = GetBaseSkillDamage(EQ::skills::SkillFrenzy, GetTarget());
+		int max_dmg       = GetBaseSkillDamage(EQ::skills::SkillFrenzy, ca_target);
 
-		CheckIncreaseSkill(EQ::skills::SkillFrenzy, GetTarget(), 10);
+		CheckIncreaseSkill(EQ::skills::SkillFrenzy, ca_target, 10);
 		DoAnim(anim1HWeapon, 0, false);
 
 		LogDebug("Attempting Frenzy: [{}]", GetClassesBits() & GetPlayerClassBit(Class::Berserker));
@@ -446,13 +448,13 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		reuse_time = (reuse_time * haste_modifier) / 100;
 
 		const EQ::ItemInstance* primary_in_use = GetInv().GetItem(EQ::invslot::slotPrimary);
-		if (primary_in_use && GetWeaponDamage(GetTarget(), primary_in_use) <= 0) {
+		if (primary_in_use && GetWeaponDamage(ca_target, primary_in_use) <= 0) {
 			max_dmg = DMG_INVULNERABLE;
 		}
 
 		while (attack_rounds > 0) {
-			if (GetTarget()) {
-				DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillFrenzy, max_dmg, 0, max_dmg, reuse_time);
+			if (ca_target) {
+				DoSpecialAttackDamage(ca_target, EQ::skills::SkillFrenzy, max_dmg, 0, max_dmg, reuse_time);
 			}
 
 			attack_rounds--;
@@ -484,19 +486,19 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		ca_atk->m_skill == EQ::skills::SkillKick &&
 		can_use_kick
 	) {
-		if (GetTarget() != this) {
-			CheckIncreaseSkill(EQ::skills::SkillKick, GetTarget(), 10);
+		if (ca_target != this) {
+			CheckIncreaseSkill(EQ::skills::SkillKick, ca_target, 10);
 			DoAnim(animKick, 0, false);
 
 			int hate_override = 0;
-			if (GetWeaponDamage(GetTarget(), GetInv().GetItem(EQ::invslot::slotFeet)) <= 0) {
+			if (GetWeaponDamage(ca_target, GetInv().GetItem(EQ::invslot::slotFeet)) <= 0) {
 				damage = -5;
 			} else {
-				hate_override = damage = GetBaseSkillDamage(EQ::skills::SkillKick, GetTarget());
+				hate_override = damage = GetBaseSkillDamage(EQ::skills::SkillKick, ca_target);
 			}
 
 			reuse_time = KickReuseTime - 1 - skill_reduction;
-			DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillKick, damage, 0, hate_override, reuse_time);
+			DoSpecialAttackDamage(ca_target, EQ::skills::SkillKick, damage, 0, hate_override, reuse_time);
 
 			found_skill = true;
 		}
@@ -509,7 +511,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		 ca_atk->m_skill == EQ::skills::SkillTigerClaw ||
 		 ca_atk->m_skill == EQ::skills::SkillRoundKick)) {
 
-		reuse_time = MonkSpecialAttack(GetTarget(), ca_atk->m_skill) - 1 - skill_reduction;
+		reuse_time = MonkSpecialAttack(ca_target, ca_atk->m_skill) - 1 - skill_reduction;
 
 		// Live AA - Technique of Master Wu
 		int wu_chance = (
@@ -553,7 +555,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 			const bool is_classic_master_wu = RuleB(Combat, ClassicMasterWu);
 			while (extra) {
 				MonkSpecialAttack(
-					GetTarget(),
+					ca_target,
 					(is_classic_master_wu ? monk_special_attacks[zone->random.Int(0, 4)] : ca_atk->m_skill)
 				);
 				--extra;
@@ -564,7 +566,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 			// hackish... but we return a huge reuse time if this is an
 			// invalid skill, otherwise, we can safely assume it is a
 			// valid monk skill and just cast it to a SkillType
-			CheckIncreaseSkill((EQ::skills::SkillType) ca_atk->m_skill, GetTarget(), 10);
+			CheckIncreaseSkill((EQ::skills::SkillType) ca_atk->m_skill, ca_target, 10);
 		}
 
 		found_skill = true;
@@ -576,7 +578,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		((GetClassesBits() & GetPlayerClassBit(Class::Rogue)))
 	) {
 		reuse_time = BackstabReuseTime - 1 - skill_reduction;
-		TryBackstab(GetTarget(), reuse_time);
+		TryBackstab(ca_target, reuse_time);
 		found_skill = true;
 	}
 

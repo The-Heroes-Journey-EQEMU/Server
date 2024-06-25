@@ -275,6 +275,9 @@ public:
 		return;
 	}
 
+
+	Mob* GetMeleeImpliedTarget(Mob* original_target);
+
 	bool HasAnInvisibilityEffect();
 	void BreakCharmPetIfConditionsMet();
 	//Invisible
