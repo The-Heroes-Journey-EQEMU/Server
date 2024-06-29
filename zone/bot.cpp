@@ -118,6 +118,8 @@ Bot::Bot(NPCType *npcTypeData, Client* botOwner) : NPC(npcTypeData, nullptr, glm
 	mana_regen = CalcManaRegen();
 	end_regen = CalcEnduranceRegen();
 
+	SetExtraHaste(database.botdb.GetBotExtraHasteByID(GetBotID()), false);
+
 	strcpy(name, GetCleanName());
 	memset(&_botInspectMessage, 0, sizeof(InspectMessage_Struct));
 }
@@ -445,6 +447,8 @@ Bot::Bot(
 	}
 
 	cur_end = max_end;
+
+	SetExtraHaste(database.botdb.GetBotExtraHasteByID(GetBotID()), false);
 }
 
 Bot::~Bot() {
@@ -648,7 +652,7 @@ NPCType *Bot::FillNPCTypeStruct(
 	n->race = botRace;
 	n->class_ = botClass;
 	n->bodytype = 1;
-	n->deity = EQ::deity::DeityAgnostic;
+	n->deity = Deity::Agnostic1;
 	n->level = botLevel;
 	n->npc_spells_id = botSpellsID;
 	n->AC = ac;
@@ -708,7 +712,7 @@ NPCType *Bot::CreateDefaultNPCTypeStructForBot(
 	n->race = botRace;
 	n->class_ = botClass;
 	n->bodytype = 1;
-	n->deity = EQ::deity::DeityAgnostic;
+	n->deity = Deity::Agnostic1;
 	n->level = botLevel;
 	n->AC = 12;
 	n->ATK = 75;
@@ -2414,14 +2418,14 @@ bool Bot::TryPrimaryWeaponAttacks(Mob* tar, const EQ::ItemInstance* p_item) {
 			}
 
 			if (GetAppearance() == eaDead) { return false; }
-			if (GetSpecialAbility(SPECATK_TRIPLE) && CheckBotDoubleAttack(true)) {
+			if (GetSpecialAbility(SpecialAbility::TripleAttack) && CheckBotDoubleAttack(true)) {
 
 				Attack(tar, EQ::invslot::slotPrimary, true);
 			}
 
 			if (GetAppearance() == eaDead) { return false; }
 			// quad attack, does this belong here??
-			if (GetSpecialAbility(SPECATK_QUAD) && CheckBotDoubleAttack(true)) {
+			if (GetSpecialAbility(SpecialAbility::QuadrupleAttack) && CheckBotDoubleAttack(true)) {
 				Attack(tar, EQ::invslot::slotPrimary, true);
 			}
 		}
@@ -5477,13 +5481,13 @@ bool Bot::IsImmuneToSpell(uint16 spell_id, Mob *caster) {
 		if (!Result) {
 			if (caster->IsBot()) {
 				if (spells[spell_id].target_type == ST_Undead) {
-					if ((GetBodyType() != BT_SummonedUndead) && (GetBodyType() != BT_Undead) && (GetBodyType() != BT_Vampire)) {
+					if ((GetBodyType() != BodyType::SummonedUndead) && (GetBodyType() != BodyType::Undead) && (GetBodyType() != BodyType::Vampire)) {
 						LogSpellsDetail("Bot's target is not an undead");
 						return true;
 					}
 				}
 				if (spells[spell_id].target_type == ST_Summoned) {
-					if ((GetBodyType() != BT_SummonedUndead) && (GetBodyType() != BT_Summoned) && (GetBodyType() != BT_Summoned2) && (GetBodyType() != BT_Summoned3)) {
+					if ((GetBodyType() != BodyType::SummonedUndead) && (GetBodyType() != BodyType::Summoned) && (GetBodyType() != BodyType::Summoned2) && (GetBodyType() != BodyType::Summoned3)) {
 						LogSpellsDetail("Bot's target is not a summoned creature");
 						return true;
 					}
@@ -5631,7 +5635,7 @@ int32 Bot::GenerateBaseManaPoints()
 
 void Bot::GenerateSpecialAttacks() {
 	if (((GetClass() == Class::Monk) || (GetClass() == Class::Warrior) || (GetClass() == Class::Ranger) || (GetClass() == Class::Berserker))	&& (GetLevel() >= 60))
-		SetSpecialAbility(SPECATK_TRIPLE, 1);
+		SetSpecialAbility(SpecialAbility::TripleAttack, 1);
 }
 
 bool Bot::DoFinishedSpellSingleTarget(uint16 spell_id, Mob* spellTarget, EQ::spells::CastingSlot slot, bool& stopLogic) {

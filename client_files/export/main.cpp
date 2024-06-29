@@ -32,6 +32,7 @@
 #include "../../common/repositories/skill_caps_repository.h"
 #include "../../common/file.h"
 #include "../../common/events/player_event_logs.h"
+#include "../../common/skill_caps.h"
 
 EQEmuLogSys         LogSys;
 WorldContentService content_service;
@@ -255,6 +256,23 @@ void ExportSkillCaps(SharedDatabase* db, SharedDatabase *database)
 		RuleI(Character, SkillCapMaxLevel) :
 		RuleI(Character, MaxLevel)
 	);
+
+	if (multiclassing) {
+        for (int skill = 0; skill < MAX_SKILLS; ++skill) {
+            for (int level = 1; level <= MAX_LEVELS; ++level) {
+                int highest_cap = 0;
+                for (int cl = 1; cl <= 16; ++cl) {
+                    if (SkillUsable(db, skill, cl)) {
+                        int cap = GetSkill(db, skill, cl, level);
+                        if (cap > highest_cap) {
+                            highest_cap = cap;
+                        }
+                    }
+                }
+                skills_array[skill][level-1] = highest_cap; // Store the highest cap for this skill and level
+            }
+        }
+    }
 
 	if (multiclassing) {
         for (int skill = 0; skill < MAX_SKILLS; ++skill) {

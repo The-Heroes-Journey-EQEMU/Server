@@ -336,6 +336,7 @@ struct StatBonuses {
 	int32	hastetype2;
 	int32	hastetype3;
 	int32	inhibitmelee;
+	int32	increase_archery;
 	float	AggroRange;							// when calculate just replace original value with this
 	float	AssistRange;
 	int32	skillmod[EQ::skills::HIGHEST_SKILL + 1];
@@ -503,7 +504,9 @@ struct StatBonuses {
 	uint8	invisibility_verse_undead;			// IVU level
 	uint8	invisibility_verse_animal;			// IVA level
 	int32	ShieldTargetSpa[2];                 // [0] base = % mitigation amount, [1] buff slot
+	uint32  ReduceSkill[EQ::skills::HIGHEST_SKILL + 2]; //reduce value of a skill by percentage
 	int64	FlatMaxHPChange;					// base: Max HP change by a flat amount value from spell effect/item worn effect/aa
+
 
 	// AAs
 	int32	TrapCircumvention;					// reduce chance to trigger a trap.
