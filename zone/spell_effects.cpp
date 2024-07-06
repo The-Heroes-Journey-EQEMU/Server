@@ -6449,6 +6449,7 @@ int64 Mob::CalcFocusEffect(focusType type, uint16 focus_id, uint16 spell_id, boo
 
 void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 {
+	LogDebugDetail("Entering TryTriggerOnCastFocusEffect");	
 	if (IsBardSong(spell_id)) {
 		return;
 	}
@@ -6506,6 +6507,7 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id)
 
 	// Spell Focus
 	if (spellbonuses.FocusEffects[type]) {
+		LogDebugDetail("Checking AA");
 		int buff_slot = 0;
 		for (buff_slot = 0; buff_slot < GetMaxTotalSlots(); buff_slot++) {
 			focus_spell_id = buffs[buff_slot].spellid;
