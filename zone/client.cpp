@@ -12141,24 +12141,47 @@ void Client::SendPath(Mob* target)
 	SendPathPacket(points);
 }
 
-/*
+
 bool Client::IsPetBagActive() {
-	return false;
+	return GetActivePetBagSlot() > 0;
 }
 
 EQ::ItemInstance* Client::GetActivePetBag() {
-	if (IsPetBagActive()) {
-
-	}
-
-	return nullptr;
+	return GetInv().GetItem(GetActivePetBagSlot());
 }
 
+int16 Client::GetActivePetBagSlot() {
+	EQ::ItemInstance* active_bag = nullptr;
+	uint16 active_bag_slot = 0;
+	if (RuleB(Custom, EnablePetBags)) {
+		std::vector<std::string> item_strings = Strings::Split(RuleS(Custom, PetBagList), ",");
+		for (int slot = EQ::invslot::GENERAL_BEGIN; slot <= EQ::invslot::GENERAL_END; slot++) {
+			//LogDebug("Checking Slot [{}]", slot);
+			auto potential_bag = GetInv().GetItem(slot);
+			if (potential_bag) {
+				for (std::string item_string: item_strings) {
+					uint32 item_id = Strings::ToInt(item_string);
+					//LogDebug("Checking for Bag [{}]", item_id);				
+					if (item_id > 0 && potential_bag->GetID() == item_id) {
+						LogDebug("Found Bag [{}] in slot [{}]", item_id, slot);			
+						if (!active_bag || active_bag->GetItem()->BagSlots > potential_bag->GetItem()->BagSlots) {
+							active_bag = potential_bag;
+							active_bag_slot = slot;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return active_bag_slot;
+}
+
+/*
 std::vector<EQ::ItemInstance*> Client::GetPetBagContents() {
 
 	return nullptr;
 }
-
 */
 
 void Client::UseAugmentContainer(int container_slot)

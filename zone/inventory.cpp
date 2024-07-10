@@ -1856,7 +1856,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		LogInventory("Invalid slot move from slot [{}] to slot [{}] with [{}] charges!", src_slot_check, dst_slot_check, stack_count_check);
 		return false;
 	}
-
+	
 	if (move_in->from_slot == move_in->to_slot) { // Item summon, no further processing needed
 		if(RuleB(QueryServ, PlayerLogMoves)) { QSSwapItemAuditor(move_in); } // QS Audit
 		if (ClientVersion() >= EQ::versions::ClientVersion::RoF) { return true; } // Can't do RoF+
