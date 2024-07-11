@@ -595,12 +595,6 @@ bool NPC::Process()
 		spun_timer.Disable();
 	}
 
-	if (RuleB(Custom, EnablePetBags)) {
-		if (IsPet() && GetOwner() && GetOwner()->IsClient()) {
-			GetOwner()->CastToClient()->IsPetBagActive();
-		}
-	}
-
 	SpellProcess();
 
 	if (swarm_timer.Check()) {
