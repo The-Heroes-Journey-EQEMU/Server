@@ -11386,12 +11386,9 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 			bool taunt_status = mypet->CastToNPC()->IsTaunting();			
 			if (RuleB(Custom, TauntTogglesPetTanking)) {
 				if (!taunt_status) {
-					mypet->SetSpecialAbility(25, 0);
 					mypet->SetSpecialAbility(41, 1);
 				} else {					
-					mypet->SetSpecialAbility(25, 1);
 					mypet->SetSpecialAbility(41, 0);
-					entity_list.RemoveFromTargets(mypet);
 				}
 			}
 			mypet->CastToNPC()->SetTaunting(!taunt_status);
@@ -11403,6 +11400,7 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 		if ((mypet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || mypet->GetPetType() != petAnimation) {
 			MessageString(Chat::PetResponse, PET_DO_TAUNT);
 			mypet->CastToNPC()->SetTaunting(true);
+			mypet->SetSpecialAbility(41, 1);
 		}
 		break;
 	}
@@ -11410,6 +11408,7 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 		if ((mypet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || mypet->GetPetType() != petAnimation) {
 			MessageString(Chat::PetResponse, PET_NO_TAUNT);
 			mypet->CastToNPC()->SetTaunting(false);
+			mypet->SetSpecialAbility(41, 0);
 		}
 		break;
 	}
@@ -15779,7 +15778,7 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 	}
 	else {
 		LogTrading("Unknown size for OP_Trader: [{}]\n", app->size);
-		LogError("Unknown size for OP_Trader: [{}]\n", app->size);
+		//LogError("Unknown size for OP_Trader: [{}]\n", app->size);
 		DumpPacket(app);
 		return;
 	}
@@ -16006,7 +16005,7 @@ void Client::Handle_OP_TraderShop(const EQApplicationPacket *app)
 	else
 	{
 		LogTrading("Unknown size for OP_TraderShop: [{}]\n", app->size);
-		LogError("Unknown size for OP_TraderShop: [{}]\n", app->size);
+		//LogError("Unknown size for OP_TraderShop: [{}]\n", app->size);
 		DumpPacket(app);
 		return;
 	}
