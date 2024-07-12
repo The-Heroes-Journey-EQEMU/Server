@@ -299,7 +299,7 @@ bool Client::Process() {
 				- being stunned or mezzed
 				- having used a ranged weapon recently
 		*/
-		if (auto_attack) {
+		if (auto_attack || AutoFireEnabled()) {
 			if (!IsAIControlled() && !dead
 				&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
 				&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled()
@@ -315,7 +315,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (AutoFireEnabled()) {
+		if (AutoFireEnabled() && may_use_attacks) {
 			if (GetTarget() == this) {
 				MessageString(Chat::TooFarAway, TRY_ATTACKING_SOMEONE);
 				auto_fire = false;
