@@ -2275,6 +2275,14 @@ bool NPC::Attack(Mob* other, int Hand, bool bRiposte, bool IsStrikethrough, bool
 		my_hit.min_damage = GetMinDamage();
 		int32 hate = my_hit.base_damage + my_hit.min_damage;
 
+		if (GetOwner() && weapon_instance) {
+			int64 base_damage_bonus = weapon_instance->GetItemWeaponDamage(true);
+			if (weapon_instance->GetItemType() == EQ::item::ItemType2HBlunt || weapon_instance->GetItemType() == EQ::item::ItemType2HSlash || weapon_instance->GetItemType() == EQ::item::ItemType2HPiercing) {
+				base_damage_bonus /= 2;
+			}
+			my_hit.base_damage += base_damage_bonus;
+		}	
+
 		int hit_chance_bonus = 0;
 
 		if (opts) {

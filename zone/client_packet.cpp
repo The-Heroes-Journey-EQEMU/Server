@@ -3554,6 +3554,12 @@ void Client::Handle_OP_AugmentItem(const EQApplicationPacket *app)
 	} else {
 		Object::HandleAugmentation(this, in_augment, m_tradeskill_object); // Delegate to tradeskill object to perform combine
 	}
+
+	auto pet_bag_idx = GetActivePetBagSlot();
+	if (EQ::InventoryProfile::CalcSlotId(in_augment->container_slot) == pet_bag_idx) {
+		DoPetBagResync();
+	}
+
 	return;
 }
 

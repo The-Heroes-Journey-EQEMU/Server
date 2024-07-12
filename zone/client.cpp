@@ -12213,6 +12213,9 @@ void Client::DoPetBagResync() {
 										  aug5 != nullptr ? aug5->GetID() : 0);
 				}
 			}
+
+			pet->SendWearChange(EQ::textures::weaponPrimary);
+			pet->SendWearChange(EQ::textures::weaponSecondary);
 		}
 	}
 }
