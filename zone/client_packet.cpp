@@ -1705,6 +1705,9 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 						pet->SetTaunting(m_petinfo.taunting);
 					}
 				}
+
+				DoPetBagResync();
+
 			}
 			m_petinfo.SpellID = 0;
 		}
