@@ -12157,8 +12157,7 @@ int16 Client::GetActivePetBagSlot() {
 		for (int slot = EQ::invslot::GENERAL_BEGIN; slot <= EQ::invslot::GENERAL_END; slot++) {
 			//LogDebug("Checking Slot [{}]", slot);
 			auto potential_bag = GetInv().GetItem(slot);
-			if (potential_bag && IsValidPetBag(potential_bag->GetID())) {
-				LogDebug("Found Bag [{}] in slot [{}]", potential_bag->GetID(), slot);			
+			if (potential_bag && IsValidPetBag(potential_bag->GetID())) {		
 				if (!active_bag || active_bag->GetItem()->BagSlots > potential_bag->GetItem()->BagSlots) {
 					active_bag = potential_bag;
 					active_bag_slot = slot;
@@ -12196,9 +12195,7 @@ void Client::DoPetBagResync() {
 			int bag_bot = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, pet_bag->GetItem()->BagSlots);
 
 			for (int slot_id = bag_top; slot_id < bag_bot; slot_id++) {
-				auto item_inst = GetInv().GetItem(slot_id);		
-						
-				LogDebug("Item in slot [{}] is [{}]", slot_id, item_inst != nullptr ? item_inst->GetID() : 0);
+				auto item_inst = GetInv().GetItem(slot_id);								
 				if (item_inst) {
 					auto aug0 = item_inst->GetAugment(0);
 					auto aug1 = item_inst->GetAugment(1);
