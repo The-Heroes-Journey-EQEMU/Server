@@ -2468,34 +2468,20 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	if (RuleB(Custom, EnablePetBags)) {
 		auto pet_bag_idx = GetActivePetBagSlot();
 		// Check to see if we are moving an entire pet bag first
-
-		if (dst_inst) {
-			LogDebug("dst_inst: [{}]", dst_inst->GetID());
+		if (dst_inst && IsValidPetBag(dst_inst->GetID()) || src_inst && IsValidPetBag(src_inst->GetID())) {
+			if (IsPetBagActive()) {
+				DoPetBagResync();
+			} else {
+				DoPetBagFlush();
+			}
 		}
-
-		if (src_inst) {
-			LogDebug("dst_inst: [{}]", src_inst->GetID());
-		}
-
-		if (dst_inst && IsValidPetBag(dst_inst->GetID())) {
-			LogDebug("Picked up? a pet bag");
-			DoPetBagResync();
-		}
-
-		if (src_inst && IsValidPetBag(src_inst->GetID())) {
-			LogDebug("Put down? a pet bag");
-			DoPetBagResync();
-		}
-
 
 		if (pet_bag_idx) {
 			if (EQ::InventoryProfile::CalcSlotId(move_in->to_slot) == pet_bag_idx) {
-				LogDebug("Item placed into pet bag");
 				DoPetBagResync();
 			}
 
 			if (EQ::InventoryProfile::CalcSlotId(move_in->from_slot) == pet_bag_idx) {
-				LogDebug("Item removed from pet bag");
 				DoPetBagResync();		
 			}
 		}

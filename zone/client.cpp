@@ -12188,13 +12188,13 @@ void Client::DoPetBagResync() {
 
 		if (pet && pet_bag) {
 			// Clear existing pet inventory
+			DoPetBagFlush();
+
 			NPC* pet_npc = pet->CastToNPC();
-			while (!pet_npc->GetLootList().empty()) {
-				pet_npc->RemoveItem(pet_npc->GetLootList().front());
-			}
 
 			int bag_top = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, 0);
 			int bag_bot = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, pet_bag->GetItem()->BagSlots);
+
 			for (int slot_id = bag_top; slot_id < bag_bot; slot_id++) {
 				auto item_inst = GetInv().GetItem(slot_id);		
 						
@@ -12207,14 +12207,28 @@ void Client::DoPetBagResync() {
 					auto aug4 = item_inst->GetAugment(4);
 					auto aug5 = item_inst->GetAugment(5);
 
-					pet_npc->AddItem(item_inst->GetID(), 1,	true, 
-									aug0 != nullptr ? aug0->GetID() : 0, 
-									aug1 != nullptr ? aug1->GetID() : 0, 
-									aug2 != nullptr ? aug2->GetID() : 0, 
-									aug3 != nullptr ? aug3->GetID() : 0, 
-									aug4 != nullptr ? aug4->GetID() : 0, 
-									aug5 != nullptr ? aug5->GetID() : 0);
+					pet_npc->AddItemFixed(item_inst->GetID(), 1,	true, 
+										  aug0 != nullptr ? aug0->GetID() : 0, 
+										  aug1 != nullptr ? aug1->GetID() : 0, 
+										  aug2 != nullptr ? aug2->GetID() : 0, 
+										  aug3 != nullptr ? aug3->GetID() : 0, 
+										  aug4 != nullptr ? aug4->GetID() : 0, 
+										  aug5 != nullptr ? aug5->GetID() : 0);
 				}
+			}
+		}
+	}
+}
+
+void Client::DoPetBagFlush() {
+	if (RuleB(Custom, EnablePetBags)) {
+		Mob* pet 	 = GetPet();
+
+		if (pet) {
+			// Clear existing pet inventory
+			NPC* pet_npc = pet->CastToNPC();
+			while (!pet_npc->GetLootList().empty()) {
+				pet_npc->RemoveItem(pet_npc->GetLootList().front());
 			}
 		}
 	}
