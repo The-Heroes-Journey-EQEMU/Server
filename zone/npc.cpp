@@ -3777,6 +3777,9 @@ void NPC::SetTaunting(bool is_taunting) {
 
 	if (IsPet() && IsPetOwnerClient()) {
 		GetOwner()->CastToClient()->SetPetCommandState(PET_BUTTON_TAUNT, is_taunting);
+		if (RuleB(Pets, TauntTogglesPetTank)) {
+			SetSpecialAbility(SpecialAbility::AllowedToTank, is_taunting ? 1 : 0);
+		}
 	}
 }
 
