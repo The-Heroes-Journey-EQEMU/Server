@@ -918,6 +918,9 @@ float Mob::GetZOffset() const {
 		case Race::Dragon2:
 			offset = 0.527f;
 			break;
+		case Race::VeliousDragon:
+			offset = 7.0f;
+			break;
 		case Race::Puma2:
 			offset = 1.536f;
 			break;

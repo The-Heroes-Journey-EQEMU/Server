@@ -1036,6 +1036,7 @@ public:
 
 	//New AA Methods
 	void SendAlternateAdvancementRank(int aa_id, int level);
+	void MulticlassSendAlternateAdvancementRank(int aa_id, int level);
 	void SendAlternateAdvancementTable();
 	void SendAlternateAdvancementStats();
 	void PurchaseAlternateAdvancementRank(int rank_id);

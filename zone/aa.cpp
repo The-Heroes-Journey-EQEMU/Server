@@ -1210,10 +1210,160 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 		return;
 	}
 
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		MulticlassSendAlternateAdvancementRank(aa_id, level);
+	}
+
+	if(!(ability->classes & (1 << GetClass()))) {
+		return;
+	}
+
+	if(!CanUseAlternateAdvancementRank(rank)) {
+		return;
+	}
+
 	int size = sizeof(AARankInfo_Struct) + (sizeof(AARankEffect_Struct) * rank->effects.size()) + (sizeof(AARankPrereq_Struct) * rank->prereqs.size());
 	auto outapp = new EQApplicationPacket(OP_SendAATable, size);
 	AARankInfo_Struct *aai = (AARankInfo_Struct*)outapp->pBuffer;
 
+	aai->id = rank->id;
+	aai->upper_hotkey_sid = rank->upper_hotkey_sid;
+	aai->lower_hotkey_sid = rank->lower_hotkey_sid;
+	aai->title_sid = rank->title_sid;
+	aai->desc_sid = rank->desc_sid;
+	aai->cost = rank->cost;
+	aai->seq = aa_id;
+	aai->type = ability->type;
+	aai->spell = rank->spell;
+	aai->spell_type = rank->spell_type;
+	aai->spell_refresh = rank->recast_time;
+	aai->classes = ability->classes;
+	aai->level_req = rank->level_req;
+	aai->current_level = level;
+	aai->max_level = ability->GetMaxLevel(this);
+	aai->prev_id = rank->prev_id;
+
+	if((rank->next && !CanUseAlternateAdvancementRank(rank->next)) || ability->charges > 0) {
+		aai->next_id = -1;
+	} else {
+		aai->next_id = rank->next_id;
+	}
+	aai->total_cost = rank->total_cost;
+	aai->expansion = rank->expansion;
+	aai->category = ability->category;
+	aai->charges = ability->charges;
+	aai->grant_only = ability->grant_only;
+	aai->total_effects = rank->effects.size();
+	aai->total_prereqs = rank->prereqs.size();
+
+	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
+	for(auto &effect : rank->effects) {
+		outapp->WriteSInt32(effect.effect_id);
+		outapp->WriteSInt32(effect.base_value);
+		outapp->WriteSInt32(effect.limit_value);
+		outapp->WriteSInt32(effect.slot);
+	}
+
+	for(auto &prereq : rank->prereqs) {
+		outapp->WriteSInt32(prereq.first);
+		outapp->WriteSInt32(prereq.second);
+	}
+
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+void Client::MulticlassSendAlternateAdvancementRank(int aa_id, int level) {
+	if(!zone)
+		return;
+
+	auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(aa_id, level);
+	auto ability = ability_rank.first;
+	auto rank = ability_rank.second;
+
+	if(!ability) {
+		return;
+	}
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		MulticlassSendAlternateAdvancementRank(aa_id, level);
+	}
+
+	if(!(ability->classes & (1 << GetClass()))) {
+		return;
+	}
+
+	if(!CanUseAlternateAdvancementRank(rank)) {
+		return;
+	}
+
+	int size = sizeof(AARankInfo_Struct) + (sizeof(AARankEffect_Struct) * rank->effects.size()) + (sizeof(AARankPrereq_Struct) * rank->prereqs.size());
+	auto outapp = new EQApplicationPacket(OP_SendAATable, size);
+	AARankInfo_Struct *aai = (AARankInfo_Struct*)outapp->pBuffer;
+
+	aai->id = rank->id;
+	aai->upper_hotkey_sid = rank->upper_hotkey_sid;
+	aai->lower_hotkey_sid = rank->lower_hotkey_sid;
+	aai->title_sid = rank->title_sid;
+	aai->desc_sid = rank->desc_sid;
+	aai->cost = rank->cost;
+	aai->seq = aa_id;
+	aai->type = ability->type;
+	aai->spell = rank->spell;
+	aai->spell_type = rank->spell_type;
+	aai->spell_refresh = rank->recast_time;
+	aai->classes = ability->classes;
+	aai->level_req = rank->level_req;
+	aai->current_level = level;
+	aai->max_level = ability->GetMaxLevel(this);
+	aai->prev_id = rank->prev_id;
+
+	if((rank->next && !CanUseAlternateAdvancementRank(rank->next)) || ability->charges > 0) {
+		aai->next_id = -1;
+	} else {
+		aai->next_id = rank->next_id;
+	}
+	aai->total_cost = rank->total_cost;
+	aai->expansion = rank->expansion;
+	aai->category = ability->category;
+	aai->charges = ability->charges;
+	aai->grant_only = ability->grant_only;
+	aai->total_effects = rank->effects.size();
+	aai->total_prereqs = rank->prereqs.size();
+
+	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
+	for(auto &effect : rank->effects) {
+		outapp->WriteSInt32(effect.effect_id);
+		outapp->WriteSInt32(effect.base_value);
+		outapp->WriteSInt32(effect.limit_value);
+		outapp->WriteSInt32(effect.slot);
+	}
+
+	for(auto &prereq : rank->prereqs) {
+		outapp->WriteSInt32(prereq.first);
+		outapp->WriteSInt32(prereq.second);
+	}
+
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+/*
+void Client::MulticlassSendAlternateAdvancementRank(int aa_id, int level) {
+	if(!zone)
+		return;
+
+	auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(aa_id, level);
+	auto ability = ability_rank.first;
+	auto rank = ability_rank.second;
+
+	if(!ability) {
+		return;
+	}
+
+	int size = sizeof(AARankInfo_Struct) + (sizeof(AARankEffect_Struct) * rank->effects.size()) + (sizeof(AARankPrereq_Struct) * rank->prereqs.size());
+	auto outapp = new EQApplicationPacket(OP_SendAATable, size);
+	AARankInfo_Struct *aai = (AARankInfo_Struct*)outapp->pBuffer;
 
 	// Lie to the client about who can use this AA rank if we are multiclassing
 	if (RuleB(Custom, MulticlassingEnabled)) {
@@ -1299,6 +1449,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	QueuePacket(outapp);
 	safe_delete(outapp);
 }
+*/
 
 void Client::SendAlternateAdvancementStats() {
 	auto outapp = new EQApplicationPacket(OP_AAExpUpdate, sizeof(AltAdvStats_Struct));
