@@ -842,10 +842,10 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 					}
 
 				} else {
-					if (is_pet || (tradingWith->CastToNPC()->GetSwarmInfo() && tradingWith->CastToNPC()->GetSwarmInfo()->permanent)) {
+					if (is_pet) {
 						LogDebug("Pet Trade Event [{}]", tradingWith->GetOwner()->GetCleanName());
 						// Set this here because pet bag needs to care avout other sense of 'pet'
-						const bool multi_pet = is_pet || (RuleB(Custom, EnableMultipet) && (tradingWith->CastToNPC()->GetSwarmInfo() && tradingWith->CastToNPC()->GetSwarmInfo()->permanent));
+						const bool multi_pet = is_pet;
 						// pets need to look inside bags and try to equip items found there
 						if (item->IsClassBag() && item->BagSlots > 0) {
 							for (int16 bslot = EQ::invbag::SLOT_BEGIN; bslot < item->BagSlots; bslot++) {

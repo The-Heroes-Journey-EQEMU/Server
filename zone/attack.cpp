@@ -1897,11 +1897,7 @@ bool Client::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::Skil
 	InterruptSpell();
 
 	Mob* m_pet = GetPet();
-	SetPet(0);
-
-	for (auto pet : GetAllPets()) {
-		pet->Depop();
-	}
+	RemoveAllPets();
 
 	SetHorseId(0);
 	ShieldAbilityClearVariables();
@@ -2576,7 +2572,11 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 	ShieldAbilityClearVariables();
 
 	SetHP(0);
-	SetPet(0);
+	RemoveAllPets();
+
+	if (ownerid) {
+		GetOwner()->RemovePet(this);
+	}
 
 	if (GetSwarmOwner()) {
 		Mob* owner = entity_list.GetMobID(GetSwarmOwner());

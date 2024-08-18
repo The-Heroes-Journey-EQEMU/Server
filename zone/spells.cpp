@@ -150,11 +150,6 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 		if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
 			if (GetPet()) {
 				return GetPet()->GetID();
-			} else if (!RuleB(Custom, EnableMultipet) && CastToClient()->GetAllPets().size() > 0) {
-				auto tar = CastToClient()->GetAllPets().front();
-				if (tar) {
-					return tar->GetID();
-				}
 			} else {
 				Message(Chat::SpellFailure, "You must have a pet in order to cast this spell or ability (%s).", spells[spell_id].name);
 				InterruptSpell(spell_id);
@@ -2216,11 +2211,8 @@ bool Mob::DetermineSpellTargets(uint16 spell_id, Mob *&spell_target, Mob *&ae_ce
 		}
 		case ST_Pet:
 		{
-			if (!GetPet() && IsClient() && RuleB(Custom, EnableMultipet)) {
-				spell_target = CastToClient()->GetAllPets().empty() ? nullptr : CastToClient()->GetAllPets().front();
-			} else {
-				spell_target = GetPet();
-			}
+			spell_target = GetPet();
+
 			if(!spell_target)
 			{
 				LogSpells("Spell [{}] canceled: invalid target (no pet)", spell_id);

@@ -91,8 +91,8 @@ void Mob::MakePet(uint16 spell_id, const char* pettype, const char *petname) {
 void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 		const char *petname, float in_size) {
 	// Sanity and early out checking first.
-	if(HasPet() || pettype == nullptr)
-		return;
+	//if(HasPet() || pettype == nullptr)
+	//	return;
 
 	int16 act_power = 0; // The actual pet power we'll use.
 	if (petpower == -1) {
@@ -519,8 +519,9 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 	if (in_size > 0.0f)
 		npc->size = in_size;
 
+	npc->SetOwnerID(GetID());
 	entity_list.AddNPC(npc, true, true);
-	SetPetID(npc->GetID());
+	AddPet(npc);
 	// We need to handle PetType 5 (petHatelist), add the current target to the hatelist of the pet
 
 
@@ -559,7 +560,6 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 		}
 	}
 }
-
 void NPC::TryDepopTargetLockedPets(Mob* current_target) {
 
 	if (!current_target || (current_target && (current_target->GetID() != GetPetTargetLockID()) || current_target->IsCorpse())) {
@@ -651,68 +651,225 @@ bool ZoneDatabase::GetPoweredPetEntry(const std::string& pet_type, int16 pet_pow
 	return true;
 }
 
-Mob* Mob::GetPet() {
-	if (!GetPetID()) {
-		return nullptr;
-	}
+// Get the ID of the pet at the given index
+uint16 Mob::GetPetID(uint8 idx) const {
+    // Check if the index is greater than or equal to the pet limit
+    if (idx >= RuleI(Custom, AbsolutePetLimit)) {
+        return 0;  // Return 0 if the index exceeds the pet limit
+    }
 
-	const auto m = entity_list.GetMob(GetPetID());
-	if (!m) {
-		SetPetID(0);
-		return nullptr;
-	}
-
-	if (m->GetOwnerID() != GetID()) {
-		SetPetID(0);
-		return nullptr;
-	}
-
-	return m;
+    // If the index is within the bounds of the petids vector, return the pet ID at that index
+    if (idx < petids.size()) {
+        return petids[idx];
+    } else {
+        return 0;  // Return 0 if the index is out of bounds
+    }
 }
 
-bool Mob::HasPet() const {
-	if (GetPetID() == 0) {
-		return false;
-	}
+// Get the Mob instance of the pet at the given index
+Mob* Mob::GetPet(uint8 idx) {
+    // Check if the index is greater than or equal to the pet limit
+    if (idx >= RuleI(Custom, AbsolutePetLimit)) {
+        return nullptr;  // Return nullptr if the index exceeds the pet limit
+    }
 
-	const auto m = entity_list.GetMob(GetPetID());
-	if (!m) {
-		return false;
-	}
+    // Check if the pet ID at the given index is valid
+    if (!GetPetID(idx)) {
+        return nullptr;  // Return nullptr if there is no pet ID at this index
+    }
 
-	if (m->GetOwnerID() != GetID()) {
-		return false;
-	}
+    // Retrieve the Mob associated with the pet ID
+    const auto m = entity_list.GetMob(GetPetID(idx));
+    if (!m) {
+        RemovePet(idx);  // Remove the pet from the list if it no longer exists
+        return nullptr;  // Return nullptr if the pet does not exist
+    }
 
-	return true;
+    // Verify that the retrieved Mob is still owned by this Mob
+    if (m->GetOwnerID() != GetID()) {
+        RemovePet(idx);  // Remove the pet from the list if it is no longer owned by this Mob
+        return nullptr;  // Return nullptr if the ownership does not match
+    }
+
+    return m;  // Return the Mob instance of the pet if all checks pass
 }
 
-void Mob::SetPet(Mob* newpet) {
-	Mob* oldpet = GetPet();
-	if (oldpet) {
-		oldpet->SetOwnerID(0);
-	}
-	if (newpet == nullptr) {
-		SetPetID(0);
-	} else {
-		SetPetID(newpet->GetID());
-		Mob* oldowner = entity_list.GetMob(newpet->GetOwnerID());
-		if (oldowner)
-			oldowner->SetPetID(0);
-		newpet->SetOwnerID(GetID());
-	}
+std::vector<Mob*> Mob::GetAllPets() const {
+    std::vector<Mob*> pets;
+
+    for (uint16 pet_id : petids) {
+        auto pet = entity_list.GetMob(pet_id);
+        if (pet) {
+            pets.push_back(pet);
+        }
+    }
+
+    return pets;
 }
 
-void Mob::SetPetID(uint16 NewPetID) {
-	if (NewPetID == GetID() && NewPetID != 0)
-		return;
-	petid = NewPetID;
+// Remove the pet at the given index from the pet list
+bool Mob::RemovePetByIndex(uint8 idx /*= 0*/) {
+    // Check if the index is within the bounds of the petids vector
+    if (idx >= petids.size()) {
+        return false;  // Return false if the index is out of bounds
+    }
 
-	if(IsClient())
-	{
-		Mob* NewPet = entity_list.GetMob(NewPetID);
-		CastToClient()->UpdateXTargetType(MyPet, NewPet);
-	}
+    // Retrieve the Mob associated with the pet ID
+    auto m = entity_list.GetMob(GetPetID(idx));
+    if (m) {
+        m->SetOwnerID(0);  // Detach the pet from its owner if the Mob exists
+    }
+
+    // Remove the pet ID from the vector
+    petids.erase(petids.begin() + idx);
+
+    return true;  // Return true to indicate successful removal
+}
+
+bool Mob::RemovePet(Mob* pet) {
+    if (!pet) {
+        return false;  // Return false if the provided Mob pointer is null
+    }
+
+    // Get the ID of the Mob to remove and delegate to RemovePet by ID
+    return RemovePet(pet->GetID());
+}
+
+bool Mob::RemovePet(uint16 pet_id) {
+	ValidatePetList();
+    // Iterate through the petids vector to find and remove the pet by its ID
+    for (auto it = petids.begin(); it != petids.end(); ++it) {
+        if (*it == pet_id) {
+            // Retrieve the Mob associated with the pet ID
+            auto pet = entity_list.GetMob(pet_id);
+            if (pet) {
+                pet->SetOwnerID(0);  // Detach the pet from its owner
+            }
+            petids.erase(it);        // Remove the pet ID from the vector
+            return true;             // Return true to indicate successful removal
+        }
+    }
+
+    return false;  // Return false if the pet was not found in the list
+}
+
+// Remove all pets from the pet list
+void Mob::RemoveAllPets() {
+    // Iterate over each pet ID in the petids vector
+    for (auto pet_id : petids) {
+        // Retrieve the Mob associated with the pet ID
+        auto pet = entity_list.GetMob(pet_id);
+        if (pet) {
+            pet->SetOwnerID(0);  // Detach the pet from its owner if the Mob exists
+        }
+    }
+
+    // Clear the petids vector to remove all pet IDs
+    petids.clear();
+}
+
+// Check if there is a valid pet at the given index
+bool Mob::HasPet(uint8 idx) const {
+    // Check if the petids vector is empty or the index is out of bounds
+    if (petids.empty() || idx >= petids.size()) {
+        return false;  // Return false if there are no pets or the index is invalid
+    }
+
+    // Retrieve the Mob instance of the pet at the given index
+    auto m = entity_list.GetMob(petids[idx]);
+
+    return m != nullptr;  // Return true if the pet exists, false otherwise
+}
+
+// Add a new pet to the pet list by Mob object; returns true if pet is on the list at the end of this operation
+bool Mob::AddPet(Mob* newpet) {
+    // Delegate to the AddPet by ID function
+    return AddPet(newpet->GetID());
+}
+
+// Add a new pet to the pet list by pet ID; returns true if pet is on the list at the end of this operation
+bool Mob::AddPet(uint16 pet_id) {
+	ValidatePetList();
+    // Retrieve the Mob associated with the given pet ID
+    auto newpet = entity_list.GetMob(pet_id);
+    if (!newpet) {
+        return false;  // Return false if the Mob with the given ID does not exist
+    }
+
+    // Check if we have reached the absolute pet limit
+    if (petids.size() >= RuleI(Custom, AbsolutePetLimit)) {
+        return false;  // Return false if the limit is reached
+    }
+
+    // Check if this pet ID is already in the petids list
+    for (auto id : petids) {
+        if (id == pet_id) {
+            return true;  // Return true if the pet is already in the list
+        }
+    }
+
+    // Add the new pet's ID to the petids list and set its owner ID
+    petids.push_back(pet_id);
+    newpet->SetOwnerID(GetID());  // Set the owner ID to this mob's ID
+
+    // Log the contents of the petids list before the final return
+    LogDebug("Pet ID [{}] added to petids list for Mob [{}]. Current petids:", pet_id, GetCleanName());
+    for (auto id : petids) {
+        LogDebug("  - Pet ID: [{}]", id);
+    }
+
+    return true;  // Return true to indicate the pet was successfully added
+}
+
+void Mob::ValidatePetList() {
+    for (auto it = petids.begin(); it != petids.end(); ) {
+        if (!entity_list.GetMob(*it)) {
+            LogDebug("Removing invalid pet ID [{}] from petids list for Mob [{}].", *it, GetCleanName());
+            it = petids.erase(it);  // Remove invalid pet ID and advance the iterator
+        } else {
+            ++it;  // Advance the iterator if the ID is valid
+        }
+    }
+}
+
+// Set a pet into the given index location using a Mob object
+bool Mob::SetPet(Mob* newpet, uint8 idx) {
+    // Delegate to the SetPet by ID function
+    return SetPet(idx, newpet->GetID());
+}
+
+// Set a pet into the given index location using a pet ID
+bool Mob::SetPet(uint16 pet_id, uint8 idx) {
+	ValidatePetList();
+    // Retrieve the Mob associated with the given pet ID
+    auto newpet = entity_list.GetMob(pet_id);
+    if (!newpet) {
+        return false;  // Return false if the Mob with the given ID does not exist
+    }
+
+    // Check if the index is within the allowed pet limit
+    if (idx >= RuleI(Custom, AbsolutePetLimit)) {
+        return false;  // Return false if the index exceeds the pet limit
+    }
+
+    // Ensure the petids vector is large enough to accommodate the index
+    if (idx >= petids.size()) {
+        // Resize the petids vector if necessary, filling new slots with 0 (invalid ID)
+        petids.resize(idx + 1, 0);
+    }
+
+    // Check if this pet ID is already in the petids list
+    for (auto id : petids) {
+        if (id == pet_id) {
+            return true;  // Return true if the pet is already in the list
+        }
+    }
+
+    // Set the new pet ID at the given index
+    petids[idx] = pet_id;
+    newpet->SetOwnerID(GetID());  // Set the owner ID to this mob's ID
+
+    return true;  // Return true to indicate the pet was successfully set
 }
 
 void NPC::GetPetState(SpellBuff_Struct *pet_buffs, uint32 *items, char *name) {

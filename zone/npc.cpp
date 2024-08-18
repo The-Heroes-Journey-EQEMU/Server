@@ -580,12 +580,9 @@ bool NPC::Process()
 	if (p_depop)
 	{
 		Mob* owner = entity_list.GetMob(ownerid);
-		if (owner != 0)
+		if (owner)
 		{
-			//if(GetBodyType() != BodyType::SwarmPet)
-			// owner->SetPetID(0);
 			ownerid = 0;
-			petid = 0;
 		}
 		return false;
 	}
@@ -599,79 +596,8 @@ bool NPC::Process()
 
 	if (GetSwarmInfo()) {
 		if (swarm_timer.Check()) {
-			if (!GetSwarmInfo()->permanent) {
+			if (!GetSwarmInfo()) {
 				DepopSwarmPets();
-			}
-		}
-
-		Mob* owner = entity_list.GetMob(GetSwarmOwner());
-		bool held = false;
-		if (owner && owner->IsClient()) {
-			if (owner->GetPet()) { held  = owner->GetPet()->IsHeld() || owner->GetPet()->IsGHeld(); }
-			// Normal Swarm Pets
-			if (!GetSwarmInfo()->permanent && RuleB(Spells, SwarmPetFullAggro) && !GetTarget()) {
-				for (const auto& npc_entity : entity_list.GetNPCList()) {
-					auto entity_id = npc_entity.first;
-					auto npc = npc_entity.second;
-
-					if (npc->IsOnHatelist(owner) && !IsOnHatelist(npc)) {
-						AddToHateList(npc, 100, 100);
-						LogDebug("Adding [{}] to swarm pet hate list", npc->GetName());
-					}
-				}
-			} else if (GetSwarmInfo()->permanent && !GetTarget()) {
-				if (owner->GetPet() && owner->GetPet()->GetTarget() && DistanceSquared(GetPosition(), owner->GetPet()->GetTarget()->GetPosition()) <= RuleR(Aggro, PetAttackRange)) {
-					auto target = owner->GetPet()->GetTarget();
-					AddToHateList(target, 100, 0, true, false, false, SPELL_UNKNOWN, true);
-					SetTarget(target);
-					MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
-				}
-			}
-		}
-	}
-
-	if (!GetTarget() && (IsPet() && GetOwner()->IsClient()) || (entity_list.GetClientByID(GetSwarmOwner()) && GetSwarmInfo()->permanent)) {
-		auto owner = GetOwner()->CastToClient();
-		if (!owner) {
-			owner = entity_list.GetClientByID(GetSwarmOwner());
-		}
-
-		if (owner && owner->HasPet() && owner->GetPet()->GetPetOrder() == eStandingPetOrder::SPO_Guard && !(owner->GetPet()->IsHeld() || owner->GetPet()->IsGHeld())) {
-			std::vector<NPC*> npc_vector;
-			for (const auto& npc_entity : entity_list.GetNPCList()) {
-				bool match = false;
-				for (const auto& pet_entity : owner->GetAllPets()) {
-					if (pet_entity->GetTarget() == npc_entity.second) {
-						match = true;
-						break;
-					}
-				}
-				if (!match && DistanceSquared(GetPosition(), npc_entity.second->GetPosition()) <= (RuleR(Aggro, PetAttackRange) / 4)) {
-					npc_vector.push_back(npc_entity.second);
-				}
-			}
-
-			std::random_device rd;
-			std::mt19937 g(rd());
-			std::shuffle(npc_vector.begin(), npc_vector.end(), g);
-
-			for (const auto target : npc_vector) {
-				if (!GetTarget() && target->IsOnHatelist(owner) && !IsOnHatelist(target)) {
-					AddToHateList(target, 100, 0, true, false, false, SPELL_UNKNOWN, true);
-					SetTarget(target);
-					MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
-				}
-			}
-
-			if (!GetTarget()) {
-				for (const auto pet : owner->GetAllPets()) {
-					auto target = pet->GetTarget();
-					if (target) {
-						AddToHateList(target, 100, 0, true, false, false, SPELL_UNKNOWN, true);
-						SetTarget(target);
-						MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
-					}
-				}
 			}
 		}
 	}
@@ -2285,7 +2211,7 @@ void NPC::PetOnSpawn(NewSpawn_Struct* ns)
 		swarm_owner->SetTempPetCount(swarm_owner->GetTempPetCount() + 1);
 
 		//Not recommended if using above (However, this will work better on older clients).
-		if (RuleB(Pets, UnTargetableSwarmPet) && !GetSwarmInfo()->permanent) {
+		if (RuleB(Pets, UnTargetableSwarmPet)) {
 			ns->spawn.bodytype = BodyType::NoTarget;
 		}
 
