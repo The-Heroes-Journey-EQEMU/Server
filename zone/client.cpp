@@ -732,17 +732,39 @@ bool Client::Save(uint8 iCommitNow) {
 
 	m_pp.lastlogin = time(nullptr);
 
-	if (GetPet() && GetPet()->CastToNPC()->GetPetSpellID() && !dead) {
-		NPC *pet = GetPet()->CastToNPC();
-		m_petinfo.SpellID = pet->CastToNPC()->GetPetSpellID();
-		m_petinfo.HP = pet->GetHP();
-		m_petinfo.Mana = pet->GetMana();
-		pet->GetPetState(m_petinfo.Buffs, m_petinfo.Items, m_petinfo.Name);
-		m_petinfo.petpower = pet->GetPetPower();
-		m_petinfo.size = pet->GetSize();
-		m_petinfo.taunting = pet->CastToNPC()->IsTaunting();
+	ValidatePetList(); // make sure pet list is compacted correctly
+
+	auto pets = GetAllPets(); // Assuming this function returns std::vector<Mob*>
+	m_petinfomulti.resize(pets.size()); // Resize m_petinfomulti to match the number of pets
+	// Clean up any existing PetInfo objects
+   	for (auto& pet_info : m_petinfomulti) {
+		if (pet_info) {
+			memset(pet_info, 0, sizeof(PetInfo)); // Dereference the pointer correctly
+		}
+	}
+
+	if (!pets.empty() && !dead) {
+		for (size_t i = 0; i < pets.size(); ++i) {
+			NPC *pet = pets[i]->CastToNPC();
+			if (pet && pet->GetPetSpellID()) {
+				if (!m_petinfomulti[i]) {
+					m_petinfomulti[i] = new PetInfo(); // Ensure memory is allocated
+				}
+				m_petinfomulti[i]->SpellID = pet->GetPetSpellID();
+				m_petinfomulti[i]->HP = pet->GetHP();
+				m_petinfomulti[i]->Mana = pet->GetMana();
+				pet->GetPetState(m_petinfomulti[i]->Buffs, m_petinfomulti[i]->Items, m_petinfomulti[i]->Name);
+				m_petinfomulti[i]->petpower = pet->GetPetPower();
+				m_petinfomulti[i]->size = pet->GetSize();
+				m_petinfomulti[i]->taunting = pet->IsTaunting();
+			}
+		}
 	} else {
-		memset(&m_petinfo, 0, sizeof(struct PetInfo));
+		for (auto& pet_info : m_petinfomulti) {
+			if (pet_info) {
+				memset(pet_info, 0, sizeof(PetInfo)); // Dereference the pointer correctly
+			}
+		}
 	}
 
 	database.SavePetInfo(this);

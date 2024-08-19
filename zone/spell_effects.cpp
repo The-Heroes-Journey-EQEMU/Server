@@ -3925,7 +3925,7 @@ void Mob::BuffProcess()
 
 					if (RuleB(Custom, SuspendGroupBuffs) && IsBeneficialSpell(buffs[buffs_i].spellid)) {
 						uint32 spellid = buffs[buffs_i].spellid;
-						if (IsClient() || (IsPetOwnerClient()) && buffs[buffs_i].caster_name) {
+						if ((IsClient() || IsPet()) && buffs[buffs_i].caster_name) {
 							Client* caster = entity_list.GetClientByName(buffs[buffs_i].caster_name);
 							Client* client = GetOwnerOrSelf()->CastToClient();
 

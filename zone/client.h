@@ -468,20 +468,7 @@ public:
 	inline ExtendedProfile_Struct& GetEPP() { return m_epp; }
 	inline EQ::InventoryProfile& GetInv() { return m_inv; }
 	inline const EQ::InventoryProfile& GetInv() const { return m_inv; }
-	inline PetInfo* GetPetInfo(int pet_info_type) {
-		switch (pet_info_type) {
-			case PetInfoType::Current:
-				return &m_petinfo;
-			case PetInfoType::Suspended:
-				return &m_suspendedminion;
-			case PetInfoType::PermanentSlot1:
-				return &m_petinfoextra[0];
-			case PetInfoType::PermanentSlot2:
-				return &m_petinfoextra[1];
-			default:
-				return nullptr;
-		}
-	}
+	inline std::vector<PetInfo*>& GetPetsInfo() { return m_petinfomulti; }
 	inline InspectMessage_Struct& GetInspectMessage() { return m_inspect_message; }
 	inline const InspectMessage_Struct& GetInspectMessage() const { return m_inspect_message; }
 	void ReloadExpansionProfileSetting();
@@ -2083,6 +2070,9 @@ private:
 	PetInfo m_petinfo; // current pet data, used while loading from and saving to DB
 	PetInfo m_suspendedminion; // pet data for our suspended minion.
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary
+
+	std::vector<PetInfo*> m_petinfomulti;
+
 	InspectMessage_Struct m_inspect_message;
 	bool temp_pvp;
 

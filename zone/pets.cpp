@@ -694,7 +694,8 @@ Mob* Mob::GetPet(uint8 idx) {
     return m;  // Return the Mob instance of the pet if all checks pass
 }
 
-std::vector<Mob*> Mob::GetAllPets() const {
+std::vector<Mob*> Mob::GetAllPets() {
+	ValidatePetList();
     std::vector<Mob*> pets;
 
     for (uint16 pet_id : petids) {
