@@ -486,6 +486,47 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 
 	//Enforce Percent XP Cap per kill, if rule is enabled
 	int kill_percent_xp_cap = RuleI(Character, ExperiencePercentCapPerKill);
+
+	if (RuleB(Character, FloatingExperiencePercentCapPerKill)) {
+		int level = GetLevel();
+
+		// Calculate the level scaling factor
+		float level_scaling = RuleR(Character, FloatingExperienceMaxScaleFactor) -
+							(RuleR(Character, FloatingExperienceMaxScaleFactor) - 1.0f) *
+							((float)level - 1.0f) /
+							(RuleI(Character, FloatingExperienceScaleTerminalLevel) - 1.0f);
+
+		int cap = 0;
+
+		switch (conlevel) {
+			case ConsiderColor::Red:
+				cap = static_cast<int>(RuleI(Character, FloatingExperiencePercentCapPerRedKill) * level_scaling);
+				break;
+			case ConsiderColor::Yellow:
+				cap = static_cast<int>(RuleI(Character, FloatingExperiencePercentCapPerYellowKill) * level_scaling);
+				break;
+			case ConsiderColor::White:
+				cap = static_cast<int>(RuleI(Character, FloatingExperiencePercentCapPerWhiteKill) * level_scaling);
+				break;
+			case ConsiderColor::DarkBlue:
+				cap = static_cast<int>(RuleI(Character, FloatingExperiencePercentCapPerBlueKill) * level_scaling);
+				break;
+			case ConsiderColor::LightBlue:
+				cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerLightBlueKill) * level_scaling);
+				break;
+			case ConsiderColor::Green:
+				cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerGreenKill) * level_scaling);
+				break;
+			default:
+				break;
+		}
+
+		// Override kill_percent_xp_cap if a valid cap was calculated
+		if (cap > 0) {
+			kill_percent_xp_cap = std::min(kill_percent_xp_cap, cap);
+		}
+	}
+
 	if (kill_percent_xp_cap >= 0) {
 		auto experience_for_level = (GetEXPForLevel(GetLevel() + 1) - GetEXPForLevel(GetLevel()));
 		float exp_percent = (float)((float)add_exp / (float)(GetEXPForLevel(GetLevel() + 1) - GetEXPForLevel(GetLevel()))) * (float)100; //EXP needed for level
