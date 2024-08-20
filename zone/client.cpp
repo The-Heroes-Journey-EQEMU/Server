@@ -734,16 +734,16 @@ bool Client::Save(uint8 iCommitNow) {
 
 	ValidatePetList(); // make sure pet list is compacted correctly
 
-	auto pets = GetAllPets(); // Assuming this function returns std::vector<Mob*>
-	m_petinfomulti.resize(pets.size()); // Resize m_petinfomulti to match the number of pets
-	// Clean up any existing PetInfo objects
    	for (auto& pet_info : m_petinfomulti) {
 		if (pet_info) {
 			memset(pet_info, 0, sizeof(PetInfo)); // Dereference the pointer correctly
 		}
 	}
 
-	if (!pets.empty() && !dead) {
+	auto pets = GetAllPets(); // Assuming this function returns std::vector<Mob*>
+	m_petinfomulti.resize(pets.size()); // Resize m_petinfomulti to match the number of pets
+
+	if (!dead) {
 		for (size_t i = 0; i < pets.size(); ++i) {
 			NPC *pet = pets[i]->CastToNPC();
 			if (pet && pet->GetPetSpellID()) {
@@ -757,12 +757,6 @@ bool Client::Save(uint8 iCommitNow) {
 				m_petinfomulti[i]->petpower = pet->GetPetPower();
 				m_petinfomulti[i]->size = pet->GetSize();
 				m_petinfomulti[i]->taunting = pet->IsTaunting();
-			}
-		}
-	} else {
-		for (auto& pet_info : m_petinfomulti) {
-			if (pet_info) {
-				memset(pet_info, 0, sizeof(PetInfo)); // Dereference the pointer correctly
 			}
 		}
 	}
@@ -7076,7 +7070,7 @@ void Client::SendXTargetPacket(uint32 Slot, Mob *m)
 		}
 		else
 		{
-			outapp->WriteUInt8(0);
+			outapp->WriteUInt8(XTargets[Slot].Type);
 		}
 	}
 	outapp->WriteUInt32(XTargets[Slot].ID);

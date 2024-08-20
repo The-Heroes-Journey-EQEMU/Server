@@ -4352,38 +4352,39 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 		// pets that have GHold will never automatically add NPCs
 		// pets that have Hold and no Focus will add NPCs if they're engaged
 		// pets that have Hold and Focus will not add NPCs
-		if (
-			Mob* pet = GetPet();
-			pet &&
-			!pet->IsFamiliar() &&
-			!pet->GetSpecialAbility(SpecialAbility::AggroImmunity) &&
-			!pet->IsEngaged() &&
-			attacker &&
-			!(attacker->IsBot() && pet->GetSpecialAbility(SpecialAbility::BotAggroImmunity)) &&
-			!(attacker->IsClient() && pet->GetSpecialAbility(SpecialAbility::ClientAggroImmunity)) &&
-			!(attacker->IsNPC() && pet->GetSpecialAbility(SpecialAbility::NPCAggroImmunity)) &&
-			attacker != this &&
-			!attacker->IsCorpse() &&
-			!pet->IsGHeld() &&
-			!attacker->IsTrap() &&
-			!pet->IsHeld()
-		) {
-			LogAggro("Sending pet [{}] into battle due to attack", pet->GetName());
-			if (IsClient() && !pet->IsPetStop()) {
-				// if pet was sitting his new mode is previous setting of
-				// follow or guard after the battle (live verified)
-				if (pet->GetPetOrder() == SPO_Sit) {
-					pet->SetPetOrder(pet->GetPreviousPetOrder());
+		for (auto pet : GetAllPets()) {
+			if (
+				pet &&
+				!pet->IsFamiliar() &&
+				!pet->GetSpecialAbility(SpecialAbility::AggroImmunity) &&
+				!pet->IsEngaged() &&
+				attacker &&
+				!(attacker->IsBot() && pet->GetSpecialAbility(SpecialAbility::BotAggroImmunity)) &&
+				!(attacker->IsClient() && pet->GetSpecialAbility(SpecialAbility::ClientAggroImmunity)) &&
+				!(attacker->IsNPC() && pet->GetSpecialAbility(SpecialAbility::NPCAggroImmunity)) &&
+				attacker != this &&
+				!attacker->IsCorpse() &&
+				!pet->IsGHeld() &&
+				!attacker->IsTrap() &&
+				!pet->IsHeld()
+			) {
+				LogAggro("Sending pet [{}] into battle due to attack", pet->GetName());
+				if (IsClient() && !pet->IsPetStop()) {
+					// if pet was sitting his new mode is previous setting of
+					// follow or guard after the battle (live verified)
+					if (pet->GetPetOrder() == SPO_Sit) {
+						pet->SetPetOrder(pet->GetPreviousPetOrder());
+					}
+
+					// fix GUI sit button to be unpressed and stop sitting regen
+					CastToClient()->SetPetCommandState(PET_BUTTON_SIT, 0);
+					pet->SetAppearance(eaStanding);
 				}
 
-				// fix GUI sit button to be unpressed and stop sitting regen
-				CastToClient()->SetPetCommandState(PET_BUTTON_SIT, 0);
-				pet->SetAppearance(eaStanding);
+				pet->AddToHateList(attacker, 1, 0, true, false, false, spell_id);
+				pet->SetTarget(attacker);
+				MessageString(Chat::NPCQuestSay, PET_ATTACKING, pet->GetCleanName(), attacker->GetCleanName());
 			}
-
-			pet->AddToHateList(attacker, 1, 0, true, false, false, spell_id);
-			pet->SetTarget(attacker);
-			MessageString(Chat::NPCQuestSay, PET_ATTACKING, pet->GetCleanName(), attacker->GetCleanName());
 		}
 
 		if (GetTempPetCount()) {

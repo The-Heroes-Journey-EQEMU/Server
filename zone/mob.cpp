@@ -4568,10 +4568,6 @@ Mob* Mob::GetOwnerOrSelf()
 		return m;
 	}
 
-	if (m->GetPetID() == GetID()) {
-		return m;
-	}
-
 	if (IsNPC() && CastToNPC()->GetSwarmInfo()){
 		return CastToNPC()->GetSwarmInfo()->GetOwner();
 	}

@@ -651,6 +651,68 @@ bool ZoneDatabase::GetPoweredPetEntry(const std::string& pet_type, int16 pet_pow
 	return true;
 }
 
+void Mob::ConfigurePetWindow(Mob* selected_pet) {
+	if (selected_pet && selected_pet->GetOwnerID() == GetID()) {
+		auto this_client = CastToClient();
+		auto pet_npc	 = selected_pet->CastToNPC();
+
+		auto outapp = new EQApplicationPacket;
+		auto outapp2 = new EQApplicationPacket;
+
+		focused_pet_id = pet_npc->GetID();
+
+		// Handle SPO? Maybe just Follow\Guard
+		switch (pet_npc->GetPetOrder()) {
+			case SPO_Follow:
+				pet_npc->SetEntityVariable("IgnoreNextFollowCommand", "true");
+				break;
+			case SPO_Guard:
+				pet_npc->SetEntityVariable("IgnoreNextGuardCommand", "true");
+				break;
+			case SPO_Sit:
+				pet_npc->SetEntityVariable("IgnoreNextSitCommand", "true");
+				break;
+		}
+
+		pet_npc->CreateDespawnPacket(outapp, false);
+		pet_npc->CreateSpawnPacket(outapp2, this);
+
+		this_client->QueuePacket(outapp);
+		this_client->QueuePacket(outapp2);
+
+		pet_npc->SendAppearancePacket(AppearanceType::Pet, pet_npc->GetID(), true, true);
+		pet_npc->SendBuffsToClient(this_client);
+		pet_npc->SendPetBuffsToClient();
+
+		if (pet_npc->IsHeld()) { pet_npc->SetEntityVariable("IgnoreNextHoldCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_HOLD, pet_npc->IsHeld());
+
+		if (pet_npc->IsTaunting()) { pet_npc->SetEntityVariable("IgnoreNextTauntCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_TAUNT, pet_npc->IsTaunting());
+
+		if (pet_npc->IsGHeld()) { pet_npc->SetEntityVariable("IgnoreNextGHoldCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_GHOLD, pet_npc->IsGHeld());
+
+		if (pet_npc->IsFocused()) { pet_npc->SetEntityVariable("IgnoreNextFocusCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_FOCUS, pet_npc->IsFocused());
+
+		if (pet_npc->IsNoCast()) { pet_npc->SetEntityVariable("IgnoreNextSpellholdCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_SPELLHOLD, pet_npc->IsNoCast());
+
+		if (pet_npc->GetPetOrder() == SPO_Follow) { pet_npc->SetEntityVariable("IgnoreNextFollowCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_FOLLOW, pet_npc->GetPetOrder() == SPO_Follow);
+
+		if (pet_npc->GetPetOrder() == SPO_Guard) { pet_npc->SetEntityVariable("IgnoreNextGuardCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_GUARD, pet_npc->GetPetOrder() == SPO_Guard);
+
+		if (pet_npc->GetPetOrder() == SPO_Sit) { pet_npc->SetEntityVariable("IgnoreNextSitCommand", "true"); }
+		this_client->SetPetCommandState(PET_BUTTON_SIT, pet_npc->GetPetOrder() == SPO_Sit);
+
+		safe_delete(outapp);
+		safe_delete(outapp2);
+	}
+}
+
 // Get the ID of the pet at the given index
 uint16 Mob::GetPetID(uint8 idx) const {
     // Check if the index is greater than or equal to the pet limit
@@ -708,6 +770,25 @@ std::vector<Mob*> Mob::GetAllPets() {
     return pets;
 }
 
+Mob* Mob::GetPetByID(uint16 id) {
+	ValidatePetList();
+    // Iterate through the list of pet IDs
+    for (uint16 pet_id : petids) {
+        if (pet_id == id) {  // Check if the current pet ID matches the provided ID
+            // Retrieve the Mob associated with the pet ID
+            Mob* pet = entity_list.GetMob(pet_id);
+            if (pet && pet->GetOwnerID() == GetID()) {  // Ensure the pet is still owned by this Mob
+                return pet;  // Return the pet if it is owned by this Mob and matches the ID
+            } else {
+                // If the pet exists but isn't owned by this Mob, consider removing it from the list
+                RemovePet(pet_id);  // Clean up the pet list if needed
+            }
+        }
+    }
+
+    return nullptr;  // Return nullptr if no pet with the given ID is found
+}
+
 // Remove the pet at the given index from the pet list
 bool Mob::RemovePetByIndex(uint8 idx /*= 0*/) {
     // Check if the index is within the bounds of the petids vector
@@ -728,6 +809,7 @@ bool Mob::RemovePetByIndex(uint8 idx /*= 0*/) {
 }
 
 bool Mob::RemovePet(Mob* pet) {
+	ValidatePetList();
     if (!pet) {
         return false;  // Return false if the provided Mob pointer is null
     }

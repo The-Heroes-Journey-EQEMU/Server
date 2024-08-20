@@ -1666,6 +1666,11 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 				item.RecastDelay = 5;
 				item.RecastType = -1;
 			}
+
+			if (item.ID % 1000000 == 6307 || item.ID % 1000000 == 6309 || item.ID % 1000000 == 6313) {
+				item.NoDrop = !item.NoDrop;
+				item.NoPet = !item.NoPet;
+			}
 		}
 
 		// Bard Instrument that isn't a weapon which fits in primary/secondary

@@ -3888,6 +3888,31 @@ void ZoneDatabase::LoadAuras(Client *c)
 void ZoneDatabase::SavePetInfo(Client *client)
 {
     std::vector<PetInfo*> pets = client->GetPetsInfo();
+
+	CharacterPetInfoRepository::DeleteWhere(
+        database,
+        fmt::format(
+            "`char_id` = {}",
+            client->CharacterID()
+        )
+    );
+
+	CharacterPetBuffsRepository::DeleteWhere(
+        database,
+        fmt::format(
+            "`char_id` = {}",
+            client->CharacterID()
+        )
+    );
+
+	CharacterPetInventoryRepository::DeleteWhere(
+        database,
+        fmt::format(
+            "`char_id` = {}",
+            client->CharacterID()
+        )
+    );
+
     if (pets.empty()) {
         return;
     }
@@ -3955,37 +3980,13 @@ void ZoneDatabase::SavePetInfo(Client *client)
         }
     }
 
-    CharacterPetInfoRepository::DeleteWhere(
-        database,
-        fmt::format(
-            "`char_id` = {}",
-            client->CharacterID()
-        )
-    );
-
     if (!pet_infos.empty()) {
         CharacterPetInfoRepository::InsertMany(database, pet_infos);
     }
 
-    CharacterPetBuffsRepository::DeleteWhere(
-        database,
-        fmt::format(
-            "`char_id` = {}",
-            client->CharacterID()
-        )
-    );
-
     if (!pet_buffs.empty()) {
         CharacterPetBuffsRepository::InsertMany(database, pet_buffs);
     }
-
-    CharacterPetInventoryRepository::DeleteWhere(
-        database,
-        fmt::format(
-            "`char_id` = {}",
-            client->CharacterID()
-        )
-    );
 
     if (!inventory.empty()) {
         CharacterPetInventoryRepository::InsertMany(database, inventory);

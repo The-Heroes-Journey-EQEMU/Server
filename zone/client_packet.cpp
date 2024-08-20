@@ -1737,6 +1737,11 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 		}
 	}
 
+	for (auto& info : m_petinfomulti) {
+		memset(info, 0, sizeof(info));
+		safe_delete(info);
+	}
+
 	/* Moved here so it's after where we load the pet data. */
 	if (!aabonuses.ZoneSuspendMinion && !spellbonuses.ZoneSuspendMinion && !itembonuses.ZoneSuspendMinion) {
 		memset(&m_suspendedminion, 0, sizeof(PetInfo));
@@ -11225,6 +11230,9 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 	Mob* mypet = GetPet();
 	Mob *target = entity_list.GetMob(pet->target);
 
+	auto foc_pet = GetPetByID(focused_pet_id)->CastToNPC();
+	LogDebug("Taunting:[{}], Held:[{}], GHeld:[{}], Focus:[{}]", foc_pet->IsTaunting(), foc_pet->IsHeld(), foc_pet->IsGHeld(), foc_pet->IsFocused());
+
 	if (!mypet || pet->command == PET_LEADER) {
 		if (pet->command == PET_LEADER) {
 			// we either send the ID of an NPC we're interested in or no ID for our own pet
@@ -11260,7 +11268,7 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 	PetCommand = PET_STANDUP;
 	}
 	*/
-
+	LogDebug("Got Pet Command: [{}]", PetCommand);
 	switch (PetCommand)
 	{
 		case PET_ATTACK: {
@@ -11325,623 +11333,652 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 			}
 			break;
 		}
-    case PET_QATTACK: {
-        int pet_idx = GetEntityVariable("PetAttackIndex").empty() ? 0 : std::stoi(GetEntityVariable("PetAttackIndex"));
-        if (pet_idx >= petids.size()) {
-            pet_idx = 0; // Reset to the first pet if we've gone through all
-        }
+		case PET_QATTACK: {
+			int pet_idx = GetEntityVariable("PetAttackIndex").empty() ? 0 : std::stoi(GetEntityVariable("PetAttackIndex"));
+			if (pet_idx >= petids.size()) {
+				pet_idx = 0; // Reset to the first pet if we've gone through all
+			}
 
-        auto pet_id = petids[pet_idx];
-        auto pet = entity_list.GetMob(pet_id);
+			auto pet_id = petids[pet_idx];
+			auto pet = entity_list.GetMob(pet_id);
 
-        if (target->IsMezzed()) {
-            MessageString(Chat::NPCQuestSay, CANNOT_WAKE, pet->GetCleanName(), target->GetCleanName());
-            break;
-        }
+			if (target->IsMezzed()) {
+				MessageString(Chat::NPCQuestSay, CANNOT_WAKE, pet->GetCleanName(), target->GetCleanName());
+				break;
+			}
 
-        if (pet->IsFeared())
-            break; // Prevent pet from attacking stuff while feared
+			if (pet->IsFeared())
+				break; // Prevent pet from attacking stuff while feared
 
-        if (!pet->IsAttackAllowed(target)) {
-            pet->SayString(this, NOT_LEGAL_TARGET);
-            break;
-        }
+			if (!pet->IsAttackAllowed(target)) {
+				pet->SayString(this, NOT_LEGAL_TARGET);
+				break;
+			}
 
-        if (DistanceSquared(pet->GetPosition(), target->GetPosition()) >= RuleR(Aggro, PetAttackRange)) {
-            break;
-        }
-
-        if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
-            if (target != this && DistanceSquared(pet->GetPosition(), target->GetPosition()) <= (RuleR(Pets, AttackCommandRange) * RuleR(Pets, AttackCommandRange))) {
-                pet->SetFeigned(false);
-                if (pet->IsPetStop()) {
-                    pet->SetPetStop(false);
-                    SetPetCommandState(PET_BUTTON_STOP, 0);
-                }
-                if (pet->IsPetRegroup()) {
-                    pet->SetPetRegroup(false);
-                    SetPetCommandState(PET_BUTTON_REGROUP, 0);
-                }
-
-                SetPetCommandState(PET_BUTTON_SIT, 0);
-                if (pet->GetPetOrder() == SPO_Sit || pet->GetPetOrder() == SPO_FeignDeath) {
-                    pet->SetPetOrder(pet->GetPreviousPetOrder());
-                    pet->SetAppearance(eaStanding);
-                }
-
-                zone->AddAggroMob();
-                int hate = 1;
-                if (pet->IsEngaged()) {
-                    auto top = pet->GetHateMost();
-                    if (top && top != target)
-                        hate += pet->GetHateAmount(top) - pet->GetHateAmount(target) + 100; // Should be enough to cause target change
-                }
-                pet->AddToHateList(target, hate, 0, true, false, false, SPELL_UNKNOWN, true);
-                MessageString(Chat::PetResponse, PET_ATTACKING, pet->GetCleanName(), target->GetCleanName());
-                SetTarget(target);
-            }
-        }
-
-        // Update the index to the next pet
-        pet_idx = (pet_idx + 1) % petids.size();
-        SetEntityVariable("PetAttackIndex", std::to_string(pet_idx));
-        break;
-    }
-	case PET_BACKOFF: {
-		auto backoffPet = [&](Mob* pet) {
-			if (pet->IsFeared()) return; // keeps pet running while feared
+			if (DistanceSquared(pet->GetPosition(), target->GetPosition()) >= RuleR(Aggro, PetAttackRange)) {
+				break;
+			}
 
 			if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
-				pet->SayString(this, Chat::PetResponse, PET_CALMING);
-				pet->WipeHateList();
-				pet->SetTarget(nullptr);
-				if (pet->IsPetStop()) {
-					pet->SetPetStop(false);
-					SetPetCommandState(PET_BUTTON_STOP, 0);
+				if (target != this && DistanceSquared(pet->GetPosition(), target->GetPosition()) <= (RuleR(Pets, AttackCommandRange) * RuleR(Pets, AttackCommandRange))) {
+					pet->SetFeigned(false);
+					if (pet->IsPetStop()) {
+						pet->SetPetStop(false);
+						SetPetCommandState(PET_BUTTON_STOP, 0);
+					}
+					if (pet->IsPetRegroup()) {
+						pet->SetPetRegroup(false);
+						SetPetCommandState(PET_BUTTON_REGROUP, 0);
+					}
+
+					SetPetCommandState(PET_BUTTON_SIT, 0);
+					if (pet->GetPetOrder() == SPO_Sit || pet->GetPetOrder() == SPO_FeignDeath) {
+						pet->SetPetOrder(pet->GetPreviousPetOrder());
+						pet->SetAppearance(eaStanding);
+					}
+
+					zone->AddAggroMob();
+					int hate = 1;
+					if (pet->IsEngaged()) {
+						auto top = pet->GetHateMost();
+						if (top && top != target)
+							hate += pet->GetHateAmount(top) - pet->GetHateAmount(target) + 100; // Should be enough to cause target change
+					}
+					pet->AddToHateList(target, hate, 0, true, false, false, SPELL_UNKNOWN, true);
+					MessageString(Chat::PetResponse, PET_ATTACKING, pet->GetCleanName(), target->GetCleanName());
+					SetTarget(target);
 				}
 			}
-		};
 
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			// Target is one of our pets
-			backoffPet(GetTarget());
-		} else {
-			// Target is not one of our pets, back off all pets
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				backoffPet(pet);
-			}
+			// Update the index to the next pet
+			pet_idx = (pet_idx + 1) % petids.size();
+			SetEntityVariable("PetAttackIndex", std::to_string(pet_idx));
+			break;
 		}
-		break;
-	}
-	case PET_HEALTHREPORT: {
-		auto reportHealth = [&](Mob* pet) {
-			if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
-				MessageString(Chat::PetResponse, PET_REPORT_HP, ConvertArrayF(pet->GetHPRatio(), val1));
-				pet->ShowBuffs(this);
-			}
-		};
+		case PET_BACKOFF: {
+			auto backoffPet = [&](Mob* pet) {
+				if (pet->IsFeared()) return; // keeps pet running while feared
 
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			// Target is one of our pets
-			reportHealth(GetTarget());
-		} else {
-			// Target is not one of our pets, report health for all pets
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				reportHealth(pet);
-			}
-		}
-		break;
-	}
-	case PET_GETLOST: {
-		auto handlePetGetLost = [&](Mob* pet) {
-			if (!pet) return;
+				if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
+					pet->SayString(this, Chat::PetResponse, PET_CALMING);
+					pet->WipeHateList();
+					pet->SetTarget(nullptr);
+					if (pet->IsPetStop()) {
+						pet->SetPetStop(false);
+						SetPetCommandState(PET_BUTTON_STOP, 0);
+					}
+				}
+			};
 
-			if (pet->Charmed()) return;
-
-			if (pet->GetPetType() == petCharmed || !pet->IsNPC()) {
-				pet->BuffFadeByEffect(SE_Charm);
-				return;
-			}
-
-			RemovePet(pet);
-			pet->SayString(this, Chat::PetResponse, PET_GETLOST_STRING);
-			pet->CastToNPC()->Depop();
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			handlePetGetLost(GetTarget());
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				handlePetGetLost(pet);
-			}
-		}
-	}
-	case PET_GUARDHERE: {
-		break;
-	}
-	case PET_FOLLOWME: {
-		auto PetFollowMe = [&](Mob* pet) {
-			if (pet->IsFeared()) return; // Prevent exploitation like in PET_BACKOFF
-
-			if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
-				pet->SetFeigned(false);
-				pet->SayString(this, Chat::PetResponse, PET_FOLLOWING);
-				pet->SetPetOrder(SPO_Follow);
-
-				// Fix GUI sit button to be unpressed - send stand anim/end hpregen
-				SetPetCommandState(PET_BUTTON_SIT, 0);
-				pet->SetAppearance(eaStanding);
-
-				if (pet->IsPetStop()) {
-					pet->SetPetStop(false);
-					SetPetCommandState(PET_BUTTON_STOP, 0);
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				// Target is one of our pets
+				backoffPet(GetTarget());
+			} else {
+				// Target is not one of our pets, back off all pets
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					backoffPet(pet);
 				}
 			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			// Target is one of our pets
-			PetFollowMe(GetTarget());
-		} else {
-			// Target is not one of our pets, set all pets to follow
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				PetFollowMe(pet);
-			}
+			break;
 		}
-		break;
-	}
-	case PET_TAUNT:
-	case PET_TAUNT_ON:
-	case PET_TAUNT_OFF: {
-		auto handleTaunt = [&](Mob* pet, bool enable_taunt) {
-			if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
-				if (enable_taunt) {
-					MessageString(Chat::PetResponse, PET_DO_TAUNT);
-					pet->CastToNPC()->SetTaunting(true);
-				} else {
-					MessageString(Chat::PetResponse, PET_NO_TAUNT);
-					pet->CastToNPC()->SetTaunting(false);
+		case PET_HEALTHREPORT: {
+			auto reportHealth = [&](Mob* pet) {
+				if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
+					MessageString(Chat::PetResponse, PET_REPORT_HP, ConvertArrayF(pet->GetHPRatio(), val1));
+					pet->ShowBuffs(this);
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				// Target is one of our pets
+				reportHealth(GetTarget());
+			} else {
+				// Target is not one of our pets, report health for all pets
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					reportHealth(pet);
 				}
 			}
-		};
+			break;
+		}
+		case PET_GETLOST: {
+			auto handlePetGetLost = [&](Mob* pet) {
+				if (!pet) return;
 
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			// Target is one of our pets
-			if (PetCommand == PET_TAUNT) {
-				if (GetTarget()->CastToNPC()->IsTaunting()) {
-					handleTaunt(GetTarget(), false);
-				} else {
-					handleTaunt(GetTarget(), true);
+				if (pet->Charmed()) return;
+
+				if (pet->GetPetType() == petCharmed || !pet->IsNPC()) {
+					pet->BuffFadeByEffect(SE_Charm);
+					return;
 				}
-			} else if (PetCommand == PET_TAUNT_ON) {
-				handleTaunt(GetTarget(), true);
-			} else if (PetCommand == PET_TAUNT_OFF) {
-				handleTaunt(GetTarget(), false);
-			}
-		} else {
-			// Target is not one of our pets, apply taunt logic to all pets
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
 
-				if (PetCommand == PET_TAUNT) {
-					if (pet->CastToNPC()->IsTaunting()) {
-						handleTaunt(pet, false);
+				pet->SayString(this, Chat::PetResponse, PET_GETLOST_STRING);
+				RemovePet(pet);
+				pet->CastToNPC()->Depop();
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				handlePetGetLost(GetTarget());
+			} else {
+				// Make a copy of the petids vector to iterate over
+				std::vector<uint16> petids_copy = petids;
+
+				for (auto pet_id : petids_copy) {
+					auto pet = entity_list.GetMob(pet_id);
+					handlePetGetLost(pet);
+				}
+			}
+			CastToClient()->Save(2);
+			break;
+		}
+		case PET_GUARDHERE: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextGuardCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextGuardCommand");
+					break;
+				}
+			}
+
+			auto PetGuardHere = [&](Mob* pet) {
+				if (pet->IsFeared()) return; // Prevent exploitation like in PET_BACKOFF
+
+				if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
+					if (pet->IsNPC()) {
+						// Set Sit button to unpressed - send stand anim/end hpregen
+						pet->SetFeigned(false);
+						SetPetCommandState(PET_BUTTON_SIT, 0);
+						SetPetCommandState(PET_BUTTON_GUARD, 1);
+						SetPetCommandState(PET_BUTTON_FOLLOW, 0);
+						pet->SetAppearance(eaStanding);
+
+						pet->SayString(this, Chat::PetResponse, PET_GUARDINGLIFE);
+						pet->SetPetOrder(SPO_Guard);
+						pet->CastToNPC()->SaveGuardSpot(pet->GetPosition());
+						if (!pet->GetTarget()) // want them to not twitch if they're chasing something down
+							pet->StopNavigation();
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				// Target is one of our pets
+				PetGuardHere(GetTarget());
+			} else {
+				// Target is not one of our pets, set all pets to guard
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					PetGuardHere(pet);
+				}
+			}
+			break;
+		}
+		case PET_FOLLOWME: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextFollowCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextFollowCommand");
+					break;
+				}
+			}
+
+			auto PetFollowMe = [&](Mob* pet) {
+				if (pet->IsFeared()) return; // Prevent exploitation like in PET_BACKOFF
+
+				if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
+					pet->SetFeigned(false);
+					pet->SayString(this, Chat::PetResponse, PET_FOLLOWING);
+					pet->SetPetOrder(SPO_Follow);
+
+					// Fix GUI sit button to be unpressed - send stand anim/end hpregen
+					SetPetCommandState(PET_BUTTON_SIT, 0);
+					SetPetCommandState(PET_BUTTON_GUARD, 0);
+					SetPetCommandState(PET_BUTTON_FOLLOW, 1);
+					pet->SetAppearance(eaStanding);
+
+					if (pet->IsPetStop()) {
+						pet->SetPetStop(false);
+						SetPetCommandState(PET_BUTTON_STOP, 0);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				// Target is one of our pets
+				PetFollowMe(GetTarget());
+			} else {
+				// Target is not one of our pets, set all pets to follow
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					PetFollowMe(pet);
+				}
+			}
+			break;
+		}
+		case PET_TAUNT:
+		case PET_TAUNT_ON:
+		case PET_TAUNT_OFF: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextTauntCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextTauntCommand");
+					break;
+				}
+			}
+
+			auto handleTaunt = [&](Mob* pet, bool enable_taunt) {
+				if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
+					if (enable_taunt) {
+						MessageString(Chat::PetResponse, PET_DO_TAUNT);
+						pet->CastToNPC()->SetTaunting(true);
+
+						SetPetCommandState(PET_BUTTON_TAUNT, 1);
 					} else {
-						handleTaunt(pet, true);
+						MessageString(Chat::PetResponse, PET_NO_TAUNT);
+						pet->CastToNPC()->SetTaunting(false);
+
+						SetPetCommandState(PET_BUTTON_TAUNT, 0);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				// Target is one of our pets
+				if (PetCommand == PET_TAUNT) {
+					if (GetTarget()->CastToNPC()->IsTaunting()) {
+						handleTaunt(GetTarget(), false);
+					} else {
+						handleTaunt(GetTarget(), true);
 					}
 				} else if (PetCommand == PET_TAUNT_ON) {
-					handleTaunt(pet, true);
+					handleTaunt(GetTarget(), true);
 				} else if (PetCommand == PET_TAUNT_OFF) {
-					handleTaunt(pet, false);
+					handleTaunt(GetTarget(), false);
 				}
-			}
-		}
-		break;
-	}
-	case PET_GUARDME: {
-		// TODO GUARDME LOGIC
-		break;
-	}
-	case PET_SIT:
-	case PET_STANDUP:
-	case PET_SITDOWN: {
-		auto handleSitStand = [&](Mob* pet, bool sit_down) {
-			if (pet->IsFeared()) return; // Prevent exploitation like PET_BACKOFF
+			} else {
+				// Target is not one of our pets, apply taunt logic to all pets
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
 
-			if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
-				pet->SetFeigned(false);
-				pet->SayString(this, Chat::PetResponse, PET_SIT_STRING);
-
-				if (sit_down) {
-					SetPetCommandState(PET_BUTTON_SIT, 1);
-					pet->SetPetOrder(SPO_Sit);
-					pet->SetRunAnimSpeed(0);
-					if (!pet->UseBardSpellLogic()) {
-						pet->InterruptSpell(); // No casting while sitting
+					if (PetCommand == PET_TAUNT) {
+						if (pet->CastToNPC()->IsTaunting()) {
+							handleTaunt(pet, false);
+						} else {
+							handleTaunt(pet, true);
+						}
+					} else if (PetCommand == PET_TAUNT_ON) {
+						handleTaunt(pet, true);
+					} else if (PetCommand == PET_TAUNT_OFF) {
+						handleTaunt(pet, false);
 					}
-					pet->SetAppearance(eaSitting);
-				} else {
-					SetPetCommandState(PET_BUTTON_SIT, 0);
-					pet->SetPetOrder(pet->GetPreviousPetOrder());
-					pet->SetAppearance(eaStanding);
 				}
 			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			// Target is one of our pets
-			if (PetCommand == PET_SIT) {
-				if (GetTarget()->GetPetOrder() == SPO_Sit) {
-					handleSitStand(GetTarget(), false); // Stand up
-				} else {
-					handleSitStand(GetTarget(), true); // Sit down
+			break;
+		}
+		case PET_GUARDME:
+			// UNFORTUNATELY THIS DOESN'T WORK IN ROF2. CUCKS.
+			break;
+		case PET_SIT:
+		case PET_STANDUP:
+		case PET_SITDOWN: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextSitCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextSitCommand");
+					break;
 				}
-			} else if (PetCommand == PET_STANDUP) {
-				handleSitStand(GetTarget(), false); // Stand up
-			} else if (PetCommand == PET_SITDOWN) {
-				handleSitStand(GetTarget(), true); // Sit down
 			}
-		} else {
-			// Target is not one of our pets, apply sit/stand logic to all pets
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
 
-				if (PetCommand == PET_SIT) {
-					if (pet->GetPetOrder() == SPO_Sit) {
-						handleSitStand(pet, false); // Stand up
+			auto handleSitStand = [&](Mob* pet, bool sit_down) {
+				if (pet->IsFeared()) return; // Prevent exploitation like PET_BACKOFF
+
+				if ((pet->GetPetType() == petAnimation && aabonuses.PetCommands[PetCommand]) || pet->GetPetType() != petAnimation) {
+					pet->SetFeigned(false);
+					pet->SayString(this, Chat::PetResponse, PET_SIT_STRING);
+
+					if (sit_down) {
+						SetPetCommandState(PET_BUTTON_SIT, 1);
+						SetPetCommandState(PET_BUTTON_GUARD, 0);
+						SetPetCommandState(PET_BUTTON_FOLLOW, 0);
+						pet->SetPetOrder(SPO_Sit);
+						pet->SetRunAnimSpeed(0);
+						if (!pet->UseBardSpellLogic()) {
+							pet->InterruptSpell(); // No casting while sitting
+						}
+						pet->SetAppearance(eaSitting);
 					} else {
-						handleSitStand(pet, true); // Sit down
+						SetPetCommandState(PET_BUTTON_SIT, 0);
+						pet->SetPetOrder(pet->GetPreviousPetOrder());
+						pet->SetAppearance(eaStanding);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				// Target is one of our pets
+				if (PetCommand == PET_SIT) {
+					if (GetTarget()->GetPetOrder() == SPO_Sit) {
+						handleSitStand(GetTarget(), false); // Stand up
+					} else {
+						handleSitStand(GetTarget(), true); // Sit down
 					}
 				} else if (PetCommand == PET_STANDUP) {
-					handleSitStand(pet, false); // Stand up
+					handleSitStand(GetTarget(), false); // Stand up
 				} else if (PetCommand == PET_SITDOWN) {
-					handleSitStand(pet, true); // Sit down
-				}
-			}
-		}
-		break;
-	}
-	case PET_HOLD:
-	case PET_HOLD_ON:
-	case PET_HOLD_OFF: {
-		auto handleHold = [&](Mob* pet, bool enable_hold) {
-			if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
-
-			if (enable_hold) {
-				if (!pet->IsHeld()) {
-					if (m_ClientVersionBit & EQ::versions::maskSoDAndLater) {
-						MessageString(Chat::PetResponse, PET_HOLD_SET_ON);
-					}
-					if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
-						pet->SayString(this, Chat::PetResponse, PET_NOW_HOLDING);
-					} else {
-						pet->SayString(this, Chat::PetResponse, PET_ON_HOLD);
-					}
-					pet->SetHeld(true);
-					pet->SetGHeld(false);  // Turn off Greater Hold if Hold is active
-					SetPetCommandState(PET_BUTTON_GHOLD, 0);
+					handleSitStand(GetTarget(), true); // Sit down
 				}
 			} else {
-				if (pet->IsHeld()) {
-					if (m_ClientVersionBit & EQ::versions::maskSoDAndLater) {
-						MessageString(Chat::PetResponse, PET_HOLD_SET_OFF);
+				// Target is not one of our pets, apply sit/stand logic to all pets
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
+
+					if (PetCommand == PET_SIT) {
+						if (pet->GetPetOrder() == SPO_Sit) {
+							handleSitStand(pet, false); // Stand up
+						} else {
+							handleSitStand(pet, true); // Sit down
+						}
+					} else if (PetCommand == PET_STANDUP) {
+						handleSitStand(pet, false); // Stand up
+					} else if (PetCommand == PET_SITDOWN) {
+						handleSitStand(pet, true); // Sit down
 					}
-					pet->SetHeld(false);
 				}
 			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			if (PetCommand == PET_HOLD) {
-				handleHold(GetTarget(), !GetTarget()->IsHeld());
-			} else if (PetCommand == PET_HOLD_ON) {
-				handleHold(GetTarget(), true);
-			} else if (PetCommand == PET_HOLD_OFF) {
-				handleHold(GetTarget(), false);
+			break;
+		}
+		case PET_HOLD:
+		case PET_HOLD_ON:
+		case PET_HOLD_OFF: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextHoldCommand").empty()) {
+					LogDebug("Hold Command Blocked");
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextHoldCommand");
+					break;
+				}
 			}
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
 
+			auto handleHold = [&](Mob* pet, bool enable_hold) {
+				if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
+
+				if (enable_hold) {
+					if (!pet->IsHeld()) {
+						if (m_ClientVersionBit & EQ::versions::maskSoDAndLater) {
+							MessageString(Chat::PetResponse, PET_HOLD_SET_ON);
+						}
+						if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
+							pet->SayString(this, Chat::PetResponse, PET_NOW_HOLDING);
+						} else {
+							pet->SayString(this, Chat::PetResponse, PET_ON_HOLD);
+						}
+						pet->SetHeld(true);
+						pet->SetGHeld(false);  // Turn off Greater Hold if Hold is active
+						SetPetCommandState(PET_BUTTON_GHOLD, 0);
+						SetPetCommandState(PET_BUTTON_HOLD, 1);
+					}
+				} else {
+					if (pet->IsHeld()) {
+						if (m_ClientVersionBit & EQ::versions::maskSoDAndLater) {
+							MessageString(Chat::PetResponse, PET_HOLD_SET_OFF);
+						}
+						pet->SetHeld(false);
+						SetPetCommandState(PET_BUTTON_HOLD, 0);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
 				if (PetCommand == PET_HOLD) {
-					handleHold(pet, !pet->IsHeld());
+					handleHold(GetTarget(), !GetTarget()->IsHeld());
 				} else if (PetCommand == PET_HOLD_ON) {
-					handleHold(pet, true);
+					handleHold(GetTarget(), true);
 				} else if (PetCommand == PET_HOLD_OFF) {
-					handleHold(pet, false);
-				}
-			}
-		}
-		break;
-	}
-	case PET_GHOLD:
-	case PET_GHOLD_ON:
-	case PET_GHOLD_OFF: {
-		auto handleGHold = [&](Mob* pet, bool enable_ghold) {
-			if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
-
-			if (enable_ghold) {
-				if (!pet->IsGHeld()) {
-					if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
-						MessageString(Chat::PetResponse, PET_ON_GHOLD);
-						pet->SayString(this, Chat::PetResponse, PET_GHOLD_ON_MSG);
-					} else {
-						pet->SayString(this, Chat::PetResponse, PET_ON_HOLD);
-					}
-					pet->SetGHeld(true);
-					pet->SetHeld(false);  // Turn off regular Hold if Greater Hold is active
-					SetPetCommandState(PET_BUTTON_HOLD, 0);
+					handleHold(GetTarget(), false);
 				}
 			} else {
-				if (pet->IsGHeld()) {
-					if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
-						MessageString(Chat::PetResponse, PET_OFF_GHOLD);
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
+
+					if (PetCommand == PET_HOLD) {
+						handleHold(pet, !pet->IsHeld());
+					} else if (PetCommand == PET_HOLD_ON) {
+						handleHold(pet, true);
+					} else if (PetCommand == PET_HOLD_OFF) {
+						handleHold(pet, false);
 					}
-					pet->SetGHeld(false);
 				}
 			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			if (PetCommand == PET_GHOLD) {
-				handleGHold(GetTarget(), !GetTarget()->IsGHeld());
-			} else if (PetCommand == PET_GHOLD_ON) {
-				handleGHold(GetTarget(), true);
-			} else if (PetCommand == PET_GHOLD_OFF) {
-				handleGHold(GetTarget(), false);
+			break;
+		}
+		case PET_GHOLD:
+		case PET_GHOLD_ON:
+		case PET_GHOLD_OFF: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextGHoldCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextGHoldCommand");
+					break;
+				}
 			}
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
 
+			auto handleGHold = [&](Mob* pet, bool enable_ghold) {
+				if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
+
+				if (enable_ghold) {
+					if (!pet->IsGHeld()) {
+						if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
+							MessageString(Chat::PetResponse, PET_ON_GHOLD);
+							pet->SayString(this, Chat::PetResponse, PET_GHOLD_ON_MSG);
+						} else {
+							pet->SayString(this, Chat::PetResponse, PET_ON_HOLD);
+						}
+						pet->SetGHeld(true);
+						pet->SetHeld(false);  // Turn off regular Hold if Greater Hold is active
+						SetPetCommandState(PET_BUTTON_HOLD, 0);
+						SetPetCommandState(PET_BUTTON_GHOLD, 1);
+					}
+				} else {
+					if (pet->IsGHeld()) {
+						if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
+							MessageString(Chat::PetResponse, PET_OFF_GHOLD);
+						}
+						pet->SetGHeld(false);
+						SetPetCommandState(PET_BUTTON_GHOLD, 0);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
 				if (PetCommand == PET_GHOLD) {
-					handleGHold(pet, !pet->IsGHeld());
+					handleGHold(GetTarget(), !GetTarget()->IsGHeld());
 				} else if (PetCommand == PET_GHOLD_ON) {
-					handleGHold(pet, true);
+					handleGHold(GetTarget(), true);
 				} else if (PetCommand == PET_GHOLD_OFF) {
-					handleGHold(pet, false);
-				}
-			}
-		}
-		break;
-	}
-	case PET_SPELLHOLD:
-	case PET_SPELLHOLD_ON:
-	case PET_SPELLHOLD_OFF: {
-		auto handleSpellHold = [&](Mob* pet, bool enable_spellhold) {
-			if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
-			if (pet->IsFeared()) return;
-
-			if (enable_spellhold) {
-				if (!pet->IsNoCast()) {
-					MessageString(Chat::PetResponse, PET_NOT_CASTING);
-					if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
-						MessageString(Chat::PetResponse, PET_SPELLHOLD_SET_ON);
-					pet->SetNoCast(true);
+					handleGHold(GetTarget(), false);
 				}
 			} else {
-				if (pet->IsNoCast()) {
-					MessageString(Chat::PetResponse, PET_CASTING);
-					if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
-						MessageString(Chat::PetResponse, PET_SPELLHOLD_SET_OFF);
-					pet->SetNoCast(false);
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
+
+					if (PetCommand == PET_GHOLD) {
+						handleGHold(pet, !pet->IsGHeld());
+					} else if (PetCommand == PET_GHOLD_ON) {
+						handleGHold(pet, true);
+					} else if (PetCommand == PET_GHOLD_OFF) {
+						handleGHold(pet, false);
+					}
 				}
 			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			if (PetCommand == PET_SPELLHOLD) {
-				handleSpellHold(GetTarget(), !GetTarget()->IsNoCast());
-			} else if (PetCommand == PET_SPELLHOLD_ON) {
-				handleSpellHold(GetTarget(), true);
-			} else if (PetCommand == PET_SPELLHOLD_OFF) {
-				handleSpellHold(GetTarget(), false);
+			break;
+		}
+		case PET_SPELLHOLD:
+		case PET_SPELLHOLD_ON:
+		case PET_SPELLHOLD_OFF: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextSpellholdCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextSpellholdCommand");
+					break;
+				}
 			}
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
 
+			auto handleSpellHold = [&](Mob* pet, bool enable_spellhold) {
+				if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
+				if (pet->IsFeared()) return;
+
+				if (enable_spellhold) {
+					if (!pet->IsNoCast()) {
+						MessageString(Chat::PetResponse, PET_NOT_CASTING);
+						if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
+							MessageString(Chat::PetResponse, PET_SPELLHOLD_SET_ON);
+						pet->SetNoCast(true);
+						SetPetCommandState(PET_BUTTON_SPELLHOLD, 1);
+					}
+				} else {
+					if (pet->IsNoCast()) {
+						MessageString(Chat::PetResponse, PET_CASTING);
+						if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
+							MessageString(Chat::PetResponse, PET_SPELLHOLD_SET_OFF);
+						pet->SetNoCast(false);
+						SetPetCommandState(PET_BUTTON_SPELLHOLD, 0);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
 				if (PetCommand == PET_SPELLHOLD) {
-					handleSpellHold(pet, !pet->IsNoCast());
+					handleSpellHold(GetTarget(), !GetTarget()->IsNoCast());
 				} else if (PetCommand == PET_SPELLHOLD_ON) {
-					handleSpellHold(pet, true);
+					handleSpellHold(GetTarget(), true);
 				} else if (PetCommand == PET_SPELLHOLD_OFF) {
-					handleSpellHold(pet, false);
-				}
-			}
-		}
-		break;
-	}
-	case PET_FOCUS:
-	case PET_FOCUS_ON:
-	case PET_FOCUS_OFF: {
-		auto handleFocus = [&](Mob* pet, bool enable_focus) {
-			if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
-			if (pet->IsFeared()) return;
-
-			if (enable_focus) {
-				if (!pet->IsFocused()) {
-					MessageString(Chat::PetResponse, PET_NOW_FOCUSING);
-					if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
-						MessageString(Chat::PetResponse, PET_FOCUS_SET_ON);
-					pet->SetFocused(true);
+					handleSpellHold(GetTarget(), false);
 				}
 			} else {
-				if (pet->IsFocused()) {
-					MessageString(Chat::PetResponse, PET_NOT_FOCUSING);
-					if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
-						MessageString(Chat::PetResponse, PET_FOCUS_SET_OFF);
-					pet->SetFocused(false);
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
+
+					if (PetCommand == PET_SPELLHOLD) {
+						handleSpellHold(pet, !pet->IsNoCast());
+					} else if (PetCommand == PET_SPELLHOLD_ON) {
+						handleSpellHold(pet, true);
+					} else if (PetCommand == PET_SPELLHOLD_OFF) {
+						handleSpellHold(pet, false);
+					}
 				}
 			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			if (PetCommand == PET_FOCUS) {
-				handleFocus(GetTarget(), !GetTarget()->IsFocused());
-			} else if (PetCommand == PET_FOCUS_ON) {
-				handleFocus(GetTarget(), true);
-			} else if (PetCommand == PET_FOCUS_OFF) {
-				handleFocus(GetTarget(), false);
+			break;
+		}
+		case PET_FOCUS:
+		case PET_FOCUS_ON:
+		case PET_FOCUS_OFF: {
+			if (GetPetByID(focused_pet_id)) {
+				if (!GetPetByID(focused_pet_id)->GetEntityVariable("IgnoreNextFocusCommand").empty()) {
+					GetPetByID(focused_pet_id)->DeleteEntityVariable("IgnoreNextFocusCommand");
+					break;
+				}
 			}
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
 
+			auto handleFocus = [&](Mob* pet, bool enable_focus) {
+				if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
+				if (pet->IsFeared()) return;
+
+				if (enable_focus) {
+					if (!pet->IsFocused()) {
+						MessageString(Chat::PetResponse, PET_NOW_FOCUSING);
+						if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
+							MessageString(Chat::PetResponse, PET_FOCUS_SET_ON);
+						pet->SetFocused(true);
+						SetPetCommandState(PET_BUTTON_FOCUS, 1);
+					}
+				} else {
+					if (pet->IsFocused()) {
+						MessageString(Chat::PetResponse, PET_NOT_FOCUSING);
+						if (m_ClientVersionBit & EQ::versions::maskSoDAndLater)
+							MessageString(Chat::PetResponse, PET_FOCUS_SET_OFF);
+						pet->SetFocused(false);
+						SetPetCommandState(PET_BUTTON_FOCUS, 0);
+					}
+				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
 				if (PetCommand == PET_FOCUS) {
-					handleFocus(pet, !pet->IsFocused());
+					handleFocus(GetTarget(), !GetTarget()->IsFocused());
 				} else if (PetCommand == PET_FOCUS_ON) {
-					handleFocus(pet, true);
+					handleFocus(GetTarget(), true);
 				} else if (PetCommand == PET_FOCUS_OFF) {
-					handleFocus(pet, false);
-				}
-			}
-		}
-		break;
-	}
-	case PET_FEIGN: {
-		auto handleFeign = [&](Mob* pet) {
-			if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
-			if (pet->IsFeared()) return;
-
-			int pet_fd_chance = aabonuses.FeignedMinionChance;
-			if (zone->random.Int(0, 99) > pet_fd_chance) {
-				pet->SetFeigned(false);
-				entity_list.MessageCloseString(this, false, 200, 10, STRING_FEIGNFAILED, pet->GetCleanName());
-			} else {
-				bool has_aggro_immunity = GetSpecialAbility(SpecialAbility::AggroImmunity);
-				pet->SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
-				pet->WipeHateList();
-				pet->SetPetOrder(SPO_FeignDeath);
-				pet->SetRunAnimSpeed(0);
-				pet->StopNavigation();
-				pet->SetAppearance(eaDead);
-				pet->SetFeigned(true);
-				pet->SetTarget(nullptr);
-				if (!pet->UseBardSpellLogic()) {
-					pet->InterruptSpell();
-				}
-
-				if (!has_aggro_immunity) {
-					pet->SetSpecialAbility(SpecialAbility::AggroImmunity, 0);
-				}
-			}
-		};
-
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			handleFeign(GetTarget());
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
-
-				handleFeign(pet);
-			}
-		}
-		break;
-	}
-	case PET_STOP:
-	case PET_STOP_ON:
-	case PET_STOP_OFF: {
-		auto handleStop = [&](Mob* pet, bool stop) {
-			if (pet->IsFeared()) return;
-
-			if (stop) {
-				pet->SetPetStop(true);
-				pet->StopNavigation();
-				pet->SetTarget(nullptr);
-				pet->SayString(this, Chat::PetResponse, PET_GETLOST_STRING);
-				if (pet->IsPetRegroup()) {
-					pet->SetPetRegroup(false);
-					SetPetCommandState(PET_BUTTON_REGROUP, 0);
+					handleFocus(GetTarget(), false);
 				}
 			} else {
-				pet->SetPetStop(false);
-				pet->SayString(this, Chat::PetResponse, PET_GETLOST_STRING);
-			}
-		};
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
 
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			if (PetCommand == PET_STOP) {
-				handleStop(GetTarget(), !GetTarget()->IsPetStop());
-			} else if (PetCommand == PET_STOP_ON) {
-				handleStop(GetTarget(), true);
-			} else if (PetCommand == PET_STOP_OFF) {
-				handleStop(GetTarget(), false);
-			}
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
-
-				if (PetCommand == PET_STOP) {
-					handleStop(pet, !pet->IsPetStop());
-				} else if (PetCommand == PET_STOP_ON) {
-					handleStop(pet, true);
-				} else if (PetCommand == PET_STOP_OFF) {
-					handleStop(pet, false);
+					if (PetCommand == PET_FOCUS) {
+						handleFocus(pet, !pet->IsFocused());
+					} else if (PetCommand == PET_FOCUS_ON) {
+						handleFocus(pet, true);
+					} else if (PetCommand == PET_FOCUS_OFF) {
+						handleFocus(pet, false);
+					}
 				}
 			}
+			break;
 		}
-		break;
-	}
-	case PET_REGROUP:
-	case PET_REGROUP_ON:
-	case PET_REGROUP_OFF: {
-		auto handleRegroup = [&](Mob* pet, bool regroup) {
-			if (pet->IsFeared()) return;
+		case PET_FEIGN: {
+			auto handleFeign = [&](Mob* pet) {
+				if (!aabonuses.PetCommands[PetCommand] || !pet->IsNPC()) return;
+				if (pet->IsFeared()) return;
 
-			if (regroup) {
-				pet->SetPetRegroup(true);
-				pet->SetTarget(nullptr);
-				pet->SayString(this, Chat::PetResponse, PET_ON_REGROUPING);
-				if (pet->IsPetStop()) {
-					pet->SetPetStop(false);
-					SetPetCommandState(PET_BUTTON_STOP, 0);
+				int pet_fd_chance = aabonuses.FeignedMinionChance;
+				if (zone->random.Int(0, 99) > pet_fd_chance) {
+					pet->SetFeigned(false);
+					entity_list.MessageCloseString(this, false, 200, 10, STRING_FEIGNFAILED, pet->GetCleanName());
+				} else {
+					bool has_aggro_immunity = GetSpecialAbility(SpecialAbility::AggroImmunity);
+					pet->SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
+					pet->WipeHateList();
+					pet->SetPetOrder(SPO_FeignDeath);
+					pet->SetRunAnimSpeed(0);
+					pet->StopNavigation();
+					pet->SetAppearance(eaDead);
+					pet->SetFeigned(true);
+					pet->SetTarget(nullptr);
+					if (!pet->UseBardSpellLogic()) {
+						pet->InterruptSpell();
+					}
+
+					if (!has_aggro_immunity) {
+						pet->SetSpecialAbility(SpecialAbility::AggroImmunity, 0);
+					}
 				}
+			};
+
+			if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
+				handleFeign(GetTarget());
 			} else {
-				pet->SetPetRegroup(false);
-				pet->SayString(this, Chat::PetResponse, PET_OFF_REGROUPING);
-			}
-		};
+				for (auto pet_id : petids) {
+					auto pet = entity_list.GetMob(pet_id);
+					if (!pet) continue;
 
-		if (GetTarget() && GetTarget()->GetOwnerID() == GetID()) {
-			if (PetCommand == PET_REGROUP) {
-				handleRegroup(GetTarget(), !GetTarget()->IsPetRegroup());
-			} else if (PetCommand == PET_REGROUP_ON) {
-				handleRegroup(GetTarget(), true);
-			} else if (PetCommand == PET_REGROUP_OFF) {
-				handleRegroup(GetTarget(), false);
-			}
-		} else {
-			for (auto pet_id : petids) {
-				auto pet = entity_list.GetMob(pet_id);
-				if (!pet) continue;
-
-				if (PetCommand == PET_REGROUP) {
-					handleRegroup(pet, !pet->IsPetRegroup());
-				} else if (PetCommand == PET_REGROUP_ON) {
-					handleRegroup(pet, true);
-				} else if (PetCommand == PET_REGROUP_OFF) {
-					handleRegroup(pet, false);
+					handleFeign(pet);
 				}
 			}
+			break;
 		}
-		break;
-	}
-	default:
-		printf("Client attempted to use a unknown pet command:\n");
-		break;
+		case PET_STOP:
+		case PET_STOP_ON:
+		case PET_STOP_OFF:
+			// STUB
+			break;
+		case PET_REGROUP:
+		case PET_REGROUP_ON:
+		case PET_REGROUP_OFF:
+			// STUB
+			break;
+		default:
+			printf("Client attempted to use a unknown pet command:\n");
+			break;
 	}
 }
 
@@ -15417,18 +15454,10 @@ void Client::Handle_OP_TargetMouse(const EQApplicationPacket *app)
 			}
 
 
-			if (nt->IsPet() && nt->GetOwnerID() == GetID()) {
-				auto outapp = new EQApplicationPacket;
-				auto outapp2 = new EQApplicationPacket;
-				nt->CreateDespawnPacket(outapp, false);
-				nt->CreateSpawnPacket(outapp2, this);
-				CastToClient()->QueuePacket(outapp);
-				CastToClient()->QueuePacket(outapp2);
-				nt->SendAppearancePacket(AppearanceType::Pet, nt->GetID(), true, true);
-				nt->SendPetBuffsToClient();
-				safe_delete(outapp);
-				safe_delete(outapp2);
 
+
+			if (nt->IsPet() && nt->GetOwnerID() == GetID() && nt->GetID() != focused_pet_id) {
+				ConfigurePetWindow(nt);
 				SendTargetCommand(ct->new_target);
 			}
 		}

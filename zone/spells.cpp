@@ -2817,6 +2817,14 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					}
 				}
 
+				if (spell_target->GetOwner()) {
+					Mob* owner =  spell_target->GetOwner();
+
+					if (owner) {
+						spell_target = owner;
+					}
+				}
+
 				if (spell_target->IsGrouped()) {
 					Group *target_group = entity_list.GetGroupByMob(spell_target);
 					if (target_group) {
@@ -2844,8 +2852,12 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 						SpellOnTarget(spell_id, this);
 	#ifdef GROUP_BUFF_PETS
 						//pet too
-						if (spells[spell_id].target_type != ST_GroupNoPets && GetPet() && HasPetAffinity() && !GetPet()->IsCharmed()) {
-							SpellOnTarget(spell_id, GetPet());
+						if (spells[spell_id].target_type != ST_GroupNoPets && GetPet() && HasPetAffinity()) {
+							for (auto pet : GetAllPets()) {
+								if (!pet->IsCharmed()) {
+									SpellOnTarget(spell_id, pet);
+								}
+							}
 						}
 	#endif
 					}
@@ -2853,8 +2865,12 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					SpellOnTarget(spell_id, spell_target);
 	#ifdef GROUP_BUFF_PETS
 					//pet too
-					if (spells[spell_id].target_type != ST_GroupNoPets && spell_target->GetPet() && spell_target->HasPetAffinity() && !spell_target->GetPet()->IsCharmed()) {
-						SpellOnTarget(spell_id, spell_target->GetPet());
+					if (spells[spell_id].target_type != ST_GroupNoPets && spell_target->GetPet() && spell_target->HasPetAffinity()) {
+						for (auto pet : spell_target->GetAllPets()) {
+							if (!pet->IsCharmed()) {
+								SpellOnTarget(spell_id, pet);
+							}
+						}
 					}
 	#endif
 				}

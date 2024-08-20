@@ -3942,10 +3942,6 @@ void Mob::BuffProcess()
 									}
 								}
 							}
-
-							if (IsPet() && GetOwner()) {
-								SendPetBuffsToClient();
-							}
 						}
 					}
 
@@ -3975,6 +3971,13 @@ void Mob::BuffProcess()
 						--buffs[buffs_i].ticsremaining;
 					} else {
 						buffs[buffs_i].UpdateClient = true;
+
+						auto clients = entity_list.GetClientList();
+						for (auto c : clients) {
+							if (c.second->GetTarget() && c.second->GetTarget()->GetID() == GetID()) {
+								SendBuffsToClient(c.second);
+							}
+						}
 					}
 
 					if (buffs[buffs_i].ticsremaining < 0) {
@@ -10193,7 +10196,7 @@ bool Mob::PassCharmTargetRestriction(Mob *target) {
 		return false;
 	}
 
-	if (target->IsClient() && IsClient()) {
+	if (target->IsClient()) {
 		MessageString(Chat::Red, CANNOT_AFFECT_PC);
 		LogSpells("Spell casting canceled: Can not cast charm on a client.");
 		return false;
@@ -10202,7 +10205,7 @@ bool Mob::PassCharmTargetRestriction(Mob *target) {
 		LogSpells("Spell casting canceled: Can not cast charm on a corpse.");
 		return false;
 	}
-	else if (GetPet() && IsClient()) {
+	else if (petids.size() >= RuleI(Custom, AbsolutePetLimit) && IsClient()) {
 		MessageString(Chat::Red, ONLY_ONE_PET);
 		LogSpells("Spell casting canceled: Can not cast charm if you have a pet.");
 		return false;

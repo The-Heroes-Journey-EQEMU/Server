@@ -1078,6 +1078,8 @@ public:
     bool SetPet(Mob* newpet, uint8 idx = 0);         // Set a pet into the given index location using a Mob object (default is index 0)
     bool SetPet(uint16 pet_id, uint8 idx = 0);       // Set a pet into the given index location using a pet ID (default is index 0)
 	void ValidatePetList();
+	Mob* GetPetByID(uint16 id);
+	void ConfigurePetWindow(Mob* focused_pet);
 
 	virtual Mob* GetOwner();
 	virtual Mob* GetOwnerOrSelf();
@@ -1577,6 +1579,7 @@ protected:
 	StatBonuses spellbonuses;
 	StatBonuses aabonuses;
 	std::vector<uint16> petids;
+	uint16 focused_pet_id;
 	uint16 ownerid;
 	PetType type_of_pet; // This refers to what type of pet 'this' is
 	int16 petpower;
