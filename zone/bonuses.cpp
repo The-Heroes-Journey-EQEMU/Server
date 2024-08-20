@@ -1386,6 +1386,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		}
 
 		case SE_SkillDamageAmount: {
+			base_value = static_cast<int>(base_value * (GetLevel() / 70.0f));
 			// Bad data or unsupported new skill
 			if (limit_value > EQ::skills::HIGHEST_SKILL)
 				break;

@@ -795,6 +795,11 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					break;
 				}
 
+				if (IsClient() && !IsPetAllowed(spell_id)) {
+					Message(Chat::SpellFailure, "You may not charm an additional creature with this spell.");
+					break;
+				}
+
 				if (IsNPC()) {
 					CastToNPC()->SaveGuardSpotCharm();
 				}
@@ -1324,7 +1329,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			case SE_SummonPet:
 			case SE_Familiar:
 			{
-				if(petids.size() >= RuleI(Custom, AbsolutePetLimit))
+				if(petids.size() >= RuleI(Custom, AbsolutePetLimit) || !IsPetAllowed(spell_id))
 				{
 					MessageString(Chat::Shout, ONLY_ONE_PET);
 				}

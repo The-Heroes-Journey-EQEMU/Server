@@ -1080,6 +1080,8 @@ public:
 	void ValidatePetList();
 	Mob* GetPetByID(uint16 id);
 	void ConfigurePetWindow(Mob* focused_pet);
+	std::map<uint8, uint16> GetPetsClassList();
+	bool IsPetAllowed(uint16 spell_id);
 
 	virtual Mob* GetOwner();
 	virtual Mob* GetOwnerOrSelf();

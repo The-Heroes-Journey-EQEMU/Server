@@ -728,6 +728,139 @@ uint16 Mob::GetPetID(uint8 idx) const {
     }
 }
 
+std::map<uint8, uint16> Mob::GetPetsClassList() {
+    std::map<uint8, uint16> ret_map;  // Map to hold the class and its corresponding pet's spell level
+
+    // Get the player's class bitmask
+    uint32 player_classes_bitmask = GetClassesBits();
+
+    LogDebugDetail("GetPetsClassList: Player's class bitmask is [{}]", player_classes_bitmask);
+
+    for (auto pet : GetAllPets()) {
+        if (!pet) {
+            continue;
+        }
+
+        uint16 origin_spell = pet->CastToNPC()->GetPetSpellID();
+        LogDebugDetail("GetPetsClassList: Processing pet with origin spell ID [{}]", origin_spell);
+
+        // Resolve if the pet is charmed
+        if (pet->IsCharmed()) {
+            auto pet_buffs = pet->GetBuffs();
+            for (int i = 0; i < pet->GetMaxTotalSlots(); i++) {
+                if (IsEffectInSpell(pet_buffs[i].spellid, SE_Charm)) {
+                    origin_spell = pet_buffs[i].spellid;
+                    LogDebugDetail("GetPetsClassList: Pet is charmed, using charm spell ID [{}]", origin_spell);
+                    break;  // Once found, we can stop searching
+                }
+            }
+        }
+
+        auto level_class_map = GetSpellClasses(origin_spell);
+        LogDebugDetail("GetPetsClassList: Spell ID [{}] can be used by [{}] classes", origin_spell, level_class_map.size());
+
+        uint8 selected_class = Class::None;
+        uint16 highest_spell_level_within_level = 0;
+        uint16 highest_spell_level = 0;
+        uint8 highest_class_within_level = Class::None;
+        uint8 highest_class = Class::None;
+
+        for (const auto& [class_id, spell_level] : level_class_map) {
+            uint32 class_bit = GetPlayerClassBit(class_id);
+
+            // Track the highest class within player's level range
+            if ((player_classes_bitmask & class_bit) && spell_level <= GetLevel()) {
+                if (spell_level > highest_spell_level_within_level) {
+                    highest_class_within_level = class_id;
+                    highest_spell_level_within_level = spell_level;
+                    LogDebugDetail("GetPetsClassList: Selected class ID [{}] with spell level [{}] within player's level", highest_class_within_level, highest_spell_level_within_level);
+                }
+            }
+
+            // Track the highest class even if it's above player's level
+            if (spell_level > highest_spell_level) {
+                highest_class = class_id;
+                highest_spell_level = spell_level;
+                LogDebugDetail("GetPetsClassList: Selected class ID [{}] with highest spell level [{}] overall", highest_class, highest_spell_level);
+            }
+        }
+
+        // First priority: Highest class within the player's level
+        if (highest_class_within_level != Class::None) {
+            selected_class = highest_class_within_level;
+            highest_spell_level = highest_spell_level_within_level;
+        }
+        // Second priority: Highest class the player has access to
+        else if ((player_classes_bitmask & GetPlayerClassBit(highest_class))) {
+            selected_class = highest_class;
+        }
+        // Last resort: Highest class overall, even if not the player's class
+        else if (highest_class != Class::None) {
+            selected_class = highest_class;
+        }
+
+        // Add the selected class and spell level to the return map
+        if (selected_class != Class::None) {
+            ret_map[selected_class] = highest_spell_level;
+            LogDebugDetail("GetPetsClassList: Added class ID [{}] with spell level [{}] to the map", selected_class, highest_spell_level);
+        }
+    }
+
+    LogDebugDetail("GetPetsClassList: Returning map with [{}] entries", ret_map.size());
+    return ret_map;
+}
+
+bool Mob::IsPetAllowed(uint16 spell_id) {
+    auto level_class_map = GetSpellClasses(spell_id);
+
+    // Get the player's class bitmask
+    uint32 player_classes_bitmask = GetClassesBits();
+    LogDebugDetail("IsPetAllowed: Player's class bitmask is [{}]", player_classes_bitmask);
+
+    // Get the list of already assigned classes from existing pets
+    std::map<uint8, uint16> existing_pet_classes = GetPetsClassList();
+    LogDebugDetail("IsPetAllowed: Existing pet classes map has [{}] entries", existing_pet_classes.size());
+
+    // Track whether any eligible class has no assigned pet
+    bool found_available_class = false;
+
+    // Loop through the classes that can use this spell
+    for (const auto& [class_id, spell_level] : level_class_map) {
+        uint32 class_bit = GetPlayerClassBit(class_id);
+
+        // Check if the class is below or equal to the player's level
+        if (spell_level <= GetLevel()) {
+            LogDebugDetail("IsPetAllowed: Class ID [{}] at level [{}] is eligible", class_id, spell_level);
+
+            // If the player has access to this class
+            if (player_classes_bitmask & class_bit) {
+                // Check if this class already has an assigned pet
+                if (existing_pet_classes.find(class_id) == existing_pet_classes.end()) {
+                    LogDebugDetail("IsPetAllowed: Class ID [{}] is available, pet is allowed", class_id);
+                    return true;  // Allow the pet if the slot for this class is not already used
+                } else {
+                    LogDebugDetail("IsPetAllowed: Class ID [{}] already has an assigned pet", class_id);
+                }
+            } else {
+                // The player doesn't have access to this class, but check if it has free slots
+                if (existing_pet_classes.find(class_id) == existing_pet_classes.end()) {
+                    found_available_class = true;
+                    LogDebugDetail("IsPetAllowed: Class ID [{}] (not a player's class) is available", class_id);
+                }
+            }
+        }
+    }
+
+    // If we found a free slot for a class the player doesn't have, allow the pet
+    if (found_available_class) {
+        LogDebugDetail("IsPetAllowed: No player's class is available, but a non-player's class is available, pet is allowed");
+        return true;
+    }
+
+    LogDebugDetail("IsPetAllowed: No available class found, pet not allowed");
+    return false;  // If all classes are full or not eligible, the new pet is not allowed
+}
+
 // Get the Mob instance of the pet at the given index
 Mob* Mob::GetPet(uint8 idx) {
     // Check if the index is greater than or equal to the pet limit
