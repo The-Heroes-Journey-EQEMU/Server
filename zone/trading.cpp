@@ -856,7 +856,8 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 									loot_drop_entry.equip_item = 1;
 									loot_drop_entry.item_charges = static_cast<int8>(baginst->GetCharges());
 									if (multi_pet && tradingWith->GetOwner() && tradingWith->GetOwner()->IsClient()) {
-										if (IsClient() && CastToClient()->IsSeasonal() == tradingWith->GetOwner()->CastToClient()->IsSeasonal()) {
+										bool no_drop = bagitem->NoDrop == 0 && tradingWith->GetOwner()->GetID() == GetID();
+										if (IsClient() && CastToClient()->IsSeasonal() == tradingWith->GetOwner()->CastToClient()->IsSeasonal() && !no_drop) {
 											tradingWith->CastToNPC()->AddLootDropFixed(
 												bagitem,
 												loot_drop_entry,
@@ -872,24 +873,32 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 							auto new_loot_drop_entry = LootdropEntriesRepository::NewNpcEntity();
 							new_loot_drop_entry.equip_item = 1;
 							new_loot_drop_entry.item_charges = static_cast<int8>(inst->GetCharges());
+							bool no_drop = item->NoDrop == 0 && tradingWith->GetOwner()->GetID() == GetID();
+
+
+							if (no_drop) {
+								PushItemOnCursor(*inst, true);
+								Message(Chat::Red, "You may not equip pets that you do not own with No-Drop items.");
+								return;
+							}
 
 							if (IsClient() && CastToClient()->IsSeasonal() == tradingWith->GetOwner()->CastToClient()->IsSeasonal()) {
-								tradingWith->CastToNPC()->AddLootDropFixed(
-									item,
-									new_loot_drop_entry,
-									true
-								);
-
-								if (RuleB(Custom, StripCharmItems) && tradingWith->IsCharmed()) {
-									PushItemOnCursor(*inst, true);
-									Message(Chat::Yellow, "The magic of your charm spell returns your items to you.");
-								}
-
-							} else {
 								PushItemOnCursor(*inst, true);
 								if (tradingWith->GetOwner()->CastToClient()->IsSeasonal()) {
 									Message(Chat::Red, "You may not equip the pets of Seasonal Characters unless you are also Seasonal.");
 								}
+								return;
+							}
+
+							tradingWith->CastToNPC()->AddLootDropFixed(
+								item,
+								new_loot_drop_entry,
+								true
+							);
+
+							if (RuleB(Custom, StripCharmItems) && tradingWith->IsCharmed()) {
+								PushItemOnCursor(*inst, true);
+								Message(Chat::Yellow, "The magic of your charm spell returns your items to you.");
 							}
 						}
 					}
