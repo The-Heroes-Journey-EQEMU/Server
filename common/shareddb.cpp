@@ -1669,7 +1669,6 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 
 			if (item.ID % 1000000 == 6307 || item.ID % 1000000 == 6309 || item.ID % 1000000 == 6313 || item.ID % 1000000 == 15996) {
 				item.NoDrop = !item.NoDrop;
-				item.NoPet = !item.NoPet;
 			}
 		}
 

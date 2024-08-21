@@ -846,6 +846,13 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		limit_value = e.limit_value;
 		slot = e.slot;
 
+		// THJ Custom Bullshit - Mutate Fist of Steel
+		if (rank.id == 12706 || rank.id == 12707) {
+			if ((e.effect_id == SE_LimitToSkill && e.base_value == 0) || (e.effect_id == SE_SkillDamageAmount && e.limit_value == 0) ) {
+				continue;
+			}
+		}
+
 		// we default to 0 (SE_CurrentHP) for the effect, so if there aren't any base1/2 values, we'll just skip it
 		if (effect == 0 && base_value == 0 && limit_value == 0)
 			continue;
