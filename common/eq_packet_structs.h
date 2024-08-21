@@ -1463,6 +1463,10 @@ struct PlayerPositionUpdateServer_Struct
 /*0024*/
 };
 
+struct AuthResponse_Struct {
+	char authHash[256];
+};
+
 /*
 ** Player position update
 **	Struct sent from client->server to update

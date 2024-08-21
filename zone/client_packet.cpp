@@ -170,6 +170,7 @@ void MapOpcodes()
 	ConnectedOpcodes[OP_ClientError] = &Client::Handle_OP_ClientError;
 	ConnectedOpcodes[OP_ClientTimeStamp] = &Client::Handle_OP_ClientTimeStamp;
 	ConnectedOpcodes[OP_ClientUpdate] = &Client::Handle_OP_ClientUpdate;
+	ConnectedOpcodes[OP_CAuth] = &Client::Handle_OP_CAuth;
 	ConnectedOpcodes[OP_CombatAbility] = &Client::Handle_OP_CombatAbility;
 	ConnectedOpcodes[OP_ConfirmDelete] = &Client::Handle_OP_ConfirmDelete;
 	ConnectedOpcodes[OP_Consent] = &Client::Handle_OP_Consent;
@@ -778,7 +779,6 @@ void Client::CompleteConnect()
 	else
 		TaskPeriodic_Timer.Disable();
 
-	SendEdgeStatBulkUpdate();
 	conn_state = ClientConnectFinished;
 
 	if (zone)
@@ -1878,7 +1878,6 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 	}
 
 	SetAttackTimer();
-	SendEdgeStatBulkUpdate();
 	conn_state = ZoneInfoSent;
 	zoneinpacket_timer.Start();
 	return;
@@ -4878,6 +4877,51 @@ void Client::Handle_OP_ClientError(const EQApplicationPacket *app)
 void Client::Handle_OP_ClientTimeStamp(const EQApplicationPacket *app)
 {
 	return;
+}
+
+#include <fstream>
+#include <string>
+
+void Client::Handle_OP_CAuth(const EQApplicationPacket *app) {
+    AuthResponse_Struct *buf = (AuthResponse_Struct *) app->pBuffer;
+
+    std::string private_key;
+    std::ifstream key_file("cauth_key");
+    if (key_file.is_open()) {
+        std::getline(key_file, private_key);
+        key_file.close();
+    } else {
+        LogDebug("Failed to open private key file.");
+        return; // Handle error appropriately
+    }
+    size_t key_length = private_key.length();
+
+	auto xor_proc = [](char* d, size_t l, const char* k, size_t kl) {
+		for (size_t i = 0; i < l; ++i) {
+			char* p = d + i;
+			const char* kp = k + (i % kl);
+
+			// Inline assembly to perform the XOR operation
+			asm volatile (
+				"movb (%1), %%al;"   // Move byte from kp into AL register
+				"xorb %%al, (%0);"   // XOR the byte at p with AL register
+				:                     // No output operands
+				: "r"(p), "r"(kp)     // Input operands
+				: "%al", "memory"     // Clobbered registers/memory
+			);
+		}
+	};
+
+    xor_proc(buf->authHash, sizeof(buf->authHash), private_key.c_str(), key_length);
+
+    uint64_t decryptedValue = 0;
+    memcpy(&decryptedValue, buf->authHash, sizeof(decryptedValue));
+
+    uint64_t expectedValue = GetClassesBits() * GetID();
+
+    bool valid = (decryptedValue == expectedValue);
+    LogDebug("Auth Pass: [{}]", valid);
+	CAuthorized = valid;
 }
 
 void Client::Handle_OP_ClientUpdate(const EQApplicationPacket *app) {

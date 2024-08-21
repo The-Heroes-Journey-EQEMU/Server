@@ -554,6 +554,17 @@ bool Client::Process() {
 			{
 				ItemTimerCheck();
 			}
+
+			if (RuleB(Custom, ServerAuthStats) && InZone() && !CAuthorized) {
+				if (CUnauth_tics >= 12) {
+					Kick("Custom client required. Visit heroesjourneyeq.com for more information.");
+				}
+
+				if (CUnauth_tics > 2) { // Allow a two-tick grace period.
+					Message(Chat::Shout, "You are not using an authorized client. You will be disconnected in %d seconds. Visit heroesjourneyeq.com for more information.", (12 - CUnauth_tics) * 6);
+				}
+				CUnauth_tics++;
+			}
 		}
 
 		if (fast_tic_timer.Check()) {
