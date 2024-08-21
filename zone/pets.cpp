@@ -680,7 +680,24 @@ void Mob::ConfigurePetWindow(Mob* selected_pet) {
 		this_client->QueuePacket(outapp);
 		this_client->QueuePacket(outapp2);
 
-		pet_npc->SendAppearancePacket(AppearanceType::Pet, pet_npc->GetID(), true, true);
+		pet_npc->SendAppearancePacket(AppearanceType::Pet, GetID(), true, true);
+
+		for (auto pet_iter : GetAllPets()) {
+			if (pet_iter->GetID() != pet_npc->GetID()) {
+				switch (pet_npc->GetPetOrder()) {
+					case SPO_Follow:
+						pet_iter->SetEntityVariable("IgnoreNextFollowCommand", "true");
+						break;
+					case SPO_Guard:
+						pet_iter->SetEntityVariable("IgnoreNextGuardCommand", "true");
+						break;
+					case SPO_Sit:
+						pet_iter->SetEntityVariable("IgnoreNextSitCommand", "true");
+						break;
+				}
+				pet_iter->SendAppearancePacket(AppearanceType::Pet, GetID(), true, true);
+			}
+		}
 		if (GetTarget() && GetTarget()->GetID() == pet_npc->GetID()) { pet_npc->SendBuffsToClient(this_client); }
 		pet_npc->SendPetBuffsToClient();
 
