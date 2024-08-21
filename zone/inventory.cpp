@@ -2546,7 +2546,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			if (IsPetBagActive()) {
 				DoPetBagResync();
 			} else {
-				DoPetBagFlush();
+				//DoPetBagFlush();
 			}
 		}
 

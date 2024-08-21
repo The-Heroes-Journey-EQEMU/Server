@@ -12205,44 +12205,44 @@ void Client::DoPetBagResync() {
 	if (RuleB(Custom, EnablePetBags)) {
 		auto pet_bag = GetActivePetBag();
 		auto pet_bag_slot = GetActivePetBagSlot();
-		Mob* pet 	 = GetPet();
 
-		if (pet && pet_bag) {
-			DoPetBagFlush();
-			NPC* pet_npc = pet->CastToNPC();
+		for (auto pet : GetAllPets()) {
+			if (pet && pet_bag && GetSpellLevel(pet->CastToNPC()->GetPetSpellID(), Class::Magician) < UINT8_MAX) {
+				DoPetBagFlush(pet);
+				NPC* pet_npc = pet->CastToNPC();
 
-			int bag_top = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, 0);
-			int bag_bot = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, pet_bag->GetItem()->BagSlots);
+				int bag_top = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, 0);
+				int bag_bot = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, pet_bag->GetItem()->BagSlots);
 
-			for (int slot_id = bag_top; slot_id < bag_bot; slot_id++) {
-				auto item_inst = GetInv().GetItem(slot_id);
-				if (item_inst) {
-					auto aug0 = item_inst->GetAugment(0);
-					auto aug1 = item_inst->GetAugment(1);
-					auto aug2 = item_inst->GetAugment(2);
-					auto aug3 = item_inst->GetAugment(3);
-					auto aug4 = item_inst->GetAugment(4);
-					auto aug5 = item_inst->GetAugment(5);
+				for (int slot_id = bag_top; slot_id < bag_bot; slot_id++) {
+					auto item_inst = GetInv().GetItem(slot_id);
+					if (item_inst) {
+						auto aug0 = item_inst->GetAugment(0);
+						auto aug1 = item_inst->GetAugment(1);
+						auto aug2 = item_inst->GetAugment(2);
+						auto aug3 = item_inst->GetAugment(3);
+						auto aug4 = item_inst->GetAugment(4);
+						auto aug5 = item_inst->GetAugment(5);
 
-					pet_npc->AddItemFixed(item_inst->GetID(), 1,	true,
-										  aug0 != nullptr ? aug0->GetID() : 0,
-										  aug1 != nullptr ? aug1->GetID() : 0,
-										  aug2 != nullptr ? aug2->GetID() : 0,
-										  aug3 != nullptr ? aug3->GetID() : 0,
-										  aug4 != nullptr ? aug4->GetID() : 0,
-										  aug5 != nullptr ? aug5->GetID() : 0);
+						pet_npc->AddItemFixed(item_inst->GetID(), 1,	true,
+											aug0 != nullptr ? aug0->GetID() : 0,
+											aug1 != nullptr ? aug1->GetID() : 0,
+											aug2 != nullptr ? aug2->GetID() : 0,
+											aug3 != nullptr ? aug3->GetID() : 0,
+											aug4 != nullptr ? aug4->GetID() : 0,
+											aug5 != nullptr ? aug5->GetID() : 0);
+					}
 				}
-			}
 
-			pet->SendWearChange(EQ::textures::weaponPrimary);
-			pet->SendWearChange(EQ::textures::weaponSecondary);
+				pet->SendWearChange(EQ::textures::weaponPrimary);
+				pet->SendWearChange(EQ::textures::weaponSecondary);
+			}
 		}
 	}
 }
 
-void Client::DoPetBagFlush() {
+void Client::DoPetBagFlush(Mob * pet) {
 	if (RuleB(Custom, EnablePetBags)) {
-		Mob* pet 	 = GetPet();
 		if (pet) {
 			// Clear existing pet inventory
 			NPC* pet_npc = pet->CastToNPC();

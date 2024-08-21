@@ -812,15 +812,13 @@ std::map<uint8, uint16> Mob::GetPetsClassList() {
             selected_class = highest_class;
         }
         // Last resort: Highest class overall, even if not the player's class
-        else if (highest_class != Class::None) {
+        else {
             selected_class = highest_class;
         }
 
         // Add the selected class and spell level to the return map
-        if (selected_class != Class::None) {
-            ret_map[selected_class] = highest_spell_level;
-            LogDebugDetail("GetPetsClassList: Added class ID [{}] with spell level [{}] to the map", selected_class, highest_spell_level);
-        }
+        ret_map[selected_class] = highest_spell_level;
+        LogDebugDetail("GetPetsClassList: Added class ID [{}] with spell level [{}] to the map", selected_class, highest_spell_level);
     }
 
     LogDebugDetail("GetPetsClassList: Returning map with [{}] entries", ret_map.size());
@@ -828,6 +826,7 @@ std::map<uint8, uint16> Mob::GetPetsClassList() {
 }
 
 bool Mob::IsPetAllowed(uint16 spell_id) {
+	ValidatePetList();
     auto level_class_map = GetSpellClasses(spell_id);
 
     // Get the player's class bitmask
@@ -845,10 +844,6 @@ bool Mob::IsPetAllowed(uint16 spell_id) {
     for (const auto& [class_id, spell_level] : level_class_map) {
         uint32 class_bit = GetPlayerClassBit(class_id);
 
-        // Check if the class is below or equal to the player's level
-        if (spell_level <= GetLevel()) {
-            LogDebugDetail("IsPetAllowed: Class ID [{}] at level [{}] is eligible", class_id, spell_level);
-
             // If the player has access to this class
             if (player_classes_bitmask & class_bit) {
                 // Check if this class already has an assigned pet
@@ -865,7 +860,7 @@ bool Mob::IsPetAllowed(uint16 spell_id) {
                     LogDebugDetail("IsPetAllowed: Class ID [{}] (not a player's class) is available", class_id);
                 }
             }
-        }
+
     }
 
     // If we found a free slot for a class the player doesn't have, allow the pet
@@ -979,6 +974,10 @@ bool Mob::RemovePet(uint16 pet_id) {
                 pet->SetOwnerID(0);  // Detach the pet from its owner
             }
             petids.erase(it);        // Remove the pet ID from the vector
+			ValidatePetList();
+			if (IsClient()) {
+				CastToClient()->DoPetBagResync();
+			}
             return true;             // Return true to indicate successful removal
         }
     }
