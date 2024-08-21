@@ -995,19 +995,20 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	}
 
 	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
-		for(auto &effect : rank->effects) {
-			if (RuleB(Custom, MulticlassingEnabled)) {
-				if (rank->id == 12706 || rank->id == 12707 || rank->id == 12708 || rank->id == 13813) { // Fists of steel
-					if (effect.effect_id = SE_LimitToSkill && effect.base_value == 0) {
-						effect.effect_id = SE_Blank;
-					}
+	for(auto &effect : rank->effects) {
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			if (rank->id == 12706 || rank->id == 12707 || rank->id == 12708 || rank->id == 13813) { // Fists of steel
+				if (effect.effect_id = SE_LimitToSkill && effect.base_value == 0) {
+					aai->total_effects -= 1;
+					continue;
 				}
 			}
-			outapp->WriteSInt32(effect.effect_id);
-			outapp->WriteSInt32(effect.base_value);
-			outapp->WriteSInt32(effect.limit_value);
-			outapp->WriteSInt32(effect.slot);
 		}
+		outapp->WriteSInt32(effect.effect_id);
+		outapp->WriteSInt32(effect.base_value);
+		outapp->WriteSInt32(effect.limit_value);
+		outapp->WriteSInt32(effect.slot);
+	}
 
 	for(auto &prereq : rank->prereqs) {
 		outapp->WriteSInt32(prereq.first);

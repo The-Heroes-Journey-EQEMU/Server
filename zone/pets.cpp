@@ -681,7 +681,7 @@ void Mob::ConfigurePetWindow(Mob* selected_pet) {
 		this_client->QueuePacket(outapp2);
 
 		pet_npc->SendAppearancePacket(AppearanceType::Pet, pet_npc->GetID(), true, true);
-		pet_npc->SendBuffsToClient(this_client);
+		if (GetTarget() && GetTarget()->GetID() == pet_npc->GetID()) { pet_npc->SendBuffsToClient(this_client); }
 		pet_npc->SendPetBuffsToClient();
 
 		if (pet_npc->IsHeld()) { pet_npc->SetEntityVariable("IgnoreNextHoldCommand", "true"); }

@@ -562,8 +562,11 @@ bool Client::Process() {
 			if (GetPet()) {
 				if (focused_pet_id && entity_list.GetNPCByID(focused_pet_id)) {
 					auto focused_pet = entity_list.GetNPCByID(focused_pet_id);
-					focused_pet->SendBuffsToClient(this);
 					focused_pet->SendPetBuffsToClient();
+
+					if (GetTarget() && GetTarget()->GetID() == focused_pet_id) {
+						focused_pet->SendBuffsToClient(this);
+					}
 				}
 
 				for(int i = 0; i < petids.size(); i++) {
