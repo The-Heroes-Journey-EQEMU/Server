@@ -436,7 +436,14 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 	}
 
 	int reuse_time     = 0;
-	int haste_modifier = GetHaste();
+	int haste          = GetHaste();
+	int haste_modifier = 0;
+
+	if (haste >= 0) {
+		haste_modifier = (10000 / (100 + haste)); //+100% haste = 2x as many attacks
+	} else {
+		haste_modifier = (100 - haste); //-100% haste = 1/2 as many attacks
+	}
 
 	int64 damage          = 0;
 	int16 skill_reduction = GetSkillReuseTime(ca_atk->m_skill);

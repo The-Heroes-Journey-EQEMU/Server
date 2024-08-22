@@ -4880,9 +4880,6 @@ void Client::Handle_OP_ClientTimeStamp(const EQApplicationPacket *app)
 	return;
 }
 
-#include <fstream>
-#include <string>
-
 void Client::Handle_OP_CAuth(const EQApplicationPacket *app) {
 	if (RuleB(Custom, ServerAuthStats)) {
 		AuthResponse_Struct *buf = (AuthResponse_Struct *) app->pBuffer;
