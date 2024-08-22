@@ -913,13 +913,15 @@ bool Mob::IsPetAllowed(uint16 incoming_spell) {
 
         auto pet_buffs = pet->GetBuffs();
         for (int i = 0; i < pet->GetMaxTotalSlots(); i++) {
-            if (IsEffectInSpell(pet_buffs[i].spellid, SE_Charm)) {
+			LogDebug("Examining Pet Buff [{}]", pet_buffs[i].spellid);
+            if (IsCharmSpell(pet_buffs[i].spellid)) {
                 origin_spell = pet_buffs[i].spellid;
+				LogDebug("Found Charm Spell: [{}]", origin_spell);
                 break;
             }
         }
 
-        if (!origin_spell) {
+        if (!origin_spell && pet->IsNPC()) {
             origin_spell = pet->CastToNPC()->GetPetSpellID();
         }
 
@@ -988,7 +990,7 @@ bool Mob::IsPetAllowed(uint16 incoming_spell) {
             if (is_unusable_by_player_classes(spell_id)) {
                 continue; // Allow it to pass if it's unusable by any of the player's classes
             } else {
-				Message(Chat::SpellFailure, "You may not have more than one pet of the same type.");
+				Message(Chat::SpellFailure, "You may not have more than one pet from the same class.");
                 return false;
             }
         }

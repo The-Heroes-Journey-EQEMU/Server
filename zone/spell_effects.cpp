@@ -795,7 +795,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					break;
 				}
 
-				if (IsClient() && !IsPetAllowed(spell_id)) {
+				if (caster->IsClient() && !caster->IsPetAllowed(spell_id)) {
 					Message(Chat::SpellFailure, "You may not charm an additional creature with this spell.");
 					break;
 				}
