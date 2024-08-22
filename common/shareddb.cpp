@@ -1673,8 +1673,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 				item.ID % 1000000 == 6309  || // Hammer of Striking
 				item.ID % 1000000 == 6313  || // Hammer of Requital
 				item.ID % 1000000 == 15996 || // Hammer of Divinity
-				item.ID % 1000000 == 29365 || // Hammer of Damnation
-				) {
+				item.ID % 1000000 == 29365) { // Hammer of Damnation
 				item.NoDrop = !item.NoDrop;
 			}
 		}
