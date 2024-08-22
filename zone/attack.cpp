@@ -3495,6 +3495,11 @@ void Mob::AddToHateList(Mob* other, int64 hate /*= 0*/, int64 damage /*= 0*/, bo
 		entity_list.AddTempPetsToHateList(this, other, bFrenzy);
 	}
 
+	// Multipet
+	for (auto pet : GetAllPets()) {
+		pet->hate_list.AddEntToHateList(other, 0, 0, bFrenzy);
+	}
+
 	if (!wasengaged) {
 		if (IsNPC() && other->IsClient() && other->CastToClient()) {
 			if (parse->HasQuestSub(GetNPCTypeID(), EVENT_AGGRO)) {

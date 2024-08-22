@@ -609,7 +609,7 @@ bool NPC::Process()
 							eligible_npcs.push_back(npc);
 						}
 
-						if (!eligible_npcs.empty() && !held) {
+						if (!eligible_npcs.empty()) {
 							int random_index = zone->random.Int(0, eligible_npcs.size() - 1);
 							NPC* random_npc = eligible_npcs[random_index];
 
