@@ -469,6 +469,7 @@ public:
 	inline EQ::InventoryProfile& GetInv() { return m_inv; }
 	inline const EQ::InventoryProfile& GetInv() const { return m_inv; }
 	inline std::vector<PetInfo*>& GetPetsInfo() { return m_petinfomulti; }
+	inline PetInfo& GetSuspendedPetInfo() { return m_suspendedminion; }
 	inline InspectMessage_Struct& GetInspectMessage() { return m_inspect_message; }
 	inline const InspectMessage_Struct& GetInspectMessage() const { return m_inspect_message; }
 	void ReloadExpansionProfileSetting();
@@ -2070,7 +2071,6 @@ private:
 	ExtendedProfile_Struct m_epp;
 	EQ::InventoryProfile m_inv;
 	Object* m_tradeskill_object;
-	PetInfo m_petinfo; // current pet data, used while loading from and saving to DB
 	PetInfo m_suspendedminion; // pet data for our suspended minion.
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary
 

@@ -5894,7 +5894,90 @@ void Client::UpdateLDoNWinLoss(uint32 theme_id, bool win, bool remove) {
 
 void Client::SuspendMinion(int value)
 {
+	ValidatePetList();
+	auto pet_mob = GetPetByID(focused_pet_id);
+	NPC* CurrentPet = nullptr;
+	if (pet_mob) {
+		CurrentPet = pet_mob->CastToNPC();
+	}
 
+	if (CurrentPet && CurrentPet->IsCharmed()) {
+		MessageString(Chat::SpellFailure, ONLY_SUMMONED_PETS);
+		return;
+	}
+
+	auto store_minion = [&]() {
+		m_suspendedminion.SpellID 	= CurrentPet->GetPetSpellID();
+		m_suspendedminion.HP 	  	= CurrentPet->GetHP();
+		m_suspendedminion.Mana    	= CurrentPet->GetMana();
+		m_suspendedminion.petpower 	= CurrentPet->GetPetPower();
+		m_suspendedminion.size 		= CurrentPet->GetSize();
+
+		if (value >= 1) {
+			CurrentPet->GetPetState(m_suspendedminion.Buffs, m_suspendedminion.Items, m_suspendedminion.Name);
+		} else {
+			strn0cpy(m_suspendedminion.Name, CurrentPet->GetName(), sizeof(m_suspendedminion.Name));
+		}
+
+		RemovePet(CurrentPet);
+		CurrentPet->Depop(false);
+
+		MessageString(Chat::Magenta, SUSPEND_MINION_SUSPEND, CurrentPet->GetCleanName());
+	};
+
+	auto deploy_minion = [&]() {
+		MakePoweredPet(m_suspendedminion.SpellID, spells[m_suspendedminion.SpellID].teleport_zone,
+			m_suspendedminion.petpower, m_suspendedminion.Name, m_suspendedminion.size);
+		ValidatePetList();
+		auto pet_mob = GetPet(petids.size() - 1);
+		if (pet_mob) {
+			CurrentPet = pet_mob->CastToNPC();
+		}
+
+		if (CurrentPet) {
+			CurrentPet->SetPetState(m_suspendedminion.Buffs, m_suspendedminion.Items);
+			CurrentPet->SendPetBuffsToClient();
+			CurrentPet->CalcBonuses();
+			CurrentPet->SetHP(m_suspendedminion.HP);
+			CurrentPet->SetMana(m_suspendedminion.Mana);
+			CurrentPet->SetTaunting(m_suspendedminion.taunting);
+
+			MessageString(Chat::Magenta, SUSPEND_MINION_UNSUSPEND, CurrentPet->GetCleanName());
+
+			memset(&m_suspendedminion, 0, sizeof(PetInfo));
+		}
+	};
+
+	bool valid_stored_pet	= m_suspendedminion.SpellID > 0;
+	bool total_pet_limit 	= GetAllPets().size() < RuleI(Custom, AbsolutePetLimit);
+	bool pet_slot_allowed 	= IsPetAllowed(m_suspendedminion.SpellID);
+
+	bool valid_pet_to_store = CurrentPet && CurrentPet->GetPetSpellID();
+	bool pet_not_engaged 	= CurrentPet && !CurrentPet->IsEngaged();
+
+	if (valid_stored_pet) {
+		if (!total_pet_limit) {
+			Message(Chat::SpellFailure, "You cannot control any additional pets.");
+			return;
+		}
+		if (!pet_slot_allowed) {
+			Message(Chat::SpellFailure, "You already have a pet of that class.");
+			return;
+		}
+
+		deploy_minion();
+		return;
+	}
+
+	if (valid_pet_to_store) {
+		if (!pet_not_engaged) {
+			MessageString(Chat::SpellFailure, SUSPEND_MINION_FIGHTING);
+			return;
+		}
+
+		store_minion();
+		return;
+	}
 }
 
 void Client::AddPVPPoints(uint32 Points)
