@@ -1982,6 +1982,7 @@ private:
 	char lskey[30];
 	int16 admin;
 	bool CAuthorized = false;
+	bool CHacker = false;
 	uint8 CUnauth_tics = 0;
 	uint32 guild_id;
 	uint8 guildrank; // player's rank in the guild, 1- Leader 8 Recruit

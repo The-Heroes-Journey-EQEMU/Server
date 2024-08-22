@@ -66,6 +66,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "../common/repositories/character_corpses_repository.h"
 #include "../common/repositories/guild_tributes_repository.h"
 #include "../common/repositories/buyer_buy_lines_repository.h"
+#include "../common/repositories/account_ip_repository.h"
 
 #include "../common/events/player_event_logs.h"
 #include "../common/repositories/character_stats_record_repository.h"
@@ -4883,45 +4884,53 @@ void Client::Handle_OP_ClientTimeStamp(const EQApplicationPacket *app)
 #include <string>
 
 void Client::Handle_OP_CAuth(const EQApplicationPacket *app) {
-    AuthResponse_Struct *buf = (AuthResponse_Struct *) app->pBuffer;
+	if (RuleB(Custom, ServerAuthStats)) {
+		AuthResponse_Struct *buf = (AuthResponse_Struct *) app->pBuffer;
 
-    std::string private_key;
-    std::ifstream key_file("cauth_key");
-    if (key_file.is_open()) {
-        std::getline(key_file, private_key);
-        key_file.close();
-    } else {
-        LogDebug("Failed to open private key file.");
-        return; // Handle error appropriately
-    }
-    size_t key_length = private_key.length();
-
-	auto xor_proc = [](char* d, size_t l, const char* k, size_t kl) {
-		for (size_t i = 0; i < l; ++i) {
-			char* p = d + i;
-			const char* kp = k + (i % kl);
-
-			// Inline assembly to perform the XOR operation
-			asm volatile (
-				"movb (%1), %%al;"   // Move byte from kp into AL register
-				"xorb %%al, (%0);"   // XOR the byte at p with AL register
-				:                     // No output operands
-				: "r"(p), "r"(kp)     // Input operands
-				: "%al", "memory"     // Clobbered registers/memory
-			);
+		auto private_key = DataBucket::GetData("cauth_key");
+		if (private_key.empty()) {
+			return;
 		}
-	};
 
-    xor_proc(buf->authHash, sizeof(buf->authHash), private_key.c_str(), key_length);
+		size_t key_length = private_key.length();
 
-    uint64_t decryptedValue = 0;
-    memcpy(&decryptedValue, buf->authHash, sizeof(decryptedValue));
+		auto xor_proc = [](char* d, size_t l, const char* k, size_t kl) {
+			for (size_t i = 0; i < l; ++i) {
+				char* p = d + i;
+				const char* kp = k + (i % kl);
 
-    uint64_t expectedValue = GetClassesBits() * GetID();
+				// Inline assembly to perform the XOR operation
+				asm volatile (
+					"movb (%1), %%al;"
+					"xorb %%al, (%0);"
+					:
+					: "r"(p), "r"(kp)
+					: "%al", "memory"
+				);
+			}
+		};
 
-    bool valid = (decryptedValue == expectedValue);
-    LogDebug("Auth Pass: [{}]", valid);
-	CAuthorized = valid;
+		xor_proc(buf->authHash, sizeof(buf->authHash), private_key.c_str(), key_length);
+
+		uint64_t decryptedValue = 0;
+		memcpy(&decryptedValue, buf->authHash, sizeof(decryptedValue));
+
+		uint64_t expectedValue = GetClassesBits() * GetID();
+
+		bool valid = (decryptedValue == expectedValue);
+		CAuthorized = valid;
+		if (!CHacker && buf->unk) {
+			CHacker = true;
+			LogError("HACKER DETECTED [{}]!", GetCleanName());
+
+			std::string message = fmt::format("HACK DETECTED: Character: {} [Account: {}, IP: {}] has been detected using MQ2. (Hook Detection)\n",
+											GetCleanName(),
+											AccountName(),
+											GetIPString());
+
+			zone->SendDiscordMessage("admin", message);
+		}
+	}
 }
 
 void Client::Handle_OP_ClientUpdate(const EQApplicationPacket *app) {
