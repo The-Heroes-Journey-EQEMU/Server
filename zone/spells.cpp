@@ -3255,10 +3255,6 @@ int Mob::CheckStackConflict(uint16 spellid1, int caster_level1, uint16 spellid2,
 		!caster2 ? "Nobody" : caster2->GetName()
 	);
 
-	if (RuleB(Custom, LessStrictSpellStacking) && (sp1.short_buff_box != sp2.short_buff_box) && (IsDetrimentalSpell(spellid1) != IsDetrimentalSpell(spellid2))) {
-		return 0;
-	}
-
 	if (IsResurrectionEffects(spellid1)) {
 		return 0;
 	}
