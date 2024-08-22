@@ -874,7 +874,7 @@ void Client::FinishTrade(Mob* tradingWith, bool finalizer, void* event_entry, st
 						auto new_loot_drop_entry = LootdropEntriesRepository::NewNpcEntity();
 						new_loot_drop_entry.equip_item = 1;
 						new_loot_drop_entry.item_charges = static_cast<int8>(inst->GetCharges());
-						bool no_drop = item->NoDrop == 0 && tradingWith->GetOwner()->GetID() == GetID();
+						bool no_drop = item->NoDrop == 0 && tradingWith->GetOwner()->GetID() != GetID();
 
 						if (no_drop) {
 							PushItemOnCursor(*inst, true);

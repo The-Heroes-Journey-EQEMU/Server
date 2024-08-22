@@ -556,12 +556,13 @@ bool Client::Process() {
 			}
 
 			if (RuleB(Custom, ServerAuthStats) && InZone() && !CAuthorized) {
-				if (CUnauth_tics >= 12) {
+				if (CUnauth_tics >= 11) {
+					zone->SendDiscordMessage("admin", fmt::format("Kicking [{}]. Unauthorized Client.", GetCleanName()));
 					Kick("Custom client required. Visit heroesjourneyeq.com for more information.");
 				}
 
-				if (CUnauth_tics > 2) { // Allow a two-tick grace period.
-					Message(Chat::Shout, "You are not using an authorized client. You will be disconnected in %d seconds. Visit heroesjourneyeq.com for more information.", (12 - CUnauth_tics) * 6);
+				if (CUnauth_tics > 1) { // Allow a two-tick grace period.
+					Message(Chat::Shout, "You are not using an authorized client. You will be disconnected in %d seconds. Visit heroesjourneyeq.com for more information.", (11 - CUnauth_tics) * 6);
 				}
 				CUnauth_tics++;
 			}

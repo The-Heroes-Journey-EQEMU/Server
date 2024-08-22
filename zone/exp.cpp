@@ -544,12 +544,12 @@ bool Client::ConsumeItemOnCursor() {
 	auto power_item  = m_inv.GetItem(EQ::invslot::slotPowerSource);
 
 	if (!cursor_item || !power_item || (power_item->GetID() % 1000000) != (cursor_item->GetID() % 1000000)) {
-		Message(Chat::SpellFailure, "You cannot consume that item, is it not similar to the item which you ar etrying to channel strength into.");
+		Message(Chat::SpellFailure, "You cannot consume that item. You do not have a similar item equipped in your Power Source.");
 		return false;
 	}
 
 	if ((cursor_item->GetID() > power_item->GetID()) || cursor_item->GetID() >= 2000000 || power_item->GetID() >= 2000000) {
-		Message(Chat::SpellFailure, "You cannot consume that item, as it is stronger than the item which you are trying to channel strength into.");
+		Message(Chat::SpellFailure, "ou cannot consume that item. You do not have a similar item equipped in your Power Source.");
 		return false;
 	}
 

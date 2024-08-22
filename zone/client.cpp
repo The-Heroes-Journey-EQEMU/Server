@@ -2862,15 +2862,9 @@ bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 		skill_id = EQ::skills::Skill2HPiercing;
 	}
 
-	unsigned int classes_bits = GetClassesBits();
-
-	for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
-		if (classes_bits & (1 << i)) {
-			int classID = i + 1;
-
-			if (skill_caps.GetSkillCap(classID, skill_id, RuleI(Character, MaxLevel)).cap > 0) {
-				return true;
-			}
+	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
+		if (HasClass(i) && skill_caps.GetSkillCap(i, skill_id, RuleI(Character, MaxLevel)).cap > 0) {
+			return true;
 		}
 	}
 
@@ -2887,21 +2881,15 @@ uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint16 class_id, uint8 l
 		skill_id = EQ::skills::Skill2HPiercing;
 	}
 
-	unsigned int classes_bits = GetClassesBits();
 	uint16 maxSkill = 0;
-
-	for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
-		if (classes_bits & (1 << i)) {
-			uint16 classID = i + 1;
-
-			auto skillCap = skill_caps.GetSkillCap(classID, skill_id, level);
-
-			if (skillCap.cap > maxSkill) {
-				maxSkill = skillCap.cap;
+	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
+		if (HasClass(i)) {
+			uint16 test = skill_caps.GetSkillCap(i, skill_id, level).cap;
+			if (test > maxSkill) {
+				maxSkill = test;
 			}
 		}
 	}
-
 	return maxSkill;
 }
 

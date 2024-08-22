@@ -4882,48 +4882,37 @@ void Client::Handle_OP_ClientTimeStamp(const EQApplicationPacket *app)
 
 void Client::Handle_OP_CAuth(const EQApplicationPacket *app) {
 	if (RuleB(Custom, ServerAuthStats)) {
-		AuthResponse_Struct *buf = (AuthResponse_Struct *) app->pBuffer;
+		AuthResponse_Struct *buf = (AuthResponse_Struct *)app->pBuffer;
 
-		auto private_key = DataBucket::GetData("cauth_key");
-		if (private_key.empty()) {
+		uint32 private_key = Strings::ToUnsignedInt(DataBucket::GetData("cauth_key"), 0);
+		if (private_key == 0) {
 			return;
 		}
 
-		size_t key_length = private_key.length();
+		size_t key_length = sizeof(private_key);
 
-		auto xor_proc = [](char* d, size_t l, const char* k, size_t kl) {
-			for (size_t i = 0; i < l; ++i) {
-				char* p = d + i;
-				const char* kp = k + (i % kl);
 
-				// Inline assembly to perform the XOR operation
-				asm volatile (
-					"movb (%1), %%al;"
-					"xorb %%al, (%0);"
-					:
-					: "r"(p), "r"(kp)
-					: "%al", "memory"
-				);
+		auto xor_proc = [](char* data, size_t length, const uint32_t key, size_t key_length) {
+			const char* key_bytes = reinterpret_cast<const char*>(&key);
+			for (size_t i = 0; i < length; ++i) {
+				data[i] ^= key_bytes[i % key_length];
 			}
 		};
 
-		xor_proc(buf->authHash, sizeof(buf->authHash), private_key.c_str(), key_length);
+		xor_proc(buf->authHash, sizeof(buf->authHash), private_key, key_length);
 
 		uint64_t decryptedValue = 0;
 		memcpy(&decryptedValue, buf->authHash, sizeof(decryptedValue));
 
-		uint64_t expectedValue = GetClassesBits() * GetID();
-
-		bool valid = (decryptedValue == expectedValue);
-		CAuthorized = valid;
+		CAuthorized = (decryptedValue == (GetClassesBits() * GetID()));
 		if (!CHacker && buf->unk) {
 			CHacker = true;
 			LogError("HACKER DETECTED [{}]!", GetCleanName());
 
 			std::string message = fmt::format("HACK DETECTED: Character: {} [Account: {}, IP: {}] has been detected using MQ2. (Hook Detection)\n",
-											GetCleanName(),
-											AccountName(),
-											GetIPString());
+											  GetCleanName(),
+											  AccountName(),
+											  GetIPString());
 
 			zone->SendDiscordMessage("admin", message);
 		}
