@@ -1331,7 +1331,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			{
 				if(petids.size() >= RuleI(Custom, AbsolutePetLimit) || !IsPetAllowed(spell_id))
 				{
-					MessageString(Chat::Shout, ONLY_ONE_PET);
+					return false;
 				}
 				else
 				{
@@ -10211,7 +10211,6 @@ bool Mob::PassCharmTargetRestriction(Mob *target) {
 		return false;
 	}
 	else if (petids.size() >= RuleI(Custom, AbsolutePetLimit) && IsClient()) {
-		MessageString(Chat::Red, ONLY_ONE_PET);
 		LogSpells("Spell casting canceled: Can not cast charm if you have a pet.");
 		return false;
 	}
