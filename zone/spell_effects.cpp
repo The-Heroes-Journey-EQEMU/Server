@@ -2335,11 +2335,12 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				snprintf(effect_desc, _EDLEN, "Call Pet");
 #endif
 				// this is cast on self, not on the pet
-				Mob *casters_pet = GetPet();
-				if(casters_pet && casters_pet->IsNPC()){
-					casters_pet->CastToNPC()->GMMove(GetX(), GetY(), GetZ(), GetHeading());
-					if (!casters_pet->GetTarget()) {
-						casters_pet->StopNavigation();
+				for(auto casters_pet : caster->GetAllPets()) {
+					if(casters_pet && casters_pet->IsNPC()){
+						casters_pet->CastToNPC()->GMMove(GetX(), GetY(), GetZ(), GetHeading());
+						if (!casters_pet->GetTarget()) {
+							casters_pet->StopNavigation();
+						}
 					}
 				}
 				break;
@@ -2389,7 +2390,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					if (spells[spell_id].limit_value[i]) {
 						max_level = spells[spell_id].limit_value[i];
 					}
-					//handle modern client era where max value determines max level or range above client.
+					//handle modern client era where max value d etermines max level or range above client.
 					else if (spells[spell_id].max_value[i]) {
 						if (spells[spell_id].max_value[i] >= 1000) {
 							max_level = 1000 - spells[spell_id].max_value[i];
