@@ -584,7 +584,7 @@ int64 Client::CalcBaseMana() {
 
 	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
 		if (HasClass(i)) {
-			int64 test = _CalcBaseMana(class_id);
+			int64 test = _CalcBaseMana(i);
 			if (test > highest_base_mana) {
 				highest_base_mana = test;
 			}
