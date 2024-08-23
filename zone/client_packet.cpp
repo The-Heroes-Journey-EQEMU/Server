@@ -4905,7 +4905,7 @@ void Client::Handle_OP_CAuth(const EQApplicationPacket *app) {
 		memcpy(&decryptedValue, buf->authHash, sizeof(decryptedValue));
 
 		CAuthorized = (decryptedValue == (GetClassesBits() * GetID()));
-		if (!CHacker && buf->unk) {
+		if (!CHacker && buf->unk && CAuthorized) {
 			CHacker = true;
 			LogError("HACKER DETECTED [{}]!", GetCleanName());
 

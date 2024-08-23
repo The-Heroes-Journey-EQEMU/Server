@@ -562,7 +562,7 @@ bool Client::Process() {
 				}
 
 				if (CUnauth_tics > 1) { // Allow a two-tick grace period.
-					Message(Chat::Shout, "You are not using an authorized client. You will be disconnected in %d seconds. Visit heroesjourneyeq.com for more information.", (11 - CUnauth_tics) * 6);
+					Message(Chat::Shout, "You are not using the Heroes' Journey client or it is out of date. You will be disconnected in {} seconds.", (11 - CUnauth_tics) * 6);
 				}
 				CUnauth_tics++;
 			}
