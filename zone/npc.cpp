@@ -600,23 +600,12 @@ bool NPC::Process()
 		} else {
 			Mob* owner = entity_list.GetMob(GetSwarmOwner());
 			if (owner && owner->IsClient()) {
-				if (RuleB(Spells, SwarmPetFullAggro) && !GetTarget()) {
+				if (RuleB(Spells, SwarmPetFullAggro)) {
 					std::vector<NPC*> eligible_npcs;
 					for (const auto& npc_entity : entity_list.GetNPCList()) {
 						NPC* npc = npc_entity.second;
-
-						if (npc->IsOnHatelist(owner) && !IsOnHatelist(npc)) {
-							eligible_npcs.push_back(npc);
-						}
-
-						if (!eligible_npcs.empty()) {
-							int random_index = zone->random.Int(0, eligible_npcs.size() - 1);
-							NPC* random_npc = eligible_npcs[random_index];
-
-							if (DistanceSquared(GetPosition(), random_npc->GetPosition()) >= RuleR(Aggro, PetAttackRange)) {
-								AddToHateList(random_npc, 100, 100);
-								SetTarget(random_npc);
-							}
+						if (npc->IsOnHatelist(owner) && !IsOnHatelist(npc) && DistanceSquared(GetPosition(), npc->GetPosition()) >= RuleR(Aggro, PetAttackRange)) {
+							AddToHateList(npc, 1, 1);
 						}
 					}
 				}
