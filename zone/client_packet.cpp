@@ -11311,6 +11311,7 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 	switch (PetCommand)
 	{
 		case PET_ATTACK: {
+			target = GetMeleeImpliedTarget(target);
 			if (!target)
 				break;
 			for (auto pet_id : petids) {
@@ -11373,6 +11374,7 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 			break;
 		}
 		case PET_QATTACK: {
+			target = GetMeleeImpliedTarget(target);
 			int pet_idx = GetEntityVariable("PetAttackIndex").empty() ? 0 : std::stoi(GetEntityVariable("PetAttackIndex"));
 			if (pet_idx >= petids.size()) {
 				pet_idx = 0; // Reset to the first pet if we've gone through all
