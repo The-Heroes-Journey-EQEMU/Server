@@ -938,6 +938,28 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 			// Skip loading fury of magic.
 			safe_delete(outapp);
 			return;
+			// Skip loading Glyphs
+			/*
+				585	Glyph of Dragon Scales
+				586	Glyph of Indeterminable Reward
+				587	Glyph of Arcane Secrets
+				588	Glyph of Draconic Potential
+				589	Glyph of Destruction
+				5000	Glyph of Courage
+				5002	Glyph of Stored Life
+				5003	Glyph of Frantic Infusion
+				5004	Glyph of Angry Thoughts
+				7016	Glyph of the Master
+				7017	Glyph of Lost Secrets
+				7018	Glyph of Genari Might
+				7019	Glyph of the Cataclysm
+			*/
+		if (ability->id == 585 || ability->id == 586 || ability->id == 587 || ability->id == 588 || ability->id == 589 ||
+			ability->id == 5000 ||ability->id == 5002 ||ability->id == 5003 ||ability->id == 5004 ||ability->id == 7016 ||
+			ability->id == 7017 ||ability->id == 7018 ||ability->id == 7019) {
+				safe_delete(outapp);
+				return;
+			}
 		}
 		if ((ability->classes >> 1) & GetClassesBits() || (ability->classes & (1 << GetClass()))) {
 			aai->classes = 0xFFFFFFF;
