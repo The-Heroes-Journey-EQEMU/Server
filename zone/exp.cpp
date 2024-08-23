@@ -633,7 +633,11 @@ bool Client::AddPowersourceExp(uint64 exp_to_add) {
 				new_item->PutAugment(r, *item->RemoveAugment(r));
 			}
 
-			new_item->SetCharges(item->GetCharges());
+			if (item->IsCharged()) {
+				new_item->SetCharges(item->GetCharges());
+			} else {
+				new_item->SetCharges(-1);
+			}
 
 			item = m_inv.PopItem(EQ::invslot::slotPowerSource);
 			if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {
