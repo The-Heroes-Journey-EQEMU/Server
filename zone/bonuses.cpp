@@ -831,7 +831,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 
 	uint32 effect = 0;
 	int32 base_value = 0;
-	int32 limit_value = 0; // only really used for SE_RaiseStatCap & SE_ReduceSkillTimer in aa_effects table
+	int32 limit_value = 0; // (base2)
 	uint32 slot = 0;
 
 	for (const auto &e : rank.effects) {
@@ -1348,7 +1348,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			break;
 		}
 
-		case SE_Critical_Melee_Damage_Mod_Max:
+		case SE_Critical_Melee_Damage_Mod_Max: //No such AAs as of 8/23/2024
 		{
 			// Bad data or unsupported new skill
 			if (limit_value > EQ::skills::HIGHEST_SKILL)
@@ -1364,7 +1364,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		case SE_CriticalSpellChance: {
 			newbon->CriticalSpellChance += base_value;
 
-			if (limit_value > newbon->SpellCritDmgIncNoStack)
+			if (limit_value > newbon->SpellCritDmgIncNoStack) //take the highest critdmg limit
 				newbon->SpellCritDmgIncNoStack = limit_value;
 
 			break;
@@ -1455,12 +1455,13 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		case SE_GiveDoubleRiposte: {
 			// 0=Regular Riposte 1=Skill Attack Riposte 2=Skill
 			if (limit_value == 0) {
-				if (newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_CHANCE] < base_value)
-					newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_CHANCE] = base_value;
+				/*if (newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_CHANCE] < base_value)
+					newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_CHANCE] = base_value;*/
+				newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_CHANCE] += base_value;
 			}
 			// Only for special attacks.
-			else if (limit_value > 0 && (newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_SKILL_ATK_CHANCE] < base_value)) {
-				newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_SKILL_ATK_CHANCE] = base_value;
+			else if (limit_value > 0/* && (newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_SKILL_ATK_CHANCE] < base_value)*/) {
+				newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_SKILL_ATK_CHANCE] += base_value;
 				newbon->GiveDoubleRiposte[SBIndex::DOUBLE_RIPOSTE_SKILL]            = limit_value;
 			}
 
@@ -1496,6 +1497,8 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 
 		case SE_DivineSave: {
 			if (newbon->DivineSaveChance[SBIndex::DIVINE_SAVE_CHANCE] < base_value) {
+				//only AAs: Touch of the Divine, Covenant of Spirit
+				//We don't have the latter as of 8/23/2024 so leaving as unstackable
 				newbon->DivineSaveChance[SBIndex::DIVINE_SAVE_CHANCE]           = base_value;
 				newbon->DivineSaveChance[SBIndex::DIVINE_SAVE_SPELL_TRIGGER_ID] = limit_value;
 			}
@@ -1532,6 +1535,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		}
 
 		case SE_FinishingBlow: {
+			//only AA: finishing blow (stacking not a concern)
 			// base1 = chance, base2 = damage
 			if (newbon->FinishingBlow[SBIndex::FINISHING_EFFECT_DMG] < limit_value) {
 				newbon->FinishingBlow[SBIndex::FINISHING_EFFECT_PROC_CHANCE] = base_value;
@@ -1566,7 +1570,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			break;
 
 		case SE_MeleeLifetap: {
-
+			//No AAs?
 			if ((base_value < 0) && (newbon->MeleeLifetap > base_value))
 				newbon->MeleeLifetap = base_value;
 
@@ -1709,6 +1713,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			break;
 
 		case SE_PC_Pet_Rampage: {
+			//No AAs?
 			newbon->PC_Pet_Rampage[SBIndex::PET_RAMPAGE_CHANCE] += base_value; //Chance to rampage
 			if (newbon->PC_Pet_Rampage[SBIndex::PET_RAMPAGE_DMG_MOD] < limit_value)
 				newbon->PC_Pet_Rampage[SBIndex::PET_RAMPAGE_DMG_MOD] = limit_value; //Damage modifer - take highest
@@ -1716,6 +1721,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		}
 
 		case SE_PC_Pet_AE_Rampage: {
+			//No AAs?
 			newbon->PC_Pet_AE_Rampage[SBIndex::PET_RAMPAGE_CHANCE] += base_value; //Chance to rampage
 			if (newbon->PC_Pet_AE_Rampage[SBIndex::PET_RAMPAGE_DMG_MOD] < limit_value)
 				newbon->PC_Pet_AE_Rampage[SBIndex::PET_RAMPAGE_DMG_MOD] = limit_value; //Damage modifer - take highest
@@ -1884,39 +1890,52 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 
 		case SE_ExtraAttackChance:
 		{
-			if (newbon->ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE] < base_value) {
+			/*if (newbon->ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE] < base_value) {
 				newbon->ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE]   = base_value;
 				newbon->ExtraAttackChance[SBIndex::EXTRA_ATTACK_NUM_ATKS] = limit_value ? limit_value : 1;
-			}
+			}*/
+			//Made chance stackable, num attacks not stackable. Consider logic change for this in Client::DoAttackRounds
+			newbon->ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE]   += base_value;
+			newbon->ExtraAttackChance[SBIndex::EXTRA_ATTACK_NUM_ATKS] = limit_value ? limit_value : 1;
 			break;
 		}
 
 		case SE_AddExtraAttackPct_1h_Primary:
 		{
-			if (newbon->ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE] < base_value) {
+			/*if (newbon->ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE] < base_value) {
 				newbon->ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE]   = base_value;
 				newbon->ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_NUM_ATKS] = limit_value ? limit_value : 1;
-			}
+			}*/
+			//Made chance stackable, num attacks not stackable. Consider logic change for this in Client::DoAttackRounds
+			newbon->ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE]   += base_value;
+			newbon->ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_NUM_ATKS] = limit_value ? limit_value : 1;
 			break;
 		}
 
 		case SE_AddExtraAttackPct_1h_Secondary:
 		{
-
-			if (newbon->ExtraAttackChanceSecondary[SBIndex::EXTRA_ATTACK_CHANCE] < base_value) {
+			//No AAs?
+			/*if (newbon->ExtraAttackChanceSecondary[SBIndex::EXTRA_ATTACK_CHANCE] < base_value) {
 				newbon->ExtraAttackChanceSecondary[SBIndex::EXTRA_ATTACK_CHANCE]   = base_value;
 				newbon->ExtraAttackChanceSecondary[SBIndex::EXTRA_ATTACK_NUM_ATKS] = limit_value ? limit_value : 1;
-			}
+			}*/
+			//Made chance stackable, num attacks not stackable. Consider logic change for this in Client::DoAttackRounds
+			newbon->ExtraAttackChanceSecondary[SBIndex::EXTRA_ATTACK_CHANCE]   += base_value;
+			newbon->ExtraAttackChanceSecondary[SBIndex::EXTRA_ATTACK_NUM_ATKS] = limit_value ? limit_value : 1;
 			break;
 		}
 
 		case SE_Double_Melee_Round:
 		{
-			if (newbon->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_CHANCE] < base_value) {
+			//No AAs?
+			/*if (newbon->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_CHANCE] < base_value) {
 				newbon->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_CHANCE] = base_value;
 				newbon->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_DMG_BONUS] = limit_value;
 
-			}
+			}*/
+			//Made chance stackable, num attacks not stackable. Consider logic change for this in Client::DoAttackRounds
+			newbon->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_CHANCE] += base_value;
+			newbon->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_DMG_BONUS] = limit_value;
 			break;
 		}
 
