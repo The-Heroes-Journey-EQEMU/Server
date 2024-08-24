@@ -440,9 +440,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 	int haste_modifier = 0;
 
 	auto calc_reuse = [](int reuse_time, int haste) -> int {
-		auto ret = (reuse_time * 100) / haste;
-		LogDebug("Calculated Reuse Time: [{}]", ret);
-		return ret;
+		return (reuse_time * 100) / haste;
 	};
 
 	if (haste >= 0) {
@@ -709,8 +707,6 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 	}
 
 	reuse_time = EQ::Clamp(reuse_time, 0, reuse_time);
-
-	LogDebug("Actual Reuse: [{}]", reuse_time);
 
 	if (reuse_time) {
 		p_timers.Start(timer, reuse_time);
