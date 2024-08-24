@@ -367,5 +367,7 @@ const uint64 EQ::ItemData::CalculateGearScore() const {
 		}
 	}
 
+	gearScore = std::max(gearScore, static_cast<uint64>(50000));
+
     return gearScore;
 }
