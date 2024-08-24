@@ -5475,7 +5475,7 @@ void Mob::TrySpellProc(const EQ::ItemInstance *inst, const EQ::ItemData *weapon,
 		}
 
 		// Not ranged
-		if (!rangedattk) {
+		if (!rangedattk || RuleB(Custom, MulticlassingEnabled)) {
 			// Perma procs (Not used for AA, they are handled below)
 			if (IsValidSpell(PermaProcs[i].spellID)) {
 				if (zone->random.Roll(PermaProcs[i].chance)) { // TODO: Do these get spell bonus?
@@ -5543,7 +5543,7 @@ void Mob::TrySpellProc(const EQ::ItemInstance *inst, const EQ::ItemData *weapon,
 			uint32 aa_proc_reuse_timer = 0;
 			int proc_type = 0; //used to deterimne which timer array is used.
 
-			if (!rangedattk) {
+			if (!rangedattk || RuleB(Custom, MulticlassingEnabled)) {
 
 				aa_rank_id = aabonuses.SpellProc[i + SBIndex::COMBAT_PROC_ORIGIN_ID];
 				aa_spell_id = aabonuses.SpellProc[i + SBIndex::COMBAT_PROC_SPELL_ID];
