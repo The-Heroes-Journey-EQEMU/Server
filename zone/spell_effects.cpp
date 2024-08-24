@@ -4615,7 +4615,8 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 				SetPetRegroup(false);
 				if(owner)
 				{
-					//owner->SetPet(0);
+					owner->RemovePet(this);
+					owner->ValidatePetList();
 				}
 
 				// Custom charm inventory handling

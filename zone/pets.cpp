@@ -1080,7 +1080,6 @@ bool Mob::RemovePetByIndex(uint8 idx /*= 0*/) {
 }
 
 bool Mob::RemovePet(Mob* pet) {
-	ValidatePetList();
     if (!pet) {
         return false;  // Return false if the provided Mob pointer is null
     }
@@ -1181,7 +1180,8 @@ bool Mob::AddPet(uint16 pet_id) {
 
 void Mob::ValidatePetList() {
     for (auto it = petids.begin(); it != petids.end(); ) {
-        if (!entity_list.GetMob(*it)) {
+		auto pet = entity_list.GetMob(*it);
+        if (!pet || !pet->GetOwner()) {
             LogDebug("Removing invalid pet ID [{}] from petids list for Mob [{}].", *it, GetCleanName());
             it = petids.erase(it);  // Remove invalid pet ID and advance the iterator
         } else {
