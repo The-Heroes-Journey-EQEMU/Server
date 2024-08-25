@@ -3782,6 +3782,7 @@ void ZoneDatabase::LoadBuffs(Client *client)
 			continue;
 		}
 
+
 		Client* c = entity_list.GetClientByName(e.caster_name.c_str());
 
 		buffs[e.slot_id].spellid = e.spell_id;
@@ -3790,14 +3791,12 @@ void ZoneDatabase::LoadBuffs(Client *client)
 		if (c) {
 			buffs[e.slot_id].casterid = c->GetID();
 			buffs[e.slot_id].client   = true;
-
-			strncpy(buffs[e.slot_id].caster_name, c->GetName(), 64);
 		} else {
 			buffs[e.slot_id].casterid = 0;
 			buffs[e.slot_id].client   = false;
-
-			strncpy(buffs[e.slot_id].caster_name, "", 64);
 		}
+
+		strn0cpy(buffs[e.slot_id].caster_name, e.caster_name.c_str(), e.caster_name.length());
 
 		buffs[e.slot_id].ticsremaining     = e.ticsremaining;
 		buffs[e.slot_id].counters          = e.counters;

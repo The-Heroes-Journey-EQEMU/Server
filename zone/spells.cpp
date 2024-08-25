@@ -3873,6 +3873,8 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 		}
 	}
 
+	LogDebug("Caster is null? [{}]", caster ? caster->GetCleanName() : "NULL");
+
 	buffs[emptyslot].spellid = spell_id;
 	buffs[emptyslot].casterlevel = caster_level;
 	if (caster && !caster->IsAura()) // maybe some other things we don't want to ...
