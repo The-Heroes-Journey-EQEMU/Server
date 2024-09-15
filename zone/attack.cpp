@@ -4001,7 +4001,8 @@ bool Client::CheckDoubleAttack()
 			default:
 				da_negate = 0;
 				break;
-		}		
+		}
+		bonus_double_attack -= da_negate;		
 	}		
 
 	//Use skill calculations otherwise, if you only have AA applied GiveDoubleAttack chance then use that value as the base.
