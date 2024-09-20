@@ -6773,20 +6773,26 @@ void Client::DoAttackRounds(Mob *target, int hand, bool IsFromSpell)
 				if (HasTwoHanderEquipped()) {
 					auto extraattackchance = aabonuses.ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE] + spellbonuses.ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE] +
 											 itembonuses.ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE];
-					if (extraattackchance && zone->random.Roll(extraattackchance)) {
+					if(extraattackchance) {
 						auto extraattackamt = std::max({aabonuses.ExtraAttackChance[SBIndex::EXTRA_ATTACK_NUM_ATKS], spellbonuses.ExtraAttackChance[SBIndex::EXTRA_ATTACK_NUM_ATKS], itembonuses.ExtraAttackChance[SBIndex::EXTRA_ATTACK_NUM_ATKS] });
 						for (int i = 0; i < extraattackamt; i++) {
-							Attack(target, hand, false, false, IsFromSpell);
+							//Roll chance of extra hit per possible extra hit
+							if (zone->random.Roll(extraattackchance)) {
+								Attack(target, hand, false, false, IsFromSpell);
+							}
 						}
 					}
 				}
 				else {
 					auto extraattackchance_primary = aabonuses.ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE] + spellbonuses.ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE] +
 													 itembonuses.ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_CHANCE];
-					if (extraattackchance_primary && zone->random.Roll(extraattackchance_primary)) {
+					if(extraattackchance_primary) {
 						auto extraattackamt_primary = std::max({aabonuses.ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_NUM_ATKS], spellbonuses.ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_NUM_ATKS], itembonuses.ExtraAttackChancePrimary[SBIndex::EXTRA_ATTACK_NUM_ATKS] });
 						for (int i = 0; i < extraattackamt_primary; i++) {
-							Attack(target, hand, false, false, IsFromSpell);
+							//Roll chance of extra hit per possible extra hit
+							if (zone->random.Roll(extraattackchance_primary)) {
+								Attack(target, hand, false, false, IsFromSpell);
+							}
 						}
 					}
 				}
