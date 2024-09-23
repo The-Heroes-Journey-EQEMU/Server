@@ -58,6 +58,7 @@ public:
 	void SetBaseRace(int v);
 	void SetBaseGender(int v);
 	uint16 GetClassBitmask();
+	bool HasClassID(int class_id);
 	int GetClassesBitmask();
 	bool AddExtraClass(int class_id);
 	uint32 GetDeityBitmask();
@@ -334,7 +335,7 @@ public:
 	void KeyRingAdd(uint32 item);
 	bool KeyRingCheck(uint32 item);
 	void AddPVPPoints(uint32 points);
-	void AddCrystals(uint32 radiant, uint32 ebon);
+	void AddCrystals(uint32 radiant_count, uint32 ebon_count);
 	void SetEbonCrystals(uint32 value);
 	void SetRadiantCrystals(uint32 value);
 	uint32 GetPVPPoints();
@@ -378,7 +379,7 @@ public:
 	void AssignTask(int task_id, int npc_id);
 	void AssignTask(int task_id, int npc_id, bool enforce_level_requirement);
 	void FailTask(int task);
-	bool IsTaskCompleted(int task);
+	bool IsTaskCompleted(int task_id);
 	bool IsTaskActive(int task);
 	bool IsTaskActivityActive(int task, int activity);
 	void LockSharedTask(bool lock);
@@ -442,7 +443,7 @@ public:
 	bool IsDead();
 	int CalcCurrentWeight();
 	int CalcATK();
-	void FilteredMessage(Mob *sender, uint32 type, int filter, const char* message);
+	void FilteredMessage(Lua_Mob sender, uint32 type, int filter, const char* message);
 	void EnableAreaHPRegen(int value);
 	void DisableAreaHPRegen();
 	void EnableAreaManaRegen(int value);
@@ -521,6 +522,11 @@ public:
 	bool SetAutoLoginCharacterName();
 	bool SetAutoLoginCharacterName(std::string character_name);
 	void DescribeSpecialAbilities(Lua_NPC n);
+	void ResetLeadershipAA();
+	uint8 GetSkillTrainLevel(int skill_id);
+	void AreaTaunt();
+	void AreaTaunt(float range);
+	void AreaTaunt(float range, int bonus_hate);
 
 	void ApplySpell(int spell_id);
 	void ApplySpell(int spell_id, int duration);
@@ -593,6 +599,7 @@ public:
 	void CampAllBots(uint8 class_id);
 	bool RemoveAAPoints(uint32 points);
 	bool RemoveAlternateCurrencyValue(uint32 currency_id, uint32 amount);
+	bool AreTasksCompleted(luabind::object task_ids);
 
 	void DialogueWindow(std::string markdown);
 

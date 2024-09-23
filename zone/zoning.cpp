@@ -224,14 +224,6 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 	min_status   = zone_data->min_status;
 	min_level    = zone_data->min_level;
 
-	// We need to set this here before any of the scripts run.
-	if (RuleI(Custom, EnableSeasonalCharacters)) {
-		if (GetBucket("SeasonalCharacter").empty()) {
-			SetBucket("SeasonalCharacter", fmt::to_string(RuleI(Custom, EnableSeasonalCharacters)));
-		}
-		DataBucket::GetDataBuckets(this);
-	}	
-
 	if (parse->PlayerHasQuestSub(EVENT_ZONE)) {
 		const auto& export_string = fmt::format(
 			"{} {} {} {} {} {}",
@@ -387,8 +379,8 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 	}
 
 	if (content_service.GetCurrentExpansion() >= Expansion::Classic && GetGM()) {
-		LogInfo("[{}] Bypassing Expansion zone checks because GM status is set", GetCleanName());
-		Message(Chat::Yellow, "Bypassing Expansion zone checks because GM status is set");
+		LogInfo("[{}] Bypassing zone expansion checks because GM flag is set", GetCleanName());
+		Message(Chat::White, "Your GM flag allows you to bypass zone expansion checks.");
 	}
 
 	if (zoning_message == ZoningMessage::ZoneSuccess) {
@@ -1381,7 +1373,7 @@ bool Client::CanEnterZone(const std::string& zone_short_name, int16 instance_ver
 		return false;
 	}
 
-	if (GetLevel() < z->min_level) {
+	if (!GetGM() && GetLevel() < z->min_level) {
 		LogInfo(
 			"Character [{}] does not meet minimum level requirement ([{}] < [{}])!",
 			GetCleanName(),
@@ -1391,7 +1383,7 @@ bool Client::CanEnterZone(const std::string& zone_short_name, int16 instance_ver
 		return false;
 	}
 
-	if (GetLevel() > z->max_level) {
+	if (!GetGM() && GetLevel() > z->max_level) {
 		LogInfo(
 			"Character [{}] does not meet maximum level requirement ([{}] > [{}])!",
 			GetCleanName(),
@@ -1411,15 +1403,19 @@ bool Client::CanEnterZone(const std::string& zone_short_name, int16 instance_ver
 		return false;
 	}
 
-	if (!z->flag_needed.empty() && Strings::IsNumber(z->flag_needed) && Strings::ToBool(z->flag_needed)) {
-		if (!GetGM() && !HasZoneFlag(z->zoneidnumber)) {
-			LogInfo(
-				"Character [{}] does not have the flag to be in this zone [{}]!",
-				GetCleanName(),
-				z->flag_needed
-			);
-			return false;
-		}
+	if (
+		!GetGM() &&
+		!z->flag_needed.empty() &&
+		Strings::IsNumber(z->flag_needed) &&
+		Strings::ToBool(z->flag_needed) &&
+		!HasZoneFlag(z->zoneidnumber)
+	) {
+		LogInfo(
+			"Character [{}] does not have the flag to be in this zone [{}]!",
+			GetCleanName(),
+			z->flag_needed
+		);
+		return false;
 	}
 
 	return true;

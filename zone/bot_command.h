@@ -753,19 +753,19 @@ namespace ActionableTarget
 				verified_friendly = target_mob;
 				break;
 			case BCEnum::TT_Animal:
-				if (target_mob && target_mob->GetBodyType() == BT_Animal)
+				if (target_mob && target_mob->GetBodyType() == BodyType::Animal)
 					verified_friendly = target_mob;
 				break;
 			case BCEnum::TT_Undead:
-				if (target_mob && target_mob->GetBodyType() == BT_Undead)
+				if (target_mob && target_mob->GetBodyType() == BodyType::Undead)
 					verified_friendly = target_mob;
 				break;
 			case BCEnum::TT_Summoned:
-				if (target_mob && target_mob->GetBodyType() == BT_Summoned)
+				if (target_mob && target_mob->GetBodyType() == BodyType::Summoned)
 					verified_friendly = target_mob;
 				break;
 			case BCEnum::TT_Plant:
-				if (target_mob && target_mob->GetBodyType() == BT_Plant)
+				if (target_mob && target_mob->GetBodyType() == BodyType::Plant)
 					verified_friendly = target_mob;
 				break;
 			case BCEnum::TT_Corpse:
@@ -800,19 +800,19 @@ namespace ActionableTarget
 		Mob* verified_enemy = nullptr;
 		switch (target_type) {
 			case BCEnum::TT_Animal:
-				if (target_mob->GetBodyType() == BT_Animal)
+				if (target_mob->GetBodyType() == BodyType::Animal)
 					verified_enemy = target_mob;
 				break;
 			case BCEnum::TT_Undead:
-				if (target_mob->GetBodyType() == BT_Undead)
+				if (target_mob->GetBodyType() == BodyType::Undead)
 					verified_enemy = target_mob;
 				break;
 			case BCEnum::TT_Summoned:
-				if (target_mob->GetBodyType() == BT_Summoned)
+				if (target_mob->GetBodyType() == BodyType::Summoned)
 					verified_enemy = target_mob;
 				break;
 			case BCEnum::TT_Plant:
-				if (target_mob->GetBodyType() == BT_Plant)
+				if (target_mob->GetBodyType() == BodyType::Plant)
 					verified_enemy = target_mob;
 				break;
 			case BCEnum::TT_Single:
@@ -1295,8 +1295,8 @@ namespace ActionableBots
 	static void Filter_ByHighestPickLock(Client* bot_owner, std::list<Bot*>& sbl, float& pick_lock_value) {
 		sbl.remove_if([bot_owner](Bot* l) { return (!MyBots::IsMyBot(bot_owner, l)); });
 		sbl.remove_if([bot_owner](const Bot* l) { return (l->GetClass() != Class::Rogue && l->GetClass() != Class::Bard); });
-		sbl.remove_if([bot_owner](const Bot* l) { return (l->GetClass() == Class::Rogue && l->GetLevel() < 5); });
-		sbl.remove_if([bot_owner](const Bot* l) { return (l->GetClass() == Class::Bard && l->GetLevel() < 40); });
+		sbl.remove_if([bot_owner](const Bot* l) { return (l->HasClass(Class::Rogue) && l->GetLevel() < 5); });
+		sbl.remove_if([bot_owner](const Bot* l) { return (l->HasClass(Class::Bard) && l->GetLevel() < 40); });
 
 		ActionableBots::Filter_ByHighestSkill(bot_owner, sbl, EQ::skills::SkillPickLock, pick_lock_value);
 	}

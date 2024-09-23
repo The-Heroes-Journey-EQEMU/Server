@@ -29,6 +29,54 @@
 
 extern WorldServer worldserver;
 
+void Client::ValidateAugments(EQ::ItemInstance* item) {
+    if (!item) {
+        return;
+    }
+
+	bool change = false;
+
+	LogDebugDetail("Checking item [{}] for invalid augments.", item->GetItem()->Name);
+
+    // Check for Invalid Aug Types
+    for (int index = EQ::invaug::SOCKET_BEGIN; index <= EQ::invaug::SOCKET_END; ++index) {
+        int slotTypeID = item->GetItem()->AugSlotType[index];
+        auto augment = item->GetAugment(index);
+
+        if (augment) {
+            int augmentTypeBitmask = augment->GetAugmentType();
+
+            // Perform the bitwise AND operation correctly
+            if ((augmentTypeBitmask & (1 << (slotTypeID - 1))) == 0) {
+				LogDebugDetail("Found invalid Augment slotted: [{}]", augment->GetItem()->Name);
+                auto aug = item->RemoveAugment(index);
+				if (aug) {
+					LogDebugDetail("Pushing Augment [{}] to inventory.", aug->GetItem()->Name);
+                	bool success = PutItemInInventory(GetInv().FindFreeSlot(false, true, aug->GetItem()->Size), *aug, true);
+					if (!success) {
+						Message(Chat::Red, "FAILED TO PLACE INVALID AUGMENT [{}] ID [{}]. SCREENSHOT THIS AND REPORT IT.", aug->GetItem()->Name, aug->GetID());
+					} else {
+						EQ::SayLinkEngine linker;
+
+						linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+						linker.SetItemInst(aug);
+
+						auto aug_link = linker.GenerateLink();
+
+						Message(Chat::Yellow, "INFO: Your augment [%s] was placed in an invalid slot, and has been moved into your bags.", aug_link.c_str());
+					}
+				}
+				change = true;
+            }
+        }
+    }
+	if (change) {
+		item->UpdateOrnamentationInfo();
+		SendItemPacket(GetInv().GetSlotByItemInst(item), item, ItemPacketType::ItemPacketTrade);
+	}
+}
+
+
 // @merth: this needs to be touched up
 uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
 	if (itemnum == 0)
@@ -167,60 +215,103 @@ uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
 
 uint32 Mob::GetApocItemUpgrade(uint32 item_id) {
 	if (RuleB(Custom, DoItemUpgrades)) {
+		zone->random.Reseed();
+		uint32 roll = zone->random.Real(0.0, 100.0);
+		uint32 newID = item_id % 1000000;
 
-		LogDebug("Attempting Upgrade for: [{}]", item_id);
+		// TODO: Affix system will need to update this
+		uint32 currentTier = item_id / 1000000;
 
-		uint32 new_item_id = item_id;
+		if (roll <= RuleR(Custom, Tier2ItemDropRate) && currentTier < 2) {
+			newID += 2000000;
+		} else if (roll <= RuleR(Custom, Tier1ItemDropRate) && currentTier < 1) {
+			newID += 1000000;
+		}
 
-		if (item_id < 1000000) { // this is a normal item
-			int roll = zone->random.Int(1, 100);
-
-			LogDebug("Upgrade Rolled: [{}]", roll);
-
-			if (roll <= RuleI(Item, RoseColoredQuestWeightDrop)) {
-				new_item_id += 1000000;
-			} else {
-				new_item_id += 2000000;
-			}
-
-			if (new_item_id != item_id) {
-				const EQ::ItemData* item = database.GetItem(new_item_id);
-				if (item != nullptr) {
-					item_id = new_item_id;
-					LogDebug("Found eligible upgrade for [{}] is [{}]", item_id, new_item_id);
-				} else {
-					LogDebug("Unable to find a valid upgrade for [{}]", item_id);
-				}
-			}
+		if (database.GetItem(newID) && newID > item_id) {
+			item_id = newID;
 		}
 	}
+
+	LogDebug("Got item_id [{}]", item_id);
 	return item_id;
 }
 
 uint32 Mob::GetMaxItemUpgrade(uint32 item_id) {
 	if (RuleB(Custom, DoItemUpgrades)) {
 		uint32 new_item_id = item_id;
-		if (item_id < 1000000) { // this is a normal item		
-			new_item_id += 2000000;
+		uint32 base_item_id = item_id % 1000000;
+		int rank = item_id / 1000000 + 1;
+		LogDebug("[{}] is rank [{}]", new_item_id, rank);
 
-			if (new_item_id != item_id) {
-				const EQ::ItemData* item = database.GetItem(new_item_id);
-				if (item != nullptr) {
-					item_id = new_item_id;
-					LogDebug("Found eligible upgrade for [{}] is [{}]", item_id, new_item_id);
-				} else {
-					LogDebug("Unable to find a valid upgrade for [{}]", item_id);
-				}
-			}
+
+		while (database.GetItem(base_item_id + (rank * 1000000)) != nullptr) {
+			new_item_id = base_item_id + (rank * 1000000);
+			LogDebug("Found eligible upgrade for [{}] is [{}]", item_id, new_item_id);
+			rank++;
 		}
+
+
+		LogDebug("[{}] is maximum upgrade for [{}]", new_item_id, item_id);
+		return new_item_id;
 	}
-	
+
 	return item_id;
 }
 
 
 bool Client::SummonApocItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5, uint32 aug6, bool attuned, uint16 to_slot, uint32 ornament_icon, uint32 ornament_idfile, uint32 ornament_hero_model, bool artifact_disco) {
-	item_id = GetApocItemUpgrade(item_id);
+	if (RuleB(Custom, DoItemUpgrades)) {
+		int original_id = item_id;
+
+		if (GetMaxItemUpgrade(original_id) > original_id) {
+			LogDebug("Trying to upgrade: [{}]", original_id);
+
+			item_id += 1000000;
+			item_id = GetApocItemUpgrade(item_id);
+
+			LogDebug("First Upgrade: [{}]", item_id);
+
+			if ((!DataBucket::GetData("eom_17779").empty()) && item_id < GetMaxItemUpgrade(original_id)) {
+				LogDebug("Trying Second-Round Upgrade");
+				auto old_id = item_id;
+				item_id = GetMaxItemUpgrade(item_id);
+
+				if (item_id > old_id) {
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemData);
+
+					linker.SetItemData(database.GetItem(old_id));
+					auto old_item_lnk = linker.GenerateLink();
+
+					linker.SetItemData(database.GetItem(item_id));
+					auto new_item_lnk = linker.GenerateLink();
+
+					Message(Chat::Yellow, "Luck is with you! [%s] has become [%s].", old_item_lnk.c_str(), new_item_lnk.c_str());
+				}
+			}
+
+			if ((IsSeasonal()) && item_id < GetMaxItemUpgrade(original_id)) {
+				LogDebug("Trying Second-Round Upgrade");
+				auto old_id = item_id;
+				item_id = GetApocItemUpgrade(item_id);
+
+				if (item_id > old_id) {
+					EQ::SayLinkEngine linker;
+					linker.SetLinkType(EQ::saylink::SayLinkItemData);
+
+					linker.SetItemData(database.GetItem(old_id));
+					auto old_item_lnk = linker.GenerateLink();
+
+					linker.SetItemData(database.GetItem(item_id));
+					auto new_item_lnk = linker.GenerateLink();
+
+					Message(Chat::Yellow, "Your seasonal status has upgraded an item reward! [%s] has become [%s].", old_item_lnk.c_str(), new_item_lnk.c_str());
+				}
+			}
+		}
+
+	}
 
 	return SummonItem(item_id, charges, aug1, aug2, aug3, aug4, aug5, aug6, attuned, to_slot, ornament_icon, ornament_idfile, ornament_hero_model, artifact_disco);
 }
@@ -447,7 +538,7 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 					return false;
 				}
 
-				if(item->AugSlotVisible[iter] == 0) {
+				if (!RuleB(Items, SummonItemAllowInvisibleAugments) && item->AugSlotVisible[iter] == 0) {
 					Message(
 						Chat::Red,
 						fmt::format(
@@ -711,14 +802,9 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 
 		RecordPlayerEventLog(PlayerEvent::ITEM_CREATION, e);
 	}
-	
+
 	if (!GetGM()) {
-
 		if (RuleB(Character, EnableDiscoveredItems) && !IsDiscovered(inst->GetItem()->ID)) {
-			DiscoverItem(inst->GetItem()->ID);
-		}
-
-		if (artifact_disco && DiscoverArtifact(inst)) {
 			DiscoverItem(inst->GetItem()->ID);
 		}
 	}
@@ -745,7 +831,7 @@ void Client::DropItem(int16 slot_id, bool recurse)
 		slot_id
 	);
 
-	if (IsSeasonal()) {				
+	if (IsSeasonal()) {
 		Message(Chat::Red, "Seasonal Characters may not drop items.");
 		SendCursorBuffer();
 		return;
@@ -979,7 +1065,7 @@ void Client::DropInst(const EQ::ItemInstance* inst)
 		return;
 	}
 
-	if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(GetBucket("SeasonalCharacter"), 0)) {				
+	if (RuleI(Custom, EnableSeasonalCharacters) == Strings::ToInt(GetBucket("SeasonalCharacter"), 0)) {
 		Message(Chat::Red, "Seasonal Characters may not drop items.");
 		SendCursorBuffer();
 		return;
@@ -1186,7 +1272,7 @@ void Client::DeleteItemInInventory(int16 slot_id, int16 quantity, bool client_up
 		if(update_db)
 			database.SaveInventory(character_id, inst, slot_id);
 	}
-	
+
 	if(client_update && IsValidSlot(slot_id)) {
 		EQApplicationPacket* outapp = nullptr;
 		if(inst) {
@@ -1251,7 +1337,7 @@ bool Client::PutItemInInventory(int16 slot_id, const EQ::ItemInstance& inst, boo
 	if (client_update)
 	{
 		SendItemPacket(slot_id, &inst, ((slot_id == EQ::invslot::slotCursor) ? ItemPacketLimbo : ItemPacketTrade));
-		//SendWearChange(EQ::InventoryProfile::CalcMaterialFromSlot(slot_id));
+		SendWearChange(EQ::InventoryProfile::CalcMaterialFromSlot(slot_id));
 	}
 
 	if (slot_id == EQ::invslot::slotCursor) {
@@ -1797,7 +1883,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			(src_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && src_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END) ||
 			(dst_slot_check >= EQ::invslot::SHARED_BANK_BEGIN && dst_slot_check <= EQ::invslot::SHARED_BANK_END) ||
 			(dst_slot_check >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && dst_slot_check <= EQ::invbag::SHARED_BANK_BAGS_END))
-		{			
+		{
 			Message(Chat::Red, "Seasonal characters may not access the shared bank.");
 			return false;
 		}
@@ -1946,6 +2032,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	uint32 dstitemid = 0;
 	EQ::ItemInstance* src_inst = m_inv.GetItem(src_slot_id);
 	EQ::ItemInstance* dst_inst = m_inv.GetItem(dst_slot_id);
+
 	if (src_inst){
 		LogInventory("Src slot [{}] has item [{}] ([{}]) with [{}] charges in it", src_slot_id, src_inst->GetItem()->Name, src_inst->GetItem()->ID, src_inst->GetCharges());
 		srcitemid = src_inst->GetItem()->ID;
@@ -1960,19 +2047,23 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		LogInventory("Dest slot [{}] has item [{}] ([{}]) with [{}] charges in it", dst_slot_id, dst_inst->GetItem()->Name, dst_inst->GetItem()->ID, dst_inst->GetCharges());
 		dstitemid = dst_inst->GetItem()->ID;
 	}
-	if (Trader && srcitemid>0){
+	if (IsBuyer() && srcitemid > 0) {
+		CheckIfMovedItemIsPartOfBuyLines(srcitemid);
+	}
+
+	if (IsTrader() && srcitemid>0){
 		EQ::ItemInstance* srcbag;
 		EQ::ItemInstance* dstbag;
 		uint32 srcbagid =0;
 		uint32 dstbagid = 0;
 
 		if (src_slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN && src_slot_id <= EQ::invbag::GENERAL_BAGS_END) {
-			srcbag = m_inv.GetItem(((int)(src_slot_id / EQ::invbag::SLOT_COUNT)) - 3);
+			srcbag = m_inv.GetItem(EQ::InventoryProfile::CalcSlotId(src_slot_id));
 			if (srcbag)
 				srcbagid = srcbag->GetItem()->ID;
 		}
 		if (dst_slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN && dst_slot_id <= EQ::invbag::GENERAL_BAGS_END) {
-			dstbag = m_inv.GetItem(((int)(dst_slot_id / EQ::invbag::SLOT_COUNT)) - 3);
+			dstbag = m_inv.GetItem(EQ::InventoryProfile::CalcSlotId(dst_slot_id));
 			if (dstbag)
 				dstbagid = dstbag->GetItem()->ID;
 		}
@@ -1980,7 +2071,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		    (dstbagid && dstbag->GetItem()->BagType == EQ::item::BagTypeTradersSatchel) ||
 		    (srcitemid && src_inst && src_inst->GetItem()->BagType == EQ::item::BagTypeTradersSatchel) ||
 		    (dstitemid && dst_inst && dst_inst->GetItem()->BagType == EQ::item::BagTypeTradersSatchel)) {
-			Trader_EndTrader();
+			TraderEndTrader();
 			Message(Chat::Red,"You cannot move your Trader Satchels, or items inside them, while Trading.");
 		}
 	}
@@ -2024,7 +2115,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			}
 		}
 	}
-	
+
 	if (dst_inst &&
 		(dst_slot_id >= EQ::invslot::SHARED_BANK_BEGIN) && (dst_slot_id <= EQ::invslot::SHARED_BANK_END) ||
 		(dst_slot_id >= EQ::invbag::SHARED_BANK_BAGS_BEGIN) && (dst_slot_id <= EQ::invbag::SHARED_BANK_BAGS_END)) {
@@ -2287,6 +2378,27 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		}
 
 		LogInventory("Moving entire item from slot [{}] to slot [{}]", src_slot_id, dst_slot_id);
+		if (src_inst->IsStackable() &&
+			dst_slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN &&
+			dst_slot_id <= EQ::invbag::GENERAL_BAGS_END
+			)	{
+			EQ::ItemInstance *bag = nullptr;
+			bag = m_inv.GetItem(EQ::InventoryProfile::CalcSlotId(dst_slot_id));
+			if (bag) {
+				if (bag->GetItem()->BagType == EQ::item::BagTypeTradersSatchel) {
+					PutItemInInventory(dst_slot_id, *src_inst, true);
+					//This resets the UF client to recognize the new serial item of the placed item
+					//if it came from a stack without having to close the trader window and re-open.
+					//It is not required for the RoF2 client.
+					if (ClientVersion() < EQ::versions::ClientVersion::RoF2) {
+						auto outapp  = new EQApplicationPacket(OP_Trader, sizeof(TraderBuy_Struct));
+						auto data    = (TraderBuy_Struct *) outapp->pBuffer;
+						data->action = BazaarBuyItem;
+						FastQueuePacket(&outapp);
+					}
+				}
+			}
+		}
 
 		if (src_slot_id <= EQ::invslot::EQUIPMENT_END) {
 			if(src_inst) {
@@ -2307,8 +2419,8 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(src_inst);
-					Message(Chat::Experience, "You stop focusing your experience on improving your [%s].", linker.GenerateLink().c_str());
-				}	
+					Message(Chat::Experience, "You stop focusing your energies on improving your [%s].", linker.GenerateLink().c_str());
+				}
 			}
 
 			if (dst_inst) {
@@ -2329,10 +2441,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
-					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
-
-					uint64 tar_item_exp   = dst_inst->GetItem()->CalculateGearScore();
-					LogDebug("GEAR SCORE: [{}]", tar_item_exp);
+					Message(Chat::Experience, "You begin to focus your energies on improving your [%s].", linker.GenerateLink().c_str());
 				}
 			}
 		}
@@ -2357,15 +2466,15 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(dst_inst);
-					Message(Chat::Experience, "You stop focusing your experience on improving your [%s].", linker.GenerateLink().c_str());
-				}				
+					Message(Chat::Experience, "You stop focusing your energies on improving your [%s].", linker.GenerateLink().c_str());
+				}
 			}
 
 			if (src_inst) {
 				if (parse->ItemHasQuestSub(src_inst, EVENT_EQUIP_ITEM)) {
 					parse->EventItem(EVENT_EQUIP_ITEM, this, src_inst, nullptr, "", dst_slot_id);
 				}
-								
+
 				if (parse->PlayerHasQuestSub(EVENT_EQUIP_ITEM_CLIENT)) {
 					const auto& export_string = fmt::format(
 						"{} {}",
@@ -2373,18 +2482,15 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 						dst_slot_id
 					);
 					std::vector<std::any> args = { src_inst };
-					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);				
+					parse->EventPlayer(EVENT_EQUIP_ITEM_CLIENT, this, export_string, src_inst->GetItem()->ID, &args);
 				}
 
 				if (RuleB(Custom, PowerSourceItemUpgrade) && dst_slot_id == EQ::invslot::slotPowerSource) {
 					EQ::SayLinkEngine linker;
 					linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 					linker.SetItemInst(src_inst);
-					Message(Chat::Experience, "You begin to focus your experience on improving your [%s].", linker.GenerateLink().c_str());
-
-					uint64 tar_item_exp   = src_inst->GetItem()->CalculateGearScore();
-					LogDebug("GEAR SCORE: [{}]", tar_item_exp);
-				}				
+					Message(Chat::Experience, "You begin to focus your energies on improving your [%s].", linker.GenerateLink().c_str());
+				}
 			}
 		}
 	}
@@ -2422,10 +2528,36 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	CalcBonuses();
 
 	if (RuleB(Custom, ServerAuthStats)) {
-		SendEdgeStatBulkUpdate();
+		SendBulkStatsUpdate();
 	}
 
-	ApplyWeaponsStance();	
+	ApplyWeaponsStance();
+
+	if (RuleB(Custom, EnablePetBags)) {
+		auto pet_bag_idx = GetActivePetBagSlot();
+		// Check to see if we are moving an entire pet bag first
+		if (dst_inst && IsValidPetBag(dst_inst->GetID()) || src_inst && IsValidPetBag(src_inst->GetID())) {
+			if (IsPetBagActive()) {
+				DoPetBagResync();
+			} else {
+				//DoPetBagFlush();
+			}
+		}
+
+		if (pet_bag_idx) {
+			if (EQ::InventoryProfile::CalcSlotId(move_in->to_slot) == pet_bag_idx) {
+				DoPetBagResync();
+			}
+
+			if (EQ::InventoryProfile::CalcSlotId(move_in->from_slot) == pet_bag_idx) {
+				DoPetBagResync();
+			}
+		}
+	}
+
+	if (src_inst) { ValidateAugments(src_inst); }
+	if (dst_inst) { ValidateAugments(dst_inst); }
+
 	return true;
 }
 
@@ -3281,182 +3413,216 @@ uint32 Client::GetEquippedItemFromTextureSlot(uint8 material_slot) const
 	return 0;
 }
 
-int64_t Client::GetStatValueEdgeType(eStatEntry eLabel)
+int64_t Client::GetStatEntryValue(StatEntry label)
 {
-	switch (eLabel)
+	switch (label)
 	{
-		case eStatMaxHP:
-		{	
-			CalcMaxHP();
-			return GetMaxHP();
-		}
-		case eStatMaxMana:
-		{
-			CalcMaxMana();
-			return GetMaxMana();
-		}
-		case eStatMaxEndur:
-		{
+		case statMaxHP:
+			return CalcMaxHP();
+		case statMaxMana:
+			return CalcMaxMana();
+		case statMaxEndur:
 			CalcMaxEndurance();
 			return GetMaxEndurance();
-		}
-		case eStatCurHP:
-		{
+		case statCurHP:
 			return GetHP();
-		}
-		case eStatCurMana:
-		{
+		case statCurMana:
 			return GetMana();
-		}
-		case eStatCurEndur:
-		{
+		case statCurEndur:
 			return GetEndurance();
-		}
-		case eStatClassesBitmask:
-		{
+		case statClassesBitmask:
 			return GetClassesBits();
-		}
-		case eStatMitigation:
-		{
+		case statMitigation:
 			CalcAC();
 			return GetMitigationAC();
-		}
-		case eStatEvasion:
-		{
+		case statEvasion:
 			return GetTotalDefense();
-		}
-		case eStatSTR:
-		{
+		case statSTR:
 			return GetSTR();
-		}
-		case eStatSTA:
-		{
+		case statSTA:
 			return GetSTA();
-		}
-		case eStatAGI:
-		{
+		case statAGI:
 			return GetAGI();
-		}
-		case eStatDEX:
-		{
+		case statDEX:
 			return GetDEX();
-		}
-		case eStatINT:
-		{
+		case statINT:
 			return GetINT();
-		}
-		case eStatWIS:
-		{
+		case statWIS:
 			return GetWIS();
-		}
-		case eStatCHA:
-		{
+		case statCHA:
 			return GetCHA();
-		}
-		case eStatHPRegen:
-		{
-			return GetHPRegen();
-		}
-		case eStatManaRegen:
-		{
-			return GetManaRegen();
-		}
-		case eStatEndurRegen:
-		{
-			return GetEnduranceRegen();
-		}
-		case eStatHaste:
-		{
-			return GetHaste();
-		}
-		case eStatATK:
-		{
+		case statMR:
+			return GetMR();
+		case statFR:
+			return GetFR();
+		case statCR:
+			return GetCR();
+		case statPR:
+			return GetPR();
+		case statDR:
+			return GetDR();
+		case statHPRegen:
+			return CalcHPRegen(true);
+		case statManaRegen:
+			return CalcManaRegen(true);
+		case statEndurRegen:
+			return CalcEnduranceRegen(true);
+		case statHaste:
+			return CalcHaste();
+		case statATK:
 			return GetTotalATK();
-		}
+		case statKickTimer:
+			return p_timers.GetRemainingTime(pTimerKick);
+		case statBashTimer:
+			return p_timers.GetRemainingTime(pTimerBashSlam);
+		case statStrikeTimer:
+			return p_timers.GetRemainingTime(pTimerStrike);
+		case statBackstabTimer:
+			return p_timers.GetRemainingTime(pTimerBackstab);
+		case statFrenzyTimer:
+			return p_timers.GetRemainingTime(pTimerFrenzy);
+		case statHeroicSTR:
+			return GetHeroicSTR();
+		case statHeroicSTA:
+			return GetHeroicSTA();
+		case statHeroicDEX:
+			return GetHeroicDEX();
+		case statHeroicAGI:
+			return GetHeroicAGI();
+		case statHeroicINT:
+			return GetHeroicINT();
+		case statHeroicWIS:
+			return GetHeroicWIS();
+		case statHeroicCHA:
+			return GetHeroicCHA();
+		case statHeroicMR:
+			return GetHeroicMR();
+		case statHeroicFR:
+			return GetHeroicFR();
+		case statHeroicCR:
+			return GetHeroicCR();
+		case statHeroicDR:
+			return GetHeroicDR();
+		case statHeroicPR:
+			return GetHeroicPR();
+		case statAC:
+			CalcAC();
+			return GetAC();
+		case statSpellDmg:
+			return itembonuses.SpellDmg;
+		case statHealAmt:
+			return itembonuses.HealAmt;
+		case statCombatEffects:
+			return GetCombatEffects();
+		case statSpellShield:
+			return GetSpellShield();
+		case statShielding:
+			return GetShielding();
+		case statDamageShield:
+			return itembonuses.DamageShield;
+		case statDoTShield:
+			return GetDoTShield();
+		case statDSMitigation:
+			return GetDSMit();
+		case statAvoidance:
+			return GetAvoidance();
+		case statAccuracy:
+			return GetAccuracy();
+		case statStunResist:
+			return GetStunResist();
+		case statStrikethrough:
+			return GetStrikeThrough();
+		case statClairvoyance:
+			return GetClair();
+
 		default:
-		{
 			return 0;
+	}
+}
+
+void Client::SendBulkStatsUpdate()
+{
+	if (RuleB(Custom, ServerAuthStats)) {
+		EmuOpcode opcode = OP_Unknown;
+		EQApplicationPacket* outapp = nullptr;
+		Stat_Struct* itempacket = nullptr;
+
+		// Construct packet
+		opcode = OP_ServerAuthStats;
+		outapp = new EQApplicationPacket(OP_ServerAuthStats, 4 + (sizeof(StatEntry_Struct) * ((int)(StatEntry::statMax) - 1)));
+		itempacket = (Stat_Struct*)outapp->pBuffer;
+		itempacket->count = (int)(StatEntry::statMax) - 1;
+		for(int i = 0; i < StatEntry::statMax - 1; i++)
+		{
+			itempacket->entries[i].statKey = (StatEntry)i;
+			itempacket->entries[i].statValue = GetStatEntryValue((StatEntry)i);
 		}
+		QueuePacket(outapp);
+		safe_delete(outapp);
 	}
-	return 0;
 }
 
-void Client::SendEdgeStatBulkUpdate()
+void Client::SendHPStats()
 {
-	EmuOpcode opcode = OP_Unknown;
-	EQApplicationPacket* outapp = nullptr;
-	EdgeStat_Struct* itempacket = nullptr;
+	if (RuleB(Custom, ServerAuthStats)) {
+		EmuOpcode opcode = OP_Unknown;
+		EQApplicationPacket* outapp = nullptr;
+		Stat_Struct* itempacket = nullptr;
 
-	// Construct packet
-	opcode = OP_EdgeStats;
-	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * ((int)(eStatEntry::eStatMax) - 1)));
-	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
-	itempacket->count = (int)(eStatMax) - 1;
-	for(int guava = 0; guava < eStatEntry::eStatMax - 1; guava++)
-	{
-		//LogDebug("EdgePacket packing [{}] value [{}]", (eStatEntry)guava, GetStatValueEdgeType((eStatEntry)guava));
-		itempacket->entries[guava].statKey = (eStatEntry)guava;
-		itempacket->entries[guava].statValue = GetStatValueEdgeType((eStatEntry)guava);
+		// Construct packet
+		opcode = OP_ServerAuthStats;
+		outapp = new EQApplicationPacket(OP_ServerAuthStats, 4 + (sizeof(StatEntry_Struct) * 2));
+		itempacket = (Stat_Struct*)outapp->pBuffer;
+		itempacket->count = 2;
+		itempacket->entries[0].statKey = StatEntry::statCurHP;
+		itempacket->entries[0].statValue = GetStatEntryValue(StatEntry::statCurHP);
+		itempacket->entries[1].statKey = StatEntry::statMaxHP;
+		itempacket->entries[1].statValue = GetStatEntryValue(StatEntry::statMaxHP);
+		QueuePacket(outapp);
+		safe_delete(outapp);
 	}
-	QueuePacket(outapp);
-	safe_delete(outapp);
 }
 
-void Client::SendEdgeHPStats()
+void Client::SendManaStats()
 {
-	EmuOpcode opcode = OP_Unknown;
-	EQApplicationPacket* outapp = nullptr;
-	EdgeStat_Struct* itempacket = nullptr;
+	if (RuleB(Custom, ServerAuthStats)) {
+		EmuOpcode opcode = OP_Unknown;
+		EQApplicationPacket* outapp = nullptr;
+		Stat_Struct* itempacket = nullptr;
 
-	// Construct packet
-	opcode = OP_EdgeStats;
-	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * 2));
-	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
-	itempacket->count = 2;
-	itempacket->entries[0].statKey = eStatCurHP;
-	itempacket->entries[0].statValue = GetStatValueEdgeType(eStatCurHP);
-	itempacket->entries[1].statKey = eStatMaxHP;
-	itempacket->entries[1].statValue = GetStatValueEdgeType(eStatMaxHP);
-	QueuePacket(outapp);
-	safe_delete(outapp);
+		// Construct packet
+		opcode = OP_ServerAuthStats;
+		outapp = new EQApplicationPacket(OP_ServerAuthStats, 4 + (sizeof(StatEntry_Struct) * 2));
+		itempacket = (Stat_Struct*)outapp->pBuffer;
+		itempacket->count = 2;
+		itempacket->entries[0].statKey = StatEntry::statCurMana;
+		itempacket->entries[0].statValue = GetStatEntryValue(StatEntry::statCurMana);
+		itempacket->entries[1].statKey = StatEntry::statMaxMana;
+		itempacket->entries[1].statValue = GetStatEntryValue(StatEntry::statMaxMana);
+		QueuePacket(outapp);
+		safe_delete(outapp);
+	}
 }
 
-void Client::SendEdgeManaStats()
+void Client::SendEnduranceStats()
 {
-	EmuOpcode opcode = OP_Unknown;
-	EQApplicationPacket* outapp = nullptr;
-	EdgeStat_Struct* itempacket = nullptr;
+	if (RuleB(Custom, ServerAuthStats)) {
+		EmuOpcode opcode = OP_Unknown;
+		EQApplicationPacket* outapp = nullptr;
+		Stat_Struct* itempacket = nullptr;
 
-	// Construct packet
-	opcode = OP_EdgeStats;
-	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * 2));
-	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
-	itempacket->count = 2;
-	itempacket->entries[0].statKey = eStatCurMana;
-	itempacket->entries[0].statValue = GetStatValueEdgeType(eStatCurMana);
-	itempacket->entries[1].statKey = eStatMaxMana;
-	itempacket->entries[1].statValue = GetStatValueEdgeType(eStatMaxMana);
-	QueuePacket(outapp);
-	safe_delete(outapp);
-}
-
-void Client::SendEdgeEnduranceStats()
-{
-	EmuOpcode opcode = OP_Unknown;
-	EQApplicationPacket* outapp = nullptr;
-	EdgeStat_Struct* itempacket = nullptr;
-
-	// Construct packet
-	opcode = OP_EdgeStats;
-	outapp = new EQApplicationPacket(OP_EdgeStats, 4 + (sizeof(EdgeStatEntry_Struct) * 2));
-	itempacket = (EdgeStat_Struct*)outapp->pBuffer;
-	itempacket->count = 2;
-	itempacket->entries[0].statKey = eStatCurEndur;
-	itempacket->entries[0].statValue = GetStatValueEdgeType(eStatCurEndur);
-	itempacket->entries[1].statKey = eStatMaxEndur;
-	itempacket->entries[1].statValue = GetStatValueEdgeType(eStatMaxEndur);
-	QueuePacket(outapp);
-	safe_delete(outapp);
+		// Construct packet
+		opcode = OP_ServerAuthStats;
+		outapp = new EQApplicationPacket(OP_ServerAuthStats, 4 + (sizeof(StatEntry_Struct) * 2));
+		itempacket = (Stat_Struct*)outapp->pBuffer;
+		itempacket->count = 2;
+		itempacket->entries[0].statKey = StatEntry::statCurEndur;
+		itempacket->entries[0].statValue = GetStatEntryValue(StatEntry::statCurEndur);
+		itempacket->entries[1].statKey = StatEntry::statMaxEndur;
+		itempacket->entries[1].statValue = GetStatEntryValue(StatEntry::statMaxEndur);
+		QueuePacket(outapp);
+		safe_delete(outapp);
+	}
 }
 
 uint32 Client::GetEquipmentColor(uint8 material_slot) const
@@ -3732,6 +3898,11 @@ void Client::SetBandolier(const EQApplicationPacket *app)
 			}
 		}
 	}
+
+	if (RuleI(Character, BandolierSwapDelay) > 0) {
+		bandolier_throttle_timer.Start(RuleI(Character, BandolierSwapDelay));
+	}
+
 	// finally, recalculate any stat bonuses from the item change
 	CalcBonuses();
 }
@@ -5155,3 +5326,63 @@ bool Client::HasItemOnCorpse(uint32 item_id)
 
 	return false;
 }
+
+bool Client::PutItemInInventoryWithStacking(EQ::ItemInstance *inst)
+{
+	auto free_id = GetInv().FindFirstFreeSlotThatFitsItem(inst->GetItem());
+	if (inst->IsStackable()) {
+		if (TryStacking(inst, ItemPacketTrade, true, false)) {
+			return true;
+		}
+	}
+	if (free_id != INVALID_INDEX) {
+		if (PutItemInInventory(free_id, *inst, true)) {
+			return true;
+		}
+	}
+	return false;
+};
+
+bool Client::FindNumberOfFreeInventorySlotsWithSizeCheck(std::vector<BuyerLineTradeItems_Struct> items)
+{
+	uint32 count = 0;
+	for (int16         i = EQ::invslot::GENERAL_BEGIN; i <= EQ::invslot::GENERAL_END; i++) {
+		if ((((uint64) 1 << i) & GetInv().GetLookup()->PossessionsBitmask) == 0) {
+			continue;
+		}
+
+		EQ::ItemInstance *inv_item = GetInv().GetItem(i);
+
+		if (!inv_item) {
+			// Found available slot in personal inventory.  Fits all sizes
+			count++;
+		}
+
+		if (count >= items.size()) {
+			return true;
+		}
+
+		if (inv_item->IsClassBag()) {
+			for (auto const& item:items) {
+				auto item_tmp = database.GetItem(item.item_id);
+				if (EQ::InventoryProfile::CanItemFitInContainer(item_tmp, inv_item->GetItem())) {
+					int16 base_slot_id = EQ::InventoryProfile::CalcSlotId(i, EQ::invbag::SLOT_BEGIN);
+					uint8 bag_size     = inv_item->GetItem()->BagSlots;
+
+					for (uint8 bag_slot = EQ::invbag::SLOT_BEGIN; bag_slot < bag_size; bag_slot++) {
+						auto bag_item = GetInv().GetItem(base_slot_id + bag_slot);
+						if (!bag_item) {
+							// Found a bag slot that fits the item
+							count++;
+						}
+					}
+
+					if (count >= items.size()) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+};

@@ -532,6 +532,7 @@ void EQStream::FastQueuePacket(EQApplicationPacket **p, bool ack_req)
 		opcode = (*OpMgr)->EmuToEQ(pack->GetOpcode());
 	}
 
+
 	if (!ack_req) {
 		NonSequencedPush(new EQProtocolPacket(opcode, pack->pBuffer, pack->size));
 		delete pack;

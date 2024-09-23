@@ -135,7 +135,7 @@ bool BotDatabase::LoadBotSpellCastingChances()
 		if (
 			e.spell_type_index >= Bot::SPELL_TYPE_COUNT ||
 			!IsPlayerClass(e.class_id) ||
-			e.stance_index >= EQ::constants::STANCE_TYPE_COUNT
+			e.stance_index >= Stance::AEBurn
 		) {
 			continue;
 		}
@@ -761,7 +761,7 @@ bool BotDatabase::LoadStance(Bot* b, bool& stance_flag)
 
 	auto e = l.front();
 
-	b->SetBotStance(static_cast<EQ::constants::StanceType>(e.stance_id));
+	b->SetBotStance(e.stance_id);
 
 	stance_flag = true;
 
@@ -793,7 +793,7 @@ bool BotDatabase::SaveStance(Bot* b)
 		database,
 		BotStancesRepository::BotStances{
 			.bot_id = b->GetBotID(),
-			.stance_id = static_cast<uint8_t>(b->GetBotStance())
+			.stance_id = b->GetBotStance()
 		}
 	);
 }
@@ -1292,28 +1292,8 @@ bool BotDatabase::LoadPetStats(const uint32 bot_id, std::string& pet_name, uint3
 
 bool BotDatabase::SavePetStats(const uint32 bot_id, const std::string& pet_name, const uint32 pet_mana, const uint32 pet_hp, const uint32 pet_spell_id)
 {
-	if (!bot_id || pet_name.empty() || !pet_spell_id || pet_spell_id > SPDAT_RECORDS) {
-		return false;
-	}
-
-	if (
-		!DeletePetItems(bot_id) ||
-		!DeletePetBuffs(bot_id) ||
-		!DeletePetStats(bot_id)
-	) {
-		return false;
-	}
-
-	return BotPetsRepository::InsertOne(
-		database,
-		BotPetsRepository::BotPets{
-			.spell_id = pet_spell_id,
-			.bot_id = bot_id,
-			.name = pet_name,
-			.mana = static_cast<int32_t>(pet_mana),
-			.hp = static_cast<int32_t>(pet_hp)
-		}
-	).pets_index;
+	// NUKED BY CATAPULTAM;
+	return false;
 }
 
 bool BotDatabase::DeletePetStats(const uint32 bot_id)
@@ -2208,7 +2188,7 @@ uint8 BotDatabase::GetSpellCastingChance(uint8 spell_type_index, uint8 class_ind
 	if (
 		spell_type_index >= Bot::SPELL_TYPE_COUNT ||
 		class_index >= Class::PLAYER_CLASS_COUNT ||
-		stance_index >= EQ::constants::STANCE_TYPE_COUNT ||
+		stance_index >= Stance::AEBurn ||
 		conditional_index >= cntHSND
 	) {
 		return 0;
@@ -2352,4 +2332,11 @@ const uint16 BotDatabase::GetBotRaceByID(const uint32 bot_id)
 	const auto& e = BotDataRepository::FindOne(database, bot_id);
 
 	return e.bot_id ? e.race : Race::Doug;
+}
+
+const int BotDatabase::GetBotExtraHasteByID(const uint32 bot_id)
+{
+	const auto& e = BotDataRepository::FindOne(database, bot_id);
+
+	return e.bot_id ? e.extra_haste : 0;
 }

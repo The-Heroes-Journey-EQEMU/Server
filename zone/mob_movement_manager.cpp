@@ -824,6 +824,38 @@ void MobMovementManager::NavigateTo(Mob *who, float x, float y, float z, MobMove
 	}
 }
 
+void MobMovementManager::NavigateToPrecise(Mob *who, float x, float y, float z, MobMovementMode mode)
+{
+	auto iter = _impl->Entries.find(who);
+	auto &ent = (*iter);
+	auto &nav = ent.second.NavTo;
+
+	double current_time = static_cast<double>(Timer::GetCurrentTime()) / 1000.0;
+	if ((current_time - nav.last_set_time) > 0.5) {
+		//Can potentially recalc
+
+		auto within        = IsPositionWithinSimpleCylinder(
+			glm::vec3(x, y, z),
+			glm::vec3(nav.navigate_to_x, nav.navigate_to_y, nav.navigate_to_z),
+			1.5f,
+			6.0f
+		);
+		auto heading_match = IsHeadingEqual(0.0, nav.navigate_to_heading);
+
+		if (false == within || false == heading_match || ent.second.Commands.size() == 0) {
+			ent.second.Commands.clear();
+
+			//Path is no longer valid, calculate a new path
+			UpdatePath(who, x, y, z, mode);
+			nav.navigate_to_x       = x;
+			nav.navigate_to_y       = y;
+			nav.navigate_to_z       = z;
+			nav.navigate_to_heading = 0.0;
+			nav.last_set_time       = current_time;
+		}
+	}
+}
+
 /**
  * @param who
  */
@@ -1487,7 +1519,7 @@ void MobMovementManager::PushEvadeCombat(MobMovementEntry &mob_movement_entry)
  */
 void MobMovementManager::HandleStuckBehavior(Mob *who, float x, float y, float z, MobMovementMode mob_movement_mode)
 {
-	LogDebug("Handle stuck behavior for {0} at ({1}, {2}, {3}) with movement_mode {4}", who->GetName(), x, y, z, static_cast<int>(mob_movement_mode));
+	LogDebugDetail("Handle stuck behavior for {0} at ({1}, {2}, {3}) with movement_mode {4}", who->GetName(), x, y, z, static_cast<int>(mob_movement_mode));
 
 	auto sb = who->GetStuckBehavior();
 	MobStuckBehavior behavior = RunToTarget;

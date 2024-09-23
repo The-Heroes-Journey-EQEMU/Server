@@ -223,6 +223,11 @@ PerlembParser::~PerlembParser()
 	safe_delete(perl);
 }
 
+void PerlembParser::Init()
+{
+	ReloadQuests();
+}
+
 void PerlembParser::ReloadQuests()
 {
 	try {
@@ -1542,16 +1547,17 @@ void PerlembParser::ExportMobVariables(
 void PerlembParser::ExportZoneVariables(std::string& package_name)
 {
 	if (zone) {
-		ExportVar(package_name.c_str(), "zoneid", zone->GetZoneID());
-		ExportVar(package_name.c_str(), "zoneln", zone->GetLongName());
-		ExportVar(package_name.c_str(), "zonesn", zone->GetShortName());
 		ExportVar(package_name.c_str(), "instanceid", zone->GetInstanceID());
 		ExportVar(package_name.c_str(), "instanceversion", zone->GetInstanceVersion());
 		TimeOfDay_Struct eqTime{ };
 		zone->zone_time.GetCurrentEQTimeOfDay(time(0), &eqTime);
 		ExportVar(package_name.c_str(), "zonehour", eqTime.hour - 1);
+		ExportVar(package_name.c_str(), "zoneid", zone->GetZoneID());
+		ExportVar(package_name.c_str(), "zoneln", zone->GetLongName());
 		ExportVar(package_name.c_str(), "zonemin", eqTime.minute);
+		ExportVar(package_name.c_str(), "zonesn", zone->GetShortName());
 		ExportVar(package_name.c_str(), "zonetime", (eqTime.hour - 1) * 100 + eqTime.minute);
+		ExportVar(package_name.c_str(), "zoneuptime", Timer::GetCurrentTime() / 1000);
 		ExportVar(package_name.c_str(), "zoneweather", zone->zone_weather);
 	}
 }
@@ -2058,9 +2064,14 @@ void PerlembParser::ExportEventVariables(
 				Corpse* corpse = std::any_cast<Corpse*>(extra_pointers->at(0));
 				if (corpse) {
 					ExportVar(package_name.c_str(), "killed_corpse_id", corpse->GetID());
+					ExportVar(package_name.c_str(), "killed_x", corpse->GetX());
+					ExportVar(package_name.c_str(), "killed_y", corpse->GetY());
+					ExportVar(package_name.c_str(), "killed_z", corpse->GetZ());
+					ExportVar(package_name.c_str(), "killed_h", corpse->GetHeading());
 				}
 			}
 
+			// EVENT_DEATH_ZONE only
 			if (extra_pointers && extra_pointers->size() >= 2) {
 				NPC* killed = std::any_cast<NPC*>(extra_pointers->at(1));
 				if (killed) {
@@ -2070,10 +2081,6 @@ void PerlembParser::ExportEventVariables(
 						killed->IsBot() ? killed->CastToBot()->GetBotID() : 0
 					);
 					ExportVar(package_name.c_str(), "killed_npc_id", killed->IsNPC() ? killed->GetNPCTypeID() : 0);
-					ExportVar(package_name.c_str(), "killed_x", killed->GetX());
-					ExportVar(package_name.c_str(), "killed_y", killed->GetY());
-					ExportVar(package_name.c_str(), "killed_z", killed->GetZ());
-					ExportVar(package_name.c_str(), "killed_h", killed->GetHeading());
 				}
 			}
 			break;

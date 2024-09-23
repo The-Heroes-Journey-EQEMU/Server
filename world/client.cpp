@@ -516,7 +516,7 @@ bool Client::HandleSendLoginInfoPacket(const EQApplicationPacket *app)
 			join->lsaccount_id = GetLSID();
 			loginserverlist.SendPacket(pack);
 			safe_delete(pack);
-		}		
+		}
 
 		if (!is_player_zoning)
 			SendGuildList();
@@ -673,16 +673,6 @@ bool Client::HandleGenerateRandomNamePacket(const EQApplicationPacket *app) {
 }
 
 bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) {
-	int account_progression = 0;
-	if (RuleB(Custom, BlockRaceOnAccountProgression) || RuleB(Custom, BlockClassOnAccountProgression)) {
-		std::string query = StringFormat("SELECT value FROM data_buckets WHERE data_buckets.key = '%d-account-progression'", GetAccountID());
-		auto results = database.QueryDatabase(query);
-		if (results.Success() && results.RowCount() > 0) {
-			auto row = results.begin();
-			account_progression = Strings::ToInt(row[0]);
-		}
-	}
-
 	// New OpCode in SoF
 	uint32 allocs = character_create_allocations.size();
 	uint32 combos = character_create_race_class_combos.size();
@@ -715,36 +705,14 @@ bool Client::HandleCharacterCreateRequestPacket(const EQApplicationPacket *app) 
 	*((uint32*)ptr) = combos;
 	ptr += sizeof(uint32);
 	for(int i = 0; i < combos; ++i) {
-		bool entry_enabled = true;
-
-		if (RuleB(Custom, BlockRaceOnAccountProgression)) {
-			if (account_progression < 1 && character_create_race_class_combos[i].Race == Race::Iksar) {
-				entry_enabled = false;
-			}
-			if (account_progression < 3 && character_create_race_class_combos[i].Race == Race::VahShir) {
-				entry_enabled = false;
-			}
-		}
-		
-		if (RuleB(Custom, BlockClassOnAccountProgression)) {
-			if (account_progression < 3 && character_create_race_class_combos[i].Class == Class::Beastlord) {
-				entry_enabled = false;
-			}
-			if (account_progression < 4 && character_create_race_class_combos[i].Class == Class::Berserker) {
-				entry_enabled = false;
-			}
-		}
-		
-		if (entry_enabled) {
-			RaceClassCombos *cmb = (RaceClassCombos*)ptr;
-			cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
-			cmb->Race = character_create_race_class_combos[i].Race;
-			cmb->Class = character_create_race_class_combos[i].Class;
-			cmb->Deity = character_create_race_class_combos[i].Deity;
-			cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
-			cmb->Zone = character_create_race_class_combos[i].Zone;
-			ptr += sizeof(RaceClassCombos);
-		}
+		RaceClassCombos *cmb = (RaceClassCombos*)ptr;
+		cmb->ExpansionRequired = character_create_race_class_combos[i].ExpansionRequired;
+		cmb->Race = character_create_race_class_combos[i].Race;
+		cmb->Class = character_create_race_class_combos[i].Class;
+		cmb->Deity = character_create_race_class_combos[i].Deity;
+		cmb->AllocationIndex = character_create_race_class_combos[i].AllocationIndex;
+		cmb->Zone = character_create_race_class_combos[i].Zone;
+		ptr += sizeof(RaceClassCombos);
 	}
 
 	QueuePacket(outapp);
@@ -797,13 +765,6 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 		return true;
 	}
 
-	if (
-		RuleB(World, EnableIPExemptions) ||
-		RuleI(World, MaxClientsPerIP) > 0
-	) {
-		client_list.GetCLEIP(GetIP()); //Check current CLE Entry IPs against incoming connection
-	}
-
 	auto ew = (EnterWorld_Struct *) app->pBuffer;
 	strn0cpy(char_name, ew->name, sizeof(char_name));
 
@@ -819,18 +780,6 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 		LogInfo("Could not get CharInfo for [{}]", char_name);
 		eqs->Close();
 		return true;
-	}
-
-	auto r = content_service.FindZone(zone_id, instance_id);
-	if (r.zone_id && r.instance.id != instance_id) {
-		LogInfo(
-			"Zone [{}] has been remapped to instance_id [{}] from instance_id [{}] for client [{}]",
-			r.zone.short_name,
-			r.instance.id,
-			instance_id,
-			char_name
-		);
-		instance_id = r.instance.id;
 	}
 
 	const auto& e = l.front();
@@ -850,6 +799,27 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 	charid      = e.id;
 	zone_id     = e.zone_id;
 	instance_id = e.zone_instance;
+
+	auto r = content_service.FindZone(zone_id, instance_id);
+	if (r.zone_id && r.instance.id != instance_id) {
+		LogInfo(
+			"Zone [{}] has been remapped to instance_id [{}] from instance_id [{}] for client [{}]",
+			r.zone.short_name,
+			r.instance.id,
+			instance_id,
+			char_name
+		);
+		instance_id = r.instance.id;
+	}
+
+	if (
+		RuleB(World, EnableIPExemptions) ||
+		RuleI(World, MaxClientsPerIP) > 0
+	) {
+		if (zone_id != Zones::BAZAAR) {
+			client_list.GetCLEIP(GetIP()); //Check current CLE Entry IPs against incoming connection
+		}
+	}
 
 	// This can probably be moved outside and have another method return requested info (don't forget to remove the #include "../common/shareddb.h" above)
 	// (This is a literal translation of the original process..I don't see why it can't be changed to a single-target query over account iteration)
@@ -1610,19 +1580,20 @@ void Client::QueuePacket(const EQApplicationPacket* app, bool ack_req) {
 	eqs->QueuePacket(app, ack_req);
 }
 
-void Client::SendGuildList() {
-	EQApplicationPacket *outapp;
-	outapp = new EQApplicationPacket(OP_GuildsList);
+void Client::SendGuildList()
+{
+	auto guilds_list = guild_mgr.MakeGuildList();
 
-	//ask the guild manager to build us a nice guild list packet
-	outapp->pBuffer = guild_mgr.MakeGuildList("", outapp->size);
-	if(outapp->pBuffer == nullptr) {
-		safe_delete(outapp);
-		return;
-	}
+	std::stringstream           ss;
+	cereal::BinaryOutputArchive ar(ss);
+	ar(guilds_list);
 
+	uint32 packet_size = ss.str().length();
 
-	eqs->FastQueuePacket((EQApplicationPacket **)&outapp);
+	std::unique_ptr<EQApplicationPacket> out(new EQApplicationPacket(OP_GuildsList, packet_size));
+	memcpy(out->pBuffer, ss.str().data(), out->size);
+
+	QueuePacket(out.get());
 }
 
 // @merth: I have no idea what this struct is for, so it's hardcoded for now
@@ -1891,6 +1862,20 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	}
 
 	content_db.SetStartingItems(&pp, &inv, pp.race, cc->class_, pp.deity, pp.zone_id, pp.name, GetAdmin());
+
+	// Seasonal
+	if (RuleI(Custom, EnableSeasonalCharacters)) {
+		int char_id = database.GetCharacterID(pp.name);
+		int season  = RuleI(Custom, EnableSeasonalCharacters);
+
+		// Construct the SQL query
+		std::string query = StringFormat(
+			"INSERT INTO data_buckets (`key`, `value`, `character_id`, `npc_id`, `bot_id`) "
+			"VALUES ('SeasonalCharacter', '%d', %d, 0, 0);", season, char_id);
+
+		// Execute the query
+		database.QueryDatabase(query);
+	}
 
 	const bool success = StoreCharacter(GetAccountID(), &pp, &inv);
 
@@ -2167,6 +2152,7 @@ bool CheckCharCreateInfoTitanium(CharCreate_Struct *cc)
 
 void Client::SetClassStartingSkills(PlayerProfile_Struct *pp)
 {
+	/*
 	for (uint32 i = 0; i <= EQ::skills::HIGHEST_SKILL; ++i) {
 		if (pp->skills[i] == 0) {
 			// Skip specialized, tradeskills (fishing excluded), Alcohol Tolerance, and Bind Wound
@@ -2183,6 +2169,7 @@ void Client::SetClassStartingSkills(PlayerProfile_Struct *pp)
 		pp->skills[EQ::skills::Skill1HPiercing] = pp->skills[EQ::skills::Skill2HPiercing];
 		pp->skills[EQ::skills::Skill2HPiercing] = 0;
 	}
+	*/
 }
 
 void Client::SetRaceStartingSkills( PlayerProfile_Struct *pp )
@@ -2420,7 +2407,7 @@ bool Client::StoreCharacter(
 	if (!v.empty()) {
 		InventoryRepository::InsertMany(database, v);
 	}
-	
+
 	return true;
 }
 

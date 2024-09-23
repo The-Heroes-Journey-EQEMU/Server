@@ -134,7 +134,7 @@ void NPC::AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop)
 	if (drop_limit == 0 && min_drop == 0) {
 		for (const auto &e: le) {
 			for (int j = 0; j < e.multiplier; ++j) {
-				if (zone->random.Real(0.0, 100.0) <= e.chance && MeetsLootDropLevelRequirements(e, true)) {							
+				if (zone->random.Real(0.0, 100.0) <= e.chance && MeetsLootDropLevelRequirements(e, true)) {
 					const EQ::ItemData *database_item = database.GetItem(e.item_id);
 					AddLootDrop(database_item, e);
 					LogLootDetail(
@@ -264,7 +264,8 @@ bool NPC::MeetsLootDropLevelRequirements(LootdropEntriesRepository::LootdropEntr
 
 uint32 NPC::DoUpgradeLoot(uint32 itemID) {
 	if (RuleB(Custom, DoItemUpgrades)) {
-		uint32 roll = zone->random.Real(0.0, 100.0);        
+		zone->random.Reseed();
+		uint32 roll = zone->random.Real(0.0, 100.0);
 		uint32 newID = itemID % 1000000;
 
 		// TODO: Affix system will need to update this
@@ -280,7 +281,7 @@ uint32 NPC::DoUpgradeLoot(uint32 itemID) {
 			itemID = newID;
 		}
 	}
-	
+
 	return itemID;
 }
 
@@ -299,7 +300,7 @@ void NPC::AddLootDrop(
 	if (RuleB(Custom, DoItemUpgrades) && item2->ID <= 1000000 && !IsPet()) {
 		item2 = database.GetItem(DoUpgradeLoot(item2->ID));
 	}
-	
+
 	AddLootDropFixed(item2, loot_drop, wear_change, augment_one, augment_two, augment_three, augment_four, augment_five, augment_six);
 }
 
@@ -609,6 +610,41 @@ void NPC::AddItem(
 	);
 }
 
+void NPC::AddItemFixed(
+	uint32 item_id,
+	uint16 charges,
+	bool equip_item,
+	uint32 augment_one,
+	uint32 augment_two,
+	uint32 augment_three,
+	uint32 augment_four,
+	uint32 augment_five,
+	uint32 augment_six
+)
+{
+	const auto *item = database.GetItem(item_id);
+	if (!item) {
+		return;
+	}
+
+	auto l = LootdropEntriesRepository::NewNpcEntity();
+
+	l.equip_item   = static_cast<uint8>(equip_item ? 1 : 0);
+	l.item_charges = charges;
+
+	AddLootDropFixed(
+		item,
+		l,
+		true,
+		augment_one,
+		augment_two,
+		augment_three,
+		augment_four,
+		augment_five,
+		augment_six
+	);
+}
+
 void NPC::AddLootTable()
 {
 	AddLootTable(m_loottable_id);
@@ -725,7 +761,7 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 	end = m_loot_items.end();
 	for(; cur != end; ++cur) {
 		LootItem *item = *cur;
-		if (item->item_id == item_id && slot <= 0 && quantity <= 0) {			
+		if (item->item_id == item_id && slot <= 0 && quantity <= 0) {
 			m_loot_items.erase(cur);
 			UpdateEquipmentLight();
 			if (UpdateActiveLight()) { SendAppearancePacket(AppearanceType::Light, GetActiveLightType()); }
@@ -738,7 +774,7 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 			return;
 		}
 		else if (item->item_id == item_id && item->equip_slot == slot && quantity >= 1) {
-			if (item->charges <= quantity) {				
+			if (item->charges <= quantity) {
 				m_loot_items.erase(cur);
 				UpdateEquipmentLight();
 				if (UpdateActiveLight()) { SendAppearancePacket(AppearanceType::Light, GetActiveLightType()); }
@@ -754,10 +790,8 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 			}
 			return;
 		}
-	}	
+	}
 }
-
-
 
 void NPC::CheckTrivialMinMaxLevelDrop(Mob *killer)
 {

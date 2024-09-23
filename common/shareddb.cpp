@@ -52,6 +52,7 @@
 #include "repositories/character_item_recast_repository.h"
 #include "repositories/character_corpses_repository.h"
 #include "repositories/skill_caps_repository.h"
+#include "repositories/inventory_repository.h"
 
 namespace ItemField
 {
@@ -132,7 +133,7 @@ std::string md5::digest(std::string str)
 
         for (int k = 0; k < 64; k++)
             current_chunk.in_chars[k] = padded_message[k + i * 64];
-    
+
         for (int k = 0; k < 16; k++)
             m_array[k] = current_chunk.in_ints[k];
 
@@ -140,7 +141,7 @@ std::string md5::digest(std::string str)
         {
             uint32_t F, g;
             if (j < 16)
-            {   
+            {
                 F = (B & C) | ((~B) & D);
                 g = j;
             }
@@ -310,27 +311,31 @@ SharedDatabase::MailKeys SharedDatabase::GetMailKey(int character_id)
 
 bool SharedDatabase::SaveCursor(uint32 char_id, std::list<EQ::ItemInstance*>::const_iterator &start, std::list<EQ::ItemInstance*>::const_iterator &end)
 {
-    // Delete cursor items
-    std::string query = StringFormat("DELETE FROM inventory WHERE slotid = %i OR (slotid >= %i AND slotid <= %i)",
-                                    EQ::invslot::slotCursor,
-                                    EQ::invbag::CURSOR_BAG_BEGIN, EQ::invbag::CURSOR_BAG_END);
-    auto results = QueryDatabase(query);
+	const int LIMBO_OFFSET = EQ::invbag::TRADE_BAGS_END + 1;
+
+	// Delete cursor items
+	const std::string query = StringFormat("DELETE FROM inventory WHERE charid = %i "
+	                                       "AND ((slotid >= %i AND slotid <= %i) "
+	                                       "OR slotid = %i OR (slotid >= %i AND slotid <= %i) )",
+	                                       char_id, LIMBO_OFFSET, LIMBO_OFFSET + 999, EQ::invslot::slotCursor,
+	                                       EQ::invbag::CURSOR_BAG_BEGIN, EQ::invbag::CURSOR_BAG_END);
+	const auto results = QueryDatabase(query);
     if (!results.Success()) {
         std::cout << "Clearing cursor failed: " << results.ErrorMessage() << std::endl;
         return false;
     }
 
-    int i = EQ::invslot::slotCursor;
-    for(auto it = start; it != end; ++it, i++) {
-        if (i > EQ::invbag::CURSOR_BAG_END) { break; } // shouldn't be anything in the queue that indexes this high
-        EQ::ItemInstance *inst = *it;
-        int16 use_slot = (i == EQ::invslot::slotCursor) ? EQ::invslot::slotCursor : i;
-        if (!SaveInventory(char_id, inst, use_slot)) {
-            return false;
-        }
+    int i = LIMBO_OFFSET;
+    for(auto& it = start; it != end; ++it, i++) {
+		if (i > LIMBO_OFFSET + 999) { break; } // shouldn't be anything in the queue that indexes this high
+		const EQ::ItemInstance *inst = *it;
+		const int16 use_slot = (i == LIMBO_OFFSET) ? EQ::invslot::slotCursor : i;
+		if (!SaveInventory(char_id, inst, use_slot)) {
+			return false;
+		}
     }
 
-    return true;
+	return true;
 }
 
 bool SharedDatabase::VerifyInventory(uint32 account_id, int16 slot_id, const EQ::ItemInstance* inst)
@@ -374,7 +379,7 @@ bool SharedDatabase::SaveInventory(uint32 char_id, const EQ::ItemInstance* inst,
 	if (slot_id >= EQ::invslot::GUILD_TRIBUTE_BEGIN && slot_id <= EQ::invslot::GUILD_TRIBUTE_END)
 		return true;
 
-	if ((slot_id >= EQ::invslot::SHARED_BANK_BEGIN && slot_id <= EQ::invslot::SHARED_BANK_END) || 
+	if ((slot_id >= EQ::invslot::SHARED_BANK_BEGIN && slot_id <= EQ::invslot::SHARED_BANK_END) ||
 	    (slot_id >= EQ::invbag::SHARED_BANK_BAGS_BEGIN && slot_id <= EQ::invbag::SHARED_BANK_BAGS_END)) {
         // Shared bank inventory
 		if (!inst) {
@@ -429,15 +434,15 @@ bool SharedDatabase::UpdateInventorySlot(uint32 char_id, const EQ::ItemInstance*
 	std::string customData = std::regex_replace(inst->GetCustomDataString(), std::regex("\'"), "''");
 	const std::string query = StringFormat("REPLACE INTO inventory "
 	                                       "(charid, slotid, itemid, charges, instnodrop, custom_data, color, "
-	                                       "augslot1, augslot2, augslot3, augslot4, augslot5, augslot6, ornamenticon, ornamentidfile, ornament_hero_model) "
+	                                       "augslot1, augslot2, augslot3, augslot4, augslot5, augslot6, ornamenticon, ornamentidfile, ornament_hero_model, guid) "
 	                                       "VALUES( %lu, %lu, %lu, %lu, %lu, '%s', %lu, "
-	                                       "%lu, %lu, %lu, %lu, %lu, %lu, %lu, %lu, %lu)",
-	                                       static_cast<unsigned long>(char_id), static_cast<unsigned long>(slot_id), static_cast<unsigned long>(item_id),
+	                                       "%lu, %lu, %lu, %lu, %lu, %lu, %lu, %lu, %lu, %lu)",
+	                                       static_cast<unsigned long>(char_id), static_cast<unsigned long>(slot_id), static_cast<unsigned long>(inst->GetItem()->ID),
 	                                       static_cast<unsigned long>(charges), static_cast<unsigned long>(inst->IsAttuned() ? 1 : 0),
 	                                       customData.c_str(), static_cast<unsigned long>(inst->GetColor()),
 	                                       static_cast<unsigned long>(augslot[0]), static_cast<unsigned long>(augslot[1]), static_cast<unsigned long>(augslot[2]),
 	                                       static_cast<unsigned long>(augslot[3]), static_cast<unsigned long>(augslot[4]), static_cast<unsigned long>(augslot[5]), static_cast<unsigned long>(inst->GetOrnamentationIcon()),
-	                                       static_cast<unsigned long>(inst->GetOrnamentationIDFile()), static_cast<unsigned long>(inst->GetOrnamentHeroModel()));
+	                                       static_cast<unsigned long>(inst->GetOrnamentationIDFile()), static_cast<unsigned long>(inst->GetOrnamentHeroModel()), inst->GetSerialNumber());
 	const auto results = QueryDatabase(query);
 
     // Save bag contents, if slot supports bag contents
@@ -749,7 +754,7 @@ bool SharedDatabase::GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is
 			inst->SetCustomDataString(data_str);
 		}
 
-		RunGenerateCallback(inst);
+		//RunGenerateCallback(inst);
 
 		// theoretically inst can be nullptr ... this would be very bad ...
 		const int16 put_slot_id = inv->PutItem(slot_id, *inst);
@@ -777,12 +782,23 @@ bool SharedDatabase::GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is
 }
 
 void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
+	// Restore original item stats before building modified item
+	if (inst->GetOriginalID() != inst->GetID()) {
+		inst->ReplaceItemData(GetItem(inst->GetOriginalID()));
+	}
+
+	// Only allow creation of dynamic items which aren't already dynamic items
     if (!inst->GetCustomData("Customized").empty()) {
         std::string key = md5::digest(inst->GetCustomDataString());
-        if (key != inst->GetItem()->Comment) {			
+        if (key != inst->GetItem()->Comment) {
 			// This data is important to preserve to properly track the item in inventories.
 			if (inst->GetCustomData("original_id").empty()) {
 				inst->SetCustomData("original_id", std::to_string(inst->GetID()));
+			}
+
+			if (inst->GetItemType() == EQ::item::ItemTypeAugmentation) {
+				LogError("Attempted to create illegal Dynamic Item: Augment");
+				return;
 			}
 
 			char* disco_tag = inst->GetItem()->CharmFile;
@@ -790,11 +806,15 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			if (!inst->GetCustomData("Name").empty()) {
 				strn0cpy(inst->GetMutableItem()->Name, inst->GetCustomData("Name").c_str(), sizeof(inst->GetMutableItem()->Name));
 			}
-			
+
 			inst->GetMutableItem()->ArtifactFlag = Strings::ToInt(inst->GetCustomData("ArtifactFlag"), inst->GetItem()->ArtifactFlag);
 			inst->GetMutableItem()->Attuneable   = Strings::ToInt(inst->GetCustomData("Attuneable"), inst->GetItem()->Attuneable);
 			inst->GetMutableItem()->Season       = Strings::ToInt(inst->GetCustomData("Season"), 0);
 			inst->GetMutableItem()->NoDrop		 = Strings::ToInt(inst->GetCustomData("NoDrop"), 1);
+
+			if (inst->IsAttuned() && !inst->GetItem()->Attuneable) {
+				inst->SetAttuned(false);
+			}
 
 			inst->GetMutableItem()->BaneDmgRaceAmt   += Strings::ToInt(inst->GetCustomData("BaneDmgRaceAmt"), 0);
 			inst->GetMutableItem()->ElemDmgAmt       += Strings::ToInt(inst->GetCustomData("ElemDmgAmt"), 0);
@@ -845,7 +865,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->ADex             += Strings::ToInt(inst->GetCustomData("ADex"), 0);
 			inst->GetMutableItem()->ACha             += Strings::ToInt(inst->GetCustomData("ACha"), 0);
 			inst->GetMutableItem()->AInt             += Strings::ToInt(inst->GetCustomData("AInt"), 0);
-			inst->GetMutableItem()->AWis             += Strings::ToInt(inst->GetCustomData("AWis"), 0);			
+			inst->GetMutableItem()->AWis             += Strings::ToInt(inst->GetCustomData("AWis"), 0);
 			inst->GetMutableItem()->Proc.Level       += Strings::ToInt(inst->GetCustomData("Proc.Level"), 0);
 			inst->GetMutableItem()->Proc.Level2      += Strings::ToInt(inst->GetCustomData("Proc.Level2"), 0);
 			inst->GetMutableItem()->Click.Level      += Strings::ToInt(inst->GetCustomData("Click.Level"), 0);
@@ -855,10 +875,10 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 			inst->GetMutableItem()->BagSlots		 += Strings::ToInt(inst->GetCustomData("BagSlots"), 0);
 
 			// Delay is weird, we want to set a hard floor on how low we can go.
-			inst->GetMutableItem()->Delay = std::max((uint8)(inst->GetMutableItem()->Delay + Strings::ToInt(inst->GetCustomData("Delay"), 0)), std::min((uint8)15, GetItem(inst->GetItem()->OriginalID)->Delay));			
+			inst->GetMutableItem()->Delay = std::max((uint8)(inst->GetMutableItem()->Delay + Strings::ToInt(inst->GetCustomData("Delay"), 0)), std::min((uint8)15, GetItem(inst->GetItem()->OriginalID)->Delay));
 
 			if (!inst->GetCustomData("force_unlimited_charges").empty() && inst->IsCharged()) {
-				uint32 new_cast_time = Strings::ToUnsignedInt(inst->GetCustomData("force_unlimited_charges"));
+				uint32 new_cast_time = std::max(static_cast<uint32>(5000), Strings::ToUnsignedInt(inst->GetCustomData("force_unlimited_charges")));
 
 				inst->SetCharges(-1);
 				inst->GetMutableItem()->MaxCharges = -1;
@@ -866,7 +886,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 				inst->GetMutableItem()->CastTime_	= std::max(new_cast_time, static_cast<uint32>(inst->GetItem()->CastTime_));
 				if (inst->GetItem()->Classes && inst->GetItem()->Races) {
 					inst->GetMutableItem()->Click.Type = 4; // Must Equip
-				}				
+				}
 			}
 
 			// Prevent items of this type from being sold to vendors.
@@ -882,7 +902,7 @@ void SharedDatabase::RunGenerateCallback(EQ::ItemInstance* inst) {
 		// If we don't have a local cached copy let's check where it's at in the items_hash or insert it for the first time
 		// And assign to our local cache. This should only happen once per zone per item that hasn't synced
 		EQ::ItemData* data = nullptr;
-		
+
 		uint32 next_id = 0xFFFFFFF;
 		// Strategy here is to assign free item ID from the upper bound with decrementing ID.
 		// This makes lookup faster for reassigning to cache.
@@ -925,48 +945,67 @@ bool SharedDatabase::GetInventory(uint32 char_id, EQ::InventoryProfile *inv)
 		return false;
 
 	// Retrieve character inventory
-	const std::string query =
-	    StringFormat("SELECT slotid, itemid, charges, color, augslot1, augslot2, augslot3, augslot4, augslot5, "
-			 "augslot6, instnodrop, custom_data, ornamenticon, ornamentidfile, ornament_hero_model FROM "
-			 "inventory WHERE charid = %i ORDER BY slotid",
-			 char_id);
-	auto results = QueryDatabase(query);
-	if (!results.Success()) {
-		LogError("If you got an error related to the 'instnodrop' field, run the "
-						    "following SQL Queries:\nalter table inventory add instnodrop "
-						    "tinyint(1) unsigned default 0 not null;\n");
+	auto results = InventoryRepository::GetWhere(*this, fmt::format("`charid` = '{}' ORDER BY `slotid`;", char_id));
+	if (results.empty()) {
+		LogError("Error loading inventory for char_id {} from the database.", char_id);
 		return false;
 	}
 
+	for (auto const &row: results) {
+		if (row.guid != 0) {
+			EQ::ItemInstance::AddGUIDToMap(row.guid);
+		}
+	}
+
 	const auto timestamps = GetItemRecastTimestamps(char_id);
+	auto cv_conflict      = false;
+	const auto pmask      = inv->GetLookup()->PossessionsBitmask;
+	const auto bank_size  = inv->GetLookup()->InventoryTypeSize.Bank;
 
-	auto cv_conflict = false;
-	const auto pmask = inv->GetLookup()->PossessionsBitmask;
-	const auto bank_size = inv->GetLookup()->InventoryTypeSize.Bank;
+	std::vector<InventoryRepository::Inventory> queue{};
+	for (auto &row: results) {
+		const int16 slot_id              = row.slotid;
+		const uint32 item_id             = row.itemid;
+		const uint16 charges             = row.charges;
+		const uint32 color               = row.color;
+		const bool instnodrop            = row.instnodrop;
+		const uint32 ornament_icon       = row.ornamenticon;
+		const uint32 ornament_idfile     = row.ornamentidfile;
+		const uint32 ornament_hero_model = row.ornament_hero_model;
 
-	for (auto& row = results.begin(); row != results.end(); ++row) {
-		int16 slot_id = Strings::ToInt(row[0]);
+		uint32 aug[EQ::invaug::SOCKET_COUNT];
+		aug[0] = row.augslot1;
+		aug[1] = row.augslot2;
+		aug[2] = row.augslot3;
+		aug[3] = row.augslot4;
+		aug[4] = row.augslot5;
+		aug[5] = row.augslot6;
 
-		if (slot_id <= EQ::invslot::POSSESSIONS_END && slot_id >= EQ::invslot::POSSESSIONS_BEGIN) { // Titanium thru UF check
+		if (slot_id <= EQ::invslot::POSSESSIONS_END && slot_id >= EQ::invslot::POSSESSIONS_BEGIN) {
+			// Titanium thru UF check
 			if (((static_cast<uint64>(1) << slot_id) & pmask) == 0) {
 				cv_conflict = true;
 				continue;
 			}
 		}
-		else if (slot_id <= EQ::invbag::GENERAL_BAGS_END && slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN) { // Titanium thru UF check
-			const auto parent_slot = EQ::invslot::GENERAL_BEGIN + ((slot_id - EQ::invbag::GENERAL_BAGS_BEGIN) / EQ::invbag::SLOT_COUNT);
+		else if (slot_id <= EQ::invbag::GENERAL_BAGS_END && slot_id >= EQ::invbag::GENERAL_BAGS_BEGIN) {
+			// Titanium thru UF check
+			const auto parent_slot = EQ::invslot::GENERAL_BEGIN + (
+				                         (slot_id - EQ::invbag::GENERAL_BAGS_BEGIN) / EQ::invbag::SLOT_COUNT);
 			if (((static_cast<uint64>(1) << parent_slot) & pmask) == 0) {
 				cv_conflict = true;
 				continue;
 			}
 		}
-		else if (slot_id <= EQ::invslot::BANK_END && slot_id >= EQ::invslot::BANK_BEGIN) { // Titanium check
+		else if (slot_id <= EQ::invslot::BANK_END && slot_id >= EQ::invslot::BANK_BEGIN) {
+			// Titanium check
 			if ((slot_id - EQ::invslot::BANK_BEGIN) >= bank_size) {
 				cv_conflict = true;
 				continue;
 			}
 		}
-		else if (slot_id <= EQ::invbag::BANK_BAGS_END && slot_id >= EQ::invbag::BANK_BAGS_BEGIN) { // Titanium check
+		else if (slot_id <= EQ::invbag::BANK_BAGS_END && slot_id >= EQ::invbag::BANK_BAGS_BEGIN) {
+			// Titanium check
 			const auto parent_index = ((slot_id - EQ::invbag::BANK_BAGS_BEGIN) / EQ::invbag::SLOT_COUNT);
 			if (parent_index >= bank_size) {
 				cv_conflict = true;
@@ -974,63 +1013,55 @@ bool SharedDatabase::GetInventory(uint32 char_id, EQ::InventoryProfile *inv)
 			}
 		}
 
-		uint32 item_id = Strings::ToUnsignedInt(row[1]);
-		const uint16 charges = Strings::ToUnsignedInt(row[2]);
-		const uint32 color = Strings::ToUnsignedInt(row[3]);
-
-		uint32 aug[EQ::invaug::SOCKET_COUNT];
-
-		aug[0] = Strings::ToUnsignedInt(row[4]);
-		aug[1] = Strings::ToUnsignedInt(row[5]);
-		aug[2] = Strings::ToUnsignedInt(row[6]);
-		aug[3] = Strings::ToUnsignedInt(row[7]);
-		aug[4] = Strings::ToUnsignedInt(row[8]);
-		aug[5] = Strings::ToUnsignedInt(row[9]);
-
-		const bool instnodrop = (row[10] && static_cast<uint16>(Strings::ToUnsignedInt(row[10])));
-
-		const uint32 ornament_icon = Strings::ToUnsignedInt(row[12]);
-		const uint32 ornament_idfile = Strings::ToUnsignedInt(row[13]);
-		uint32 ornament_hero_model = Strings::ToUnsignedInt(row[14]);
-
-		const EQ::ItemData *item = GetItem(item_id);
+		auto *item = GetItem(item_id);
 		if (!item) {
-			LogError("Warning: charid [{}] has an invalid item_id [{}] in inventory slot [{}]", char_id, item_id,
-				slot_id);
+			LogError(
+				"Warning: charid [{}] has an invalid item_id [{}] in inventory slot [{}]",
+				char_id,
+				item_id,
+				slot_id
+			);
 			continue;
 		}
 
-		EQ::ItemInstance *inst = CreateBaseItem(item, charges);
-
-		if (inst == nullptr)
+		auto *inst = CreateBaseItem(item, charges);
+		if (!inst) {
 			continue;
+		}
 
-		if (row[11]) {
-			std::string data_str(row[11]);
-			inst->SetCustomDataString(data_str);
+		if (!row.custom_data.empty()) {
+			inst->SetCustomDataString(row.custom_data);
 		}
 
 		inst->SetOrnamentIcon(ornament_icon);
 		inst->SetOrnamentationIDFile(ornament_idfile);
 		inst->SetOrnamentHeroModel(item->HerosForgeModel);
 
-		if (instnodrop || (inst->GetItem()->Attuneable && slot_id >= EQ::invslot::EQUIPMENT_BEGIN && slot_id <= EQ::invslot::EQUIPMENT_END))
+		if (instnodrop || (inst->GetItem()->Attuneable && slot_id >= EQ::invslot::EQUIPMENT_BEGIN && slot_id <=
+		                   EQ::invslot::EQUIPMENT_END)) {
 			inst->SetAttuned(true);
+		}
 
-		if (color > 0)
+		if (color > 0) {
 			inst->SetColor(color);
+		}
 
-		if (charges == 0x7FFF)
+		if (charges == 0x7FFF) {
 			inst->SetCharges(-1);
-		else if (charges == 0 && inst->IsStackable()) // Stackable items need a minimum charge of 1 remain moveable.
+		}
+		else if (charges == 0 && inst->IsStackable()) {
+			// Stackable items need a minimum charge of 1 remain moveable.
 			inst->SetCharges(1);
-		else
+		}
+		else {
 			inst->SetCharges(charges);
+		}
 
 		if (item->RecastDelay) {
 			if (item->RecastType != RECAST_TYPE_UNLINKED_ITEM && timestamps.count(item->RecastType)) {
 				inst->SetRecastTimestamp(timestamps.at(item->RecastType));
-			} else if (item->RecastType == RECAST_TYPE_UNLINKED_ITEM && timestamps.count(item->ID)) {
+			}
+			else if (item->RecastType == RECAST_TYPE_UNLINKED_ITEM && timestamps.count(item->ID)) {
 				inst->SetRecastTimestamp(timestamps.at(item->ID));
 			}
 			else {
@@ -1040,47 +1071,83 @@ bool SharedDatabase::GetInventory(uint32 char_id, EQ::InventoryProfile *inv)
 
 		if (item->IsClassCommon()) {
 			for (int i = EQ::invaug::SOCKET_BEGIN; i <= EQ::invaug::SOCKET_END; i++) {
-				if (aug[i])
+				if (aug[i]) {
 					inst->PutAugment(this, i, aug[i]);
+				}
 			}
 		}
 
-		RunGenerateCallback(inst);
+		//RunGenerateCallback(inst);
 
 		int16 put_slot_id;
-		if (slot_id >= EQ::invbag::CURSOR_BAG_BEGIN && slot_id <= EQ::invbag::CURSOR_BAG_END) {
+		if (slot_id > (EQ::invbag::TRADE_BAGS_END)) {
 			put_slot_id = inv->PushCursor(*inst);
 		}
-		/* COMMENTING THIS OUT FOR NOW.. THIS IS CAUSING ISSUES
+
+		/*
 		else if (slot_id >= 3111 && slot_id <= 3179) {
 			// Admins: please report any occurrences of this error
-			LogError("Warning: Defunct location for item in inventory: charid={}, item_id={}, slot_id={} .. pushing to cursor...",
-				char_id, item_id, slot_id);
+			LogError(
+				"Warning: Defunct location for item in inventory: charid={}, item_id={}, slot_id={} .. pushing to cursor...",
+				char_id,
+				item_id,
+				slot_id
+			);
 			put_slot_id = inv->PushCursor(*inst);
-		} 
+		}
 		*/
+
 		else {
 			put_slot_id = inv->PutItem(slot_id, *inst);
 		}
+
+		row.guid = inst->GetSerialNumber();
+		queue.push_back(row);
+
+		row.guid = inst->GetSerialNumber();
+		queue.push_back(row);
 
 		safe_delete(inst);
 
 		// Save ptr to item in inventory
 		if (put_slot_id == INVALID_INDEX) {
-			LogError("Warning: Invalid slot_id for item in inventory: charid=[{}], item_id=[{}], slot_id=[{}]",
-				char_id, item_id, slot_id);
+			LogError(
+				"Warning: Invalid slot_id for item in inventory: charid=[{}], item_id=[{}], slot_id=[{}]",
+				char_id,
+				item_id,
+				slot_id
+			);
+			LogError(
+				"Warning: Invalid slot_id for item in inventory: charid=[{}], item_id=[{}], slot_id=[{}]",
+				char_id,
+				item_id,
+				slot_id
+			);
 		}
 	}
 
 	if (cv_conflict) {
-		const std::string& char_name = GetCharName(char_id);
-		LogError("ClientVersion/Expansion conflict during inventory load at zone entry for [{}] (charid: [{}], inver: [{}], gmi: [{}])",
+		const std::string &char_name = GetCharName(char_id);
+		LogError(
+			"ClientVersion/Expansion conflict during inventory load at zone entry for [{}] (charid: [{}], inver: [{}], gmi: [{}])",
 			char_name,
 			char_id,
 			EQ::versions::MobVersionName(inv->InventoryVersion()),
 			(inv->GMInventory() ? "true" : "false")
 		);
 	}
+
+	if (!queue.empty()) {
+		InventoryRepository::ReplaceMany(*this, queue);
+	}
+
+	EQ::ItemInstance::ClearGUIDMap();
+
+	if (!queue.empty()) {
+		InventoryRepository::ReplaceMany(*this, queue);
+	}
+
+	EQ::ItemInstance::ClearGUIDMap();
 
 	// Retrieve shared inventory
 	return GetSharedBank(char_id, inv, true);
@@ -1156,9 +1223,9 @@ bool SharedDatabase::GetInventory(uint32 account_id, char *name, EQ::InventoryPr
 			}
 		}
 
-		RunGenerateCallback(inst);
-		
-		int16 put_slot_id;		
+		//RunGenerateCallback(inst);
+
+		int16 put_slot_id;
 		put_slot_id = inv->PutItem(slot_id, *inst);
 
 		safe_delete(inst);
@@ -1590,7 +1657,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 		item.CharmFileID = Strings::IsNumber(row[ItemField::charmfileid]) ? Strings::ToUnsignedInt(row[ItemField::charmfileid]) : 0;
 		strn0cpy(item.CharmFile, row[ItemField::charmfile], sizeof(item.CharmFile));
 		strn0cpy(item.Filename, row[ItemField::filename], sizeof(item.Filename));
-		item.ScriptFileID = Strings::ToUnsignedInt(row[ItemField::scriptfileid]);		
+		item.ScriptFileID = Strings::ToUnsignedInt(row[ItemField::scriptfileid]);
 
 		if (RuleB(Custom, UseDynamicItemDiscoveryTags)) {
 			snprintf(item.CharmFile, sizeof(item.CharmFile), "%d#%s", item.ID, row[ItemField::charmfile]);
@@ -1612,14 +1679,34 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 				strn0cpy(item.Name, modifiedName, sizeof(item.Name));
 			}
 
-			// Bard Instrument that isn't a weapon which fits in primary/secondary
-			if ((item.Slots & (8192 | 16384)) && (item.Classes & GetPlayerClassBit(Class::Bard)) && (item.Damage <= 0)) {
-				item.Slots |= 2048;
+			if (item.Click.Effect == 524 && item.CastTime == 0 && item.CastTime_ == 0 && item.RecastDelay == 0) {
+				item.RecastDelay = 5;
+				item.RecastType = -1;
+			}
+
+			if (item.ID > 2000000 && item.NoRent) {
+				item.Attuneable = 0;
+			}
+
+			if (item.ID % 1000000 == 5798  || // Hammer of Souls
+			    item.ID % 1000000 == 5800  || // Hammer of Judgment
+				item.ID % 1000000 == 6307  || // Hammer of Wrath
+				item.ID % 1000000 == 6309  || // Hammer of Striking
+				item.ID % 1000000 == 6313  || // Hammer of Requital
+				item.ID % 1000000 == 15996 || // Hammer of Divinity
+				item.ID % 1000000 == 29365) { // Hammer of Damnation
+				item.NoDrop = !item.NoDrop;
+				item.Attuneable = 0;
 			}
 		}
 
+		// Bard Instrument that isn't a weapon which fits in primary/secondary
+		if ((item.Slots & (8192 | 16384)) && (item.Classes & GetPlayerClassBit(Class::Bard)) && (item.Damage <= 0) && (item.BardValue > 0)) {
+			item.Slots |= 2048;
+		}
+
 		if (RuleB(Custom, PowerSourceItemUpgrade)) {
-			if (item.Slots > 0 && item.Classes > 0) {
+			if (item.Slots > 0 && item.Classes > 0 && item.ID < 2000000) {
 				item.Slots |= 2097152;
 			}
 		}
@@ -1641,7 +1728,7 @@ EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
 
 	if (!items_hash || id > items_hash->max_key()) {
 		return nullptr;
-	}	
+	}
 
 	if (items_hash->exists(id)) {
 		return &(items_hash->at(id));
@@ -1685,7 +1772,7 @@ std::string SharedDatabase::GetBook(const char *txtfile, int16 *language)
 	}
 
     if (results.RowCount() == 0) {
-        LogError("No book to send, ({})", txtfile);
+        LogErrorDetail("No book to send, ({})", txtfile);
         txtout.assign(" ",1);
         return txtout;
     }
@@ -1736,7 +1823,7 @@ EQ::ItemInstance* SharedDatabase::CreateItem(
 		inst->SetOrnamentIcon(ornamenticon);
 		inst->SetOrnamentationIDFile(ornamentidfile);
 		inst->SetOrnamentHeroModel(ornament_hero_model);
-		RunGenerateCallback(inst);
+		//RunGenerateCallback(inst);
 	}
 
 	return inst;
@@ -1780,7 +1867,7 @@ EQ::ItemInstance* SharedDatabase::CreateItem(
 		inst->SetOrnamentIcon(ornamenticon);
 		inst->SetOrnamentationIDFile(ornamentidfile);
 		inst->SetOrnamentHeroModel(ornament_hero_model);
-		RunGenerateCallback(inst);
+		//RunGenerateCallback(inst);
 	}
 
 	return inst;
@@ -2168,6 +2255,14 @@ void SharedDatabase::LoadSpells(void *data, int max_spells) {
 		sp[tempid].min_range = Strings::ToFloat(row[231]);
 		sp[tempid].no_remove = Strings::ToBool(row[232]);
 		sp[tempid].damage_shield_type = 0;
+
+		if (RuleB(Custom, UseTHJItemMutations) && !sp[tempid].is_discipline) {
+			sp[tempid].timer_id = -1;
+
+			if (sp[tempid].target_type == ST_GroupClientAndPet) {
+				sp[tempid].target_type = ST_Target;
+			}
+		}
 	}
 
 	LoadDamageShieldTypes(sp, max_spells);

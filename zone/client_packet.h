@@ -74,6 +74,7 @@
 	void Handle_OP_ClientError(const EQApplicationPacket *app);
 	void Handle_OP_ClientTimeStamp(const EQApplicationPacket *app);
 	void Handle_OP_ClientUpdate(const EQApplicationPacket *app);
+	void Handle_OP_CAuth(const EQApplicationPacket *app);
 //	void Handle_OP_CloseContainer(const EQApplicationPacket *app);
 	void Handle_OP_CombatAbility(const EQApplicationPacket *app);
 	void Handle_OP_ConfirmDelete(const EQApplicationPacket *app);
@@ -338,5 +339,3 @@
 
 	void Handle_OP_ShopSendParcel(const EQApplicationPacket *app);
 	void Handle_OP_ShopRetrieveParcel(const EQApplicationPacket *app);
-
-	void Handle_OP_Checksum(const EQApplicationPacket *app);

@@ -163,7 +163,7 @@ public:
 
 	void LevelScale();
 
-	virtual void SetTarget(Mob* mob);
+	virtual void SetTarget(Mob* mob, bool skip_lock_despawn = false);
 	virtual uint16 GetSkill(EQ::skills::SkillType skill_num) const { if (skill_num <= EQ::skills::HIGHEST_SKILL) { return skills[skill_num]; } return 0; }
 
 	virtual void CalcBonuses();
@@ -199,6 +199,17 @@ public:
 	// loot
 	void AddItem(const EQ::ItemData *item, uint16 charges, bool equip_item = true);
 	void AddItem(
+		uint32 item_id,
+		uint16 charges,
+		bool equip_item = true,
+		uint32 augment_one = 0,
+		uint32 augment_two = 0,
+		uint32 augment_three = 0,
+		uint32 augment_four = 0,
+		uint32 augment_five = 0,
+		uint32 augment_six = 0
+	);
+	void AddItemFixed(
 		uint32 item_id,
 		uint16 charges,
 		bool equip_item = true,
@@ -268,6 +279,7 @@ public:
 	inline void	MerchantOpenShop() { merchant_open = true; }
 	inline void	MerchantCloseShop() { merchant_open = false; }
 	inline bool	IsMerchantOpen() { return merchant_open; }
+	inline uint8 GetGreedPercent() { return NPCTypedata->greed; }
 	inline bool GetParcelMerchant() { return NPCTypedata->is_parcel_merchant; }
 	void	Depop(bool start_spawn_timer = false);
 	void	Stun(int duration);
@@ -278,6 +290,8 @@ public:
 	void	DepopSwarmPets();
 	void	TryDepopTargetLockedPets(Mob* current_target);
 	void	PetOnSpawn(NewSpawn_Struct* ns);
+
+	void    NamePetOnSpellID(uint16 spell_id, const char* static_name = nullptr);
 
 	void	SignalNPC(int _signal_id);
 	void	SendPayload(int payload_id, std::string payload_value = std::string());
@@ -312,7 +326,7 @@ public:
 	float GetSlowMitigation() const { return slow_mitigation; }
 	float	GetAttackSpeed() const {return attack_speed;}
 	int		GetAttackDelay() const {return attack_delay;}
-	bool	IsAnimal() const { return(bodytype == BT_Animal); }
+	bool	IsAnimal() const { return(bodytype == BodyType::Animal); }
 	uint16	GetPetSpellID() const {return pet_spell_id;}
 	void	SetPetSpellID(uint16 amt) {pet_spell_id = amt;}
 	uint32	GetMaxDamage(uint8 tlevel);
@@ -322,7 +336,7 @@ public:
 	void	Disarm(Client* client, int chance);
 	void	StartSwarmTimer(uint32 duration) { swarm_timer.Start(duration); }
 	void	DisableSwarmTimer() { swarm_timer.Disable(); }
-	
+
 	uint32 DoUpgradeLoot(uint32 itemID);
 
 	void AddLootDrop(

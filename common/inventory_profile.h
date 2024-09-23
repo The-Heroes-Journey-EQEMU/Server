@@ -132,7 +132,7 @@ namespace EQ
 
 		// Swap items in inventory
 		enum SwapItemFailState : int8 { swapInvalid = -1, swapPass = 0, swapNotAllowed, swapNullData, swapRaceClass, swapDeity, swapLevel };
-		bool SwapItem(int16 source_slot, int16 destination_slot, SwapItemFailState& fail_state, uint16 race_id = Race::Doug, uint8 class_id = Class::None, uint16 deity_id = deity::DeityType::DeityUnknown, uint8 level = 0, int classes_bits = 0);
+		bool SwapItem(int16 source_slot, int16 destination_slot, SwapItemFailState& fail_state, uint16 race_id = Race::Doug, uint8 class_id = Class::None, uint32 deity_id = Deity::Unknown, uint8 level = 0, int classes_bits = 0);
 
 		// Remove item from inventory
 		bool DeleteItem(int16 slot_id, int16 quantity = 0);
@@ -167,6 +167,7 @@ namespace EQ
 		// Check whether item exists in inventory
 		// where argument specifies OR'd list of invWhere constants to look
 		int16 HasItem(uint32 item_id, uint8 quantity = 0, uint8 where = 0xFF);
+		int16 HasItemFuzzy(uint32 item_id, uint8 quantity = 0, uint8 where = 0xFF);
 
 		// Check whether item exists in inventory
 		// where argument specifies OR'd list of invWhere constants to look
@@ -179,6 +180,8 @@ namespace EQ
 		// Locate an available inventory slot
 		int16 FindFreeSlot(bool for_bag, bool try_cursor, uint8 min_size = 0, bool is_arrow = false);
 		int16 FindFreeSlotForTradeItem(const ItemInstance* inst, int16 general_start = invslot::GENERAL_BEGIN, uint8 bag_start = invbag::SLOT_BEGIN);
+		std::vector<int16> FindAllFreeSlotsThatFitItem(const EQ::ItemData *inst);
+		int16 FindFirstFreeSlotThatFitsItem(const EQ::ItemData *inst);
 
 		// Calculate slot_id for an item within a bag
 		static int16 CalcSlotId(int16 slot_id); // Calc parent bag's slot_id
@@ -230,6 +233,8 @@ namespace EQ
 		// Checks an inventory bucket for a particular item
 		int16 _HasItem(std::map<int16, ItemInstance*>& bucket, uint32 item_id, uint8 quantity);
 		int16 _HasItem(ItemInstQueue& iqueue, uint32 item_id, uint8 quantity);
+		int16 _HasItemFuzzy(std::map<int16, ItemInstance*>& bucket, uint32 item_id, uint8 quantity);
+		int16 _HasItemFuzzy(ItemInstQueue& iqueue, uint32 item_id, uint8 quantity);
 		int16 _HasItemByUse(std::map<int16, ItemInstance*>& bucket, uint8 use, uint8 quantity);
 		int16 _HasItemByUse(ItemInstQueue& iqueue, uint8 use, uint8 quantity);
 		int16 _HasItemByLoreGroup(std::map<int16, ItemInstance*>& bucket, uint32 loregroup);

@@ -276,7 +276,7 @@ bool EQ::InventoryProfile::SwapItem(
 	SwapItemFailState &fail_state,
 	uint16 race_id,
 	uint8 class_id,
-	uint16 deity_id,
+	uint32 deity_id,
 	uint8 level,
 	int classes_bits
 ) {
@@ -351,13 +351,12 @@ bool EQ::InventoryProfile::SwapItem(
 				fail_state = swapNullData;
 				return false;
 			}
-						
+
 			if (race_id && class_id && !source_item->IsEquipable(race_id, classes_bits)) {
 				fail_state = swapRaceClass;
 				return false;
-			}   
-			
-			if (deity_id && source_item->Deity && !(deity::GetDeityBitmask((deity::DeityType)deity_id) & source_item->Deity)) {
+			}
+			if (deity_id && source_item->Deity && !(Deity::GetBitmask(deity_id) & source_item->Deity)) {
 				fail_state = swapDeity;
 				return false;
 			}
@@ -383,7 +382,7 @@ bool EQ::InventoryProfile::SwapItem(
 				fail_state = swapRaceClass;
 				return false;
 			}
-			if (deity_id && destination_item->Deity && !(deity::GetDeityBitmask((deity::DeityType)deity_id) & destination_item->Deity)) {
+			if (deity_id && destination_item->Deity && !(Deity::GetBitmask(deity_id) & destination_item->Deity)) {
 				fail_state = swapDeity;
 				return false;
 			}
@@ -674,7 +673,7 @@ bool EQ::InventoryProfile::IsClickEffectEquipped(uint32 spellid) {
 		eff = item->GetItem()->Click;
 		if (eff.Effect == spellid) {
 			return true;
-		}			
+		}
 		for (uint8 augment_slot = invaug::SOCKET_BEGIN; augment_slot <= invaug::SOCKET_END; ++augment_slot) {
 			augment = item->GetAugment(augment_slot);
 			if (!augment) { continue; }
@@ -682,7 +681,7 @@ bool EQ::InventoryProfile::IsClickEffectEquipped(uint32 spellid) {
 			if (eff.Effect == spellid) {
 				return true;
 			}
-		}			
+		}
 	}
 	return false;
 }
@@ -731,6 +730,55 @@ int16 EQ::InventoryProfile::HasItem(uint32 item_id, uint8 quantity, uint8 where)
 	if (where & invWhereCursor) {
 		// Check cursor queue
 		slot_id = _HasItem(m_cursor, item_id, quantity);
+		if (slot_id != INVALID_INDEX)
+			return slot_id;
+	}
+
+	return slot_id;
+}
+
+int16 EQ::InventoryProfile::HasItemFuzzy(uint32 item_id, uint8 quantity, uint8 where)
+{
+	int16 slot_id = INVALID_INDEX;
+
+	//Altered by Father Nitwit to support a specification of
+	//where to search, with a default value to maintain compatibility
+
+	// Check each inventory bucket
+	if (where & invWhereWorn) {
+		slot_id = _HasItemFuzzy(m_worn, item_id, quantity);
+		if (slot_id != INVALID_INDEX)
+			return slot_id;
+	}
+
+	if (where & invWherePersonal) {
+		slot_id = _HasItemFuzzy(m_inv, item_id, quantity);
+		if (slot_id != INVALID_INDEX)
+			return slot_id;
+	}
+
+	if (where & invWhereBank) {
+		slot_id = _HasItemFuzzy(m_bank, item_id, quantity);
+		if (slot_id != INVALID_INDEX)
+			return slot_id;
+	}
+
+	if (where & invWhereSharedBank) {
+		slot_id = _HasItemFuzzy(m_shbank, item_id, quantity);
+		if (slot_id != INVALID_INDEX)
+			return slot_id;
+	}
+
+	if (where & invWhereTrading) {
+		slot_id = _HasItemFuzzy(m_trade, item_id, quantity);
+		if (slot_id != INVALID_INDEX)
+			return slot_id;
+	}
+
+	// Behavioral change - Limbo is no longer checked due to improper handling of return value
+	if (where & invWhereCursor) {
+		// Check cursor queue
+		slot_id = _HasItemFuzzy(m_cursor, item_id, quantity);
 		if (slot_id != INVALID_INDEX)
 			return slot_id;
 	}
@@ -1508,6 +1556,56 @@ int16 EQ::InventoryProfile::_HasItem(std::map<int16, ItemInstance*>& bucket, uin
 		auto inst = iter->second;
 		if (inst == nullptr) { continue; }
 
+		if (inst->GetID() == item_id) {
+			quantity_found += (inst->GetCharges() <= 0) ? 1 : inst->GetCharges();
+			if (quantity_found >= quantity)
+				return iter->first;
+		}
+
+		for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
+			if (inst->GetAugmentItemID(index) == item_id && quantity <= 1)
+				return invslot::SLOT_AUGMENT_GENERIC_RETURN;
+		}
+
+		if (!inst->IsClassBag()) { continue; }
+
+		for (auto bag_iter = inst->_cbegin(); bag_iter != inst->_cend(); ++bag_iter) {
+			auto bag_inst = bag_iter->second;
+			if (bag_inst == nullptr) { continue; }
+
+			if (bag_inst->GetID() == item_id) {
+				quantity_found += (bag_inst->GetCharges() <= 0) ? 1 : bag_inst->GetCharges();
+				if (quantity_found >= quantity)
+					return InventoryProfile::CalcSlotId(iter->first, bag_iter->first);
+			}
+
+			for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
+				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1)
+					return invslot::SLOT_AUGMENT_GENERIC_RETURN;
+			}
+		}
+	}
+
+	return INVALID_INDEX;
+}
+
+int16 EQ::InventoryProfile::_HasItemFuzzy(std::map<int16, ItemInstance*>& bucket, uint32 item_id, uint8 quantity)
+{
+	uint32 quantity_found = 0;
+
+	for (auto iter = bucket.begin(); iter != bucket.end(); ++iter) {
+		if (iter->first <= EQ::invslot::POSSESSIONS_END && iter->first >= EQ::invslot::POSSESSIONS_BEGIN) {
+			if ((((uint64)1 << iter->first) & m_lookup->PossessionsBitmask) == 0)
+				continue;
+		}
+		else if (iter->first <= EQ::invslot::BANK_END && iter->first >= EQ::invslot::BANK_BEGIN) {
+			if (iter->first - EQ::invslot::BANK_BEGIN >= m_lookup->InventoryTypeSize.Bank)
+				continue;
+		}
+
+		auto inst = iter->second;
+		if (inst == nullptr) { continue; }
+
 		if (inst->GetID() % 1000000 == item_id % 1000000) {
 			quantity_found += (inst->GetCharges() <= 0) ? 1 : inst->GetCharges();
 			if (quantity_found >= quantity)
@@ -1581,6 +1679,56 @@ int16 EQ::InventoryProfile::_HasItem(ItemInstQueue& iqueue, uint32 item_id, uint
 
 			for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
 				if (bag_inst->GetAugmentItemID(index) == item_id && quantity <= 1)
+					return invslot::SLOT_AUGMENT_GENERIC_RETURN;
+			}
+		}
+
+		// We only check the visible cursor due to lack of queue processing ability (client allows duplicate in limbo)
+		break;
+	}
+
+	return INVALID_INDEX;
+}
+
+int16 EQ::InventoryProfile::_HasItemFuzzy(ItemInstQueue& iqueue, uint32 item_id, uint8 quantity)
+{
+	// The downfall of this (these) queue procedure is that callers presume that when an item is
+	// found, it is presented as being available on the cursor. In cases of a parity check, this
+	// is sufficient. However, in cases where referential criteria is considered, this can lead
+	// to unintended results. Funtionality should be observed when referencing the return value
+	// of this query
+
+	uint32 quantity_found = 0;
+
+	for (auto iter = iqueue.cbegin(); iter != iqueue.cend(); ++iter) {
+		auto inst = *iter;
+		if (inst == nullptr) { continue; }
+
+		if (inst->GetID() % 1000000 == item_id % 1000000) {
+			quantity_found += (inst->GetCharges() <= 0) ? 1 : inst->GetCharges();
+			if (quantity_found >= quantity)
+				return invslot::slotCursor;
+		}
+
+		for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
+			if (inst->GetAugmentItemID(index) % 1000000 == item_id % 1000000 && quantity <= 1)
+				return invslot::SLOT_AUGMENT_GENERIC_RETURN;
+		}
+
+		if (!inst->IsClassBag()) { continue; }
+
+		for (auto bag_iter = inst->_cbegin(); bag_iter != inst->_cend(); ++bag_iter) {
+			auto bag_inst = bag_iter->second;
+			if (bag_inst == nullptr) { continue; }
+
+			if (bag_inst->GetID() % 1000000 == item_id % 1000000) {
+				quantity_found += (bag_inst->GetCharges() <= 0) ? 1 : bag_inst->GetCharges();
+				if (quantity_found >= quantity)
+					return InventoryProfile::CalcSlotId(invslot::slotCursor, bag_iter->first);
+			}
+
+			for (int index = invaug::SOCKET_BEGIN; index <= invaug::SOCKET_END; ++index) {
+				if (bag_inst->GetAugmentItemID(index) % 1000000 == item_id % 1000000 && quantity <= 1)
 					return invslot::SLOT_AUGMENT_GENERIC_RETURN;
 			}
 		}
@@ -1771,4 +1919,69 @@ std::vector<uint32> EQ::InventoryProfile::GetAugmentIDsBySlotID(int16 slot_id)
 	}
 
 	return augments;
+}
+
+std::vector<int16> EQ::InventoryProfile::FindAllFreeSlotsThatFitItem(const EQ::ItemData *item_data)
+{
+	std::vector<int16> free_slots{};
+	for (int16         i = EQ::invslot::GENERAL_BEGIN; i <= EQ::invslot::GENERAL_END; i++) {
+		if ((((uint64) 1 << i) & GetLookup()->PossessionsBitmask) == 0) {
+			continue;
+		}
+
+		EQ::ItemInstance *inv_item = GetItem(i);
+
+		if (!inv_item) {
+			// Found available slot in personal inventory
+			free_slots.push_back(i);
+		}
+
+		if (inv_item->IsClassBag() &&
+			EQ::InventoryProfile::CanItemFitInContainer(item_data, inv_item->GetItem())) {
+
+			int16 base_slot_id = EQ::InventoryProfile::CalcSlotId(i, EQ::invbag::SLOT_BEGIN);
+			uint8 bag_size     = inv_item->GetItem()->BagSlots;
+
+			for (uint8 bag_slot = EQ::invbag::SLOT_BEGIN; bag_slot < bag_size; bag_slot++) {
+				auto bag_item = GetItem(base_slot_id + bag_slot);
+				if (!bag_item) {
+					// Found available slot within bag
+					free_slots.push_back(i);
+				}
+			}
+		}
+	}
+	return free_slots;
+}
+
+int16 EQ::InventoryProfile::FindFirstFreeSlotThatFitsItem(const EQ::ItemData *item_data)
+{
+	for (int16         i = EQ::invslot::GENERAL_BEGIN; i <= EQ::invslot::GENERAL_END; i++) {
+		if ((((uint64) 1 << i) & GetLookup()->PossessionsBitmask) == 0) {
+			continue;
+		}
+
+		EQ::ItemInstance *inv_item = GetItem(i);
+
+		if (!inv_item) {
+			// Found available slot in personal inventory
+			return i;
+		}
+
+		if (inv_item->IsClassBag() &&
+			EQ::InventoryProfile::CanItemFitInContainer(item_data, inv_item->GetItem())) {
+
+			int16 base_slot_id = EQ::InventoryProfile::CalcSlotId(i, EQ::invbag::SLOT_BEGIN);
+			uint8 bag_size     = inv_item->GetItem()->BagSlots;
+
+			for (uint8 bag_slot = EQ::invbag::SLOT_BEGIN; bag_slot < bag_size; bag_slot++) {
+				auto bag_item = GetItem(base_slot_id + bag_slot);
+				if (!bag_item) {
+					// Found available slot within bag
+					return base_slot_id + bag_slot;
+				}
+			}
+		}
+	}
+	return 0;
 }

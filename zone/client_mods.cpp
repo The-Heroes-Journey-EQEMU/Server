@@ -289,7 +289,7 @@ int64 Client::CalcHPRegen(bool bCombat)
 
 	if (!bCombat && CanFastRegen() && (IsSitting() || CanMedOnHorse())) {
 		auto max_hp = GetMaxHP();
-		int64 fast_regen = 6 * (max_hp / (zone ? zone->newzone_data.fast_regen_hp : 180));
+		int64 fast_regen = 6 * (max_hp / (zone && zone->newzone_data.fast_regen_hp > 0 ? zone->newzone_data.fast_regen_hp : 180));
 		if (base < fast_regen) // weird, but what the client is doing
 			base = fast_regen;
 	}
@@ -322,7 +322,7 @@ int64 Client::CalcMaxHP()
 	//but the actual effect sent on live causes the client
 	//to apply it to (basehp + itemhp).. I will oblige to the client's whims over
 	//the aa description
-	
+
 	nd += aabonuses.PercentMaxHPChange + spellbonuses.PercentMaxHPChange + itembonuses.PercentMaxHPChange;	//Natural Durability, Physical Enhancement, Planar Durability
 	max_hp = (float)max_hp * (float)nd / (float)10000; //this is to fix the HP-above-495k issue
 	max_hp += spellbonuses.FlatMaxHPChange + aabonuses.FlatMaxHPChange + itembonuses.FlatMaxHPChange;
@@ -574,22 +574,19 @@ int64 Client::CalcMaxMana()
 		}
 	}
 
-	LogSpells("for [{}] returning [{}]", GetName(), max_mana);
+	LogSpellsDetail("for [{}] returning [{}]", GetName(), max_mana);
 	return max_mana;
 }
 
-int64 Client::CalcBaseMana() {    
+int64 Client::CalcBaseMana() {
 	int classes_bits = GetClassesBits();
 	int64 highest_base_mana = 0;
 
-	for (const auto& class_bitmask : player_class_bitmasks) {
-		uint8 class_id = class_bitmask.first;
-		uint16 class_bit = class_bitmask.second;
-		if ((classes_bits & class_bit) != 0) {
-			LogSpells("Checking Class ID [{}], bit [{}]", class_id, class_bit);
-			int64 class_base_mana = _CalcBaseMana(class_id);
-			if (class_base_mana > highest_base_mana) {
-				highest_base_mana = class_base_mana; 
+	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
+		if (HasClass(i)) {
+			int64 test = _CalcBaseMana(i);
+			if (test > highest_base_mana) {
+				highest_base_mana = test;
 			}
 		}
 	}
@@ -644,7 +641,7 @@ int64 Client::_CalcBaseMana(uint8 class_id)
 			max_m = (((5 * (MindFactor + 200)) / 2) * 3 * GetLevel() / 100);
 		}
 	}
-	
+
 	return max_m;
 }
 
@@ -1009,7 +1006,7 @@ int Client::CalcHaste()
 	else {   // 1-50
 		h += spellbonuses.hastetype3 > 10 ? 10 : spellbonuses.hastetype3;
 	}
-	h += ExtraHaste;	//GM granted haste.
+	h += extra_haste;	//GM granted haste.
 	Haste = 100 + h;
 	return Haste;
 }
@@ -1079,7 +1076,7 @@ int32	Client::CalcMR()
 			MR = 20;
 	}
 	MR += itembonuses.MR + spellbonuses.MR + aabonuses.MR;
-	if (GetClassesBits() & (GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Berserker))) {
+	if (HasClass(Class::Warrior) || HasClass(Class::Berserker)) {
 		MR += GetLevel() / 2;
 	}
 	if (MR < 1) {
@@ -1632,7 +1629,7 @@ void Client::CalcMaxEndurance()
 int64 Client::CalcBaseEndurance() {
     if (RuleB(Custom, MulticlassingEnabled)) {
         int classes_bits = GetClassesBits();
-        int64 highest_base_endur = 0; 
+        int64 highest_base_endur = 0;
 
         for (const auto& class_bitmask : player_class_bitmasks) {
             uint8 class_id = class_bitmask.first;
@@ -1640,12 +1637,12 @@ int64 Client::CalcBaseEndurance() {
             if ((classes_bits & class_bit) != 0) {
                 int64 class_base_endur = _CalcBaseEndurance(class_id);
                 if (class_base_endur > highest_base_endur) {
-                    highest_base_endur = class_base_endur; 
+                    highest_base_endur = class_base_endur;
                 }
             }
         }
 
-        return highest_base_endur > 0 ? highest_base_endur : 5; 
+        return highest_base_endur > 0 ? highest_base_endur : 5;
     } else {
         return _CalcBaseEndurance(GetClass());
     }
@@ -1713,7 +1710,7 @@ int64 Client::CalcEnduranceRegen(bool bCombat)
 
 	int weight_limit = GetSTR();
 	auto level = GetLevel();
-	if (GetClass() == Class::Monk && !RuleB(Custom, MulticlassingEnabled)) {
+	if (HasClass(Class::Monk) && !RuleB(Custom, MulticlassingEnabled)) {
 		if (level > 99)
 			weight_limit = 58;
 		else if (level > 94)

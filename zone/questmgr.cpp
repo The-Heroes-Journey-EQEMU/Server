@@ -180,7 +180,12 @@ void QuestManager::ClearAllTimers() {
 //quest perl functions
 void QuestManager::echo(int colour, const char *str) {
 	QuestManagerCurrentQuestVars();
-	entity_list.MessageClose(initiator, false, 200, colour, str);
+
+	if (!owner) {
+		return;
+	}
+
+	entity_list.MessageClose(owner, false, 200, colour, str);
 }
 
 void QuestManager::say(const char *str, Journal::Options &opts) {
@@ -199,9 +204,12 @@ void QuestManager::say(const char *str, Journal::Options &opts) {
 
 void QuestManager::me(const char *str) {
 	QuestManagerCurrentQuestVars();
-	if (!initiator)
+
+	if (!owner) {
 		return;
-	entity_list.MessageClose(initiator, false, 200, 10, str);
+	}
+
+	entity_list.MessageClose(owner, false, 200, 10, str);
 }
 
 void QuestManager::summonitem(uint32 itemid, int16 charges) {
@@ -1379,7 +1387,7 @@ void QuestManager::sfollow() {
 	owner->SetFollowID(0);
 }
 
-void QuestManager::changedeity(int deity_id) {
+void QuestManager::changedeity(uint32 deity_id) {
 	QuestManagerCurrentQuestVars();
 	//Changes the deity.
 	if(initiator)
@@ -1394,7 +1402,7 @@ void QuestManager::changedeity(int deity_id) {
 void QuestManager::exp(int amt) {
 	QuestManagerCurrentQuestVars();
 	if (initiator)
-		initiator->AddEXP(amt);
+		initiator->AddEXP(ExpSource::Quest, amt);
 }
 
 void QuestManager::level(int newlevel) {
@@ -1491,8 +1499,8 @@ std::string QuestManager::getlanguagename(uint8 language_id) {
 	return EQ::constants::GetLanguageName(language_id);
 }
 
-std::string QuestManager::getbodytypename(uint32 bodytype_id) {
-	return EQ::constants::GetBodyTypeName(static_cast<bodyType>(bodytype_id));
+std::string QuestManager::getbodytypename(uint8 body_type_id) {
+	return BodyType::GetName(body_type_id);
 }
 
 std::string QuestManager::getconsiderlevelname(uint8 consider_level) {
@@ -2961,50 +2969,50 @@ bool QuestManager::createBot(const char *name, const char *lastname, uint8 level
 
 		auto spawned_bot_count = Bot::SpawnedBotCount(initiator->CharacterID());
 
-		if (
-			bot_spawn_limit >= 0 &&
-			spawned_bot_count >= bot_spawn_limit &&
-			!initiator->GetGM()
-		) {
-			std::string message;
-			if (bot_spawn_limit) {
-				message = fmt::format(
-					"You cannot have more than {} spawned bot{}.",
-					bot_spawn_limit,
-					bot_spawn_limit != 1 ? "s" : ""
-				);
-			} else {
-				message = "You are not currently allowed to spawn any bots.";
-			}
+		if (bot_spawn_limit >= 0 && spawned_bot_count >= bot_spawn_limit) {
+			if (!initiator->GetGM()) {
+				std::string message;
+				if (bot_spawn_limit) {
+					message = fmt::format(
+						"You cannot have more than {} spawned bot{}.",
+						bot_spawn_limit,
+						bot_spawn_limit != 1 ? "s" : ""
+					);
+				} else {
+					message = "You are not currently allowed to spawn any bots.";
+				}
 
-			initiator->Message(Chat::White, message.c_str());
-			return false;
+				initiator->Message(Chat::White, message.c_str());
+				return false;
+			} else {
+				initiator->Message(Chat::White, "Your GM flag allows you to bypass bot spawn limits.");
+			}
 		}
 
 		auto spawned_bot_count_class = Bot::SpawnedBotCount(initiator->CharacterID(), botclass);
 
-		if (
-			bot_spawn_limit_class >= 0 &&
-			spawned_bot_count_class >= bot_spawn_limit_class &&
-			!initiator->GetGM()
-		) {
-			std::string message;
-			if (bot_spawn_limit_class) {
-				message = fmt::format(
-					"You cannot have more than {} spawned {} bot{}.",
-					bot_spawn_limit_class,
-					GetClassIDName(botclass),
-					bot_spawn_limit_class != 1 ? "s" : ""
-				);
-			} else {
-				message = fmt::format(
-					"You are not currently allowed to spawn any {} bots.",
-					GetClassIDName(botclass)
-				);
-			}
+		if (bot_spawn_limit_class >= 0 && spawned_bot_count_class >= bot_spawn_limit_class) {
+			if (!initiator->GetGM()) {
+				std::string message;
+				if (bot_spawn_limit_class) {
+					message = fmt::format(
+						"You cannot have more than {} spawned {} bot{}.",
+						bot_spawn_limit_class,
+						GetClassIDName(botclass),
+						bot_spawn_limit_class != 1 ? "s" : ""
+					);
+				} else {
+					message = fmt::format(
+						"You are not currently allowed to spawn any {} bots.",
+						GetClassIDName(botclass)
+					);
+				}
 
-			initiator->Message(Chat::White, message.c_str());
-			return false;
+				initiator->Message(Chat::White, message.c_str());
+				return false;
+			} else {
+				initiator->Message(Chat::White, "Your GM flag allows you to bypass bot class-based spawn limits.");
+			}
 		}
 
 		std::string test_name = name;
@@ -3243,13 +3251,26 @@ int QuestManager::activespeakactivity(int taskid) {
 	return 0;
 }
 
-int QuestManager::istaskcompleted(int taskid) {
+bool QuestManager::istaskcompleted(int task_id)
+{
 	QuestManagerCurrentQuestVars();
 
-	if(RuleB(TaskSystem, EnableTaskSystem) && initiator)
-		return initiator->IsTaskCompleted(taskid);
+	if (initiator && RuleB(TaskSystem, EnableTaskSystem)) {
+		return initiator->IsTaskCompleted(task_id);
+	}
 
-	return -1;
+	return false;
+}
+
+bool QuestManager::aretaskscompleted(const std::vector<int>& task_ids)
+{
+	QuestManagerCurrentQuestVars();
+
+	if (initiator && RuleB(TaskSystem, EnableTaskSystem)) {
+		return initiator->AreTasksCompleted(task_ids);
+	}
+
+	return false;
 }
 
 int QuestManager::activetasksinset(int taskset) {
@@ -3572,6 +3593,21 @@ uint32 QuestManager::MerchantCountItem(uint32 NPCid, uint32 itemid) {
 	}
 
 	return Quant;	// return the quantity of itemid (0 if it was never found)
+}
+
+std::string QuestManager::varlink(EQ::ItemInstance* inst)
+{
+	QuestManagerCurrentQuestVars();
+
+	if (!inst) {
+		return "INVALID ITEM INSTANCE IN VARLINK";
+	}
+
+	EQ::SayLinkEngine linker;
+	linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+	linker.SetItemInst(inst);
+
+	return linker.GenerateLink();
 }
 
 // Item Link for use in Variables - "my $example_link = quest::varlink(item_id);"
@@ -4358,7 +4394,7 @@ std::string QuestManager::getgendername(uint32 gender_id) {
 }
 
 std::string QuestManager::getdeityname(uint32 deity_id) {
-	return EQ::deity::GetDeityName(static_cast<EQ::deity::DeityType>(deity_id));
+	return Deity::GetName(deity_id);
 }
 
 std::string QuestManager::getinventoryslotname(int16 slot_id) {

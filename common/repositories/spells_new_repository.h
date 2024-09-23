@@ -44,7 +44,48 @@ public:
      */
 
 	// Custom extended repository methods here
+	static std::vector<std::string> GetSpellFileLines(Database& db)
+	{
+		std::vector<std::string> lines;
 
+		auto results = db.QueryDatabase(
+			fmt::format(
+				"SELECT CONCAT_WS('^', {}) FROM {} ORDER BY {} ASC",
+				ColumnsRaw(),
+				TableName(),
+				PrimaryKey()
+			)
+		);
+
+		for (auto row : results) {
+			std::string line = row[0];
+			std::stringstream ss(line);
+			std::string item;
+			std::vector<std::string> columns;
+
+			while (std::getline(ss, item, '^')) {
+				columns.push_back(item);
+			}
+
+
+			if (columns[98] == "14" || columns[98] == "38") {
+				columns[98] = "6";
+			}
+
+			// Reconstruct the line
+			std::string modified_line;
+			for (size_t i = 0; i < columns.size(); ++i) {
+				if (i > 0) {
+					modified_line += '^';
+				}
+				modified_line += columns[i];
+			}
+
+			lines.emplace_back(modified_line);
+		}
+
+		return lines;
+	}
 };
 
 #endif //EQEMU_SPELLS_NEW_REPOSITORY_H

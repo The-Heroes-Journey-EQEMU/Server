@@ -117,7 +117,7 @@ void Client::CalcBonuses()
 
 	// hmm maybe a better way to do this
 	int metabolism = spellbonuses.Metabolism + itembonuses.Metabolism + aabonuses.Metabolism;
-	int timer = (GetClassesBits() & GetPlayerClassBit(Class::Monk)) ? CONSUMPTION_MNK_TIMER : CONSUMPTION_TIMER;
+	int timer = (HasClass(Class::Monk)) ? CONSUMPTION_MNK_TIMER : CONSUMPTION_TIMER;
 	timer = timer * (100 + metabolism) / 100;
 	if (timer != consume_food_timer.GetTimerTime())
 		consume_food_timer.SetTimer(timer);
@@ -144,7 +144,6 @@ void Mob::CalcItemBonuses(StatBonuses* b) {
 	SetDualWeaponsEquipped(false);
 
 	int16 i;
-
 	for (i = EQ::invslot::BONUS_BEGIN; i <= EQ::invslot::BONUS_SKILL_END; i++) {
 		const auto* inst = GetInv().GetItem(i);
 
@@ -182,14 +181,20 @@ void Mob::CalcItemBonuses(StatBonuses* b) {
 		SetDualWeaponsEquipped(true);
 	}
 
-	if (IsOfClientBot()) {
-		for (i = EQ::invslot::TRIBUTE_BEGIN; i <= EQ::invslot::TRIBUTE_END; i++) {
-			const EQ::ItemInstance* inst = m_inv[i];
-			if (!inst) {
-				continue;
-			}
+	if (IsClient()) {
+		if (CastToClient()->GetPP().tribute_active) {
+			for (auto const &t: CastToClient()->GetPP().tributes) {
+				auto item_id = CastToClient()->LookupTributeItemID(t.tribute, t.tier);
+				if (item_id) {
+					const EQ::ItemInstance *inst = database.CreateItem(item_id);
+					if (!inst) {
+						continue;
+					}
 
-			AddItemBonuses(inst, b, false, true);
+					AddItemBonuses(inst, b, false, true);
+					safe_delete(inst);
+				}
+			}
 		}
 	}
 
@@ -840,6 +845,24 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		limit_value = e.limit_value;
 		slot = e.slot;
 
+		// THJ Custom Bullshit - Mutate Fist of Steel
+		if (RuleB(Custom, MulticlassingEnabled) && (rank.id == 12706 || rank.id == 12707)) {
+			if ((e.effect_id == SE_LimitToSkill && e.base_value == 0) || (e.effect_id == SE_SkillDamageAmount && e.limit_value == 0) ) {
+				continue;
+			}
+
+			/* Version Cata Likes
+			// Remove the ability to proc off of anything but H2H
+			if ((e.effect_id == SE_LimitToSkill && e.base_value == EQ::skills::Skill1HBlunt) && e.effect_id == SE_SkillDamageAmount && e.limit_value == EQ::skills::Skill1HBlunt) {
+				continue;
+			}
+			// Hack the damage bonus to apply to all skills
+			if (e.effect_id == SE_SkillDamageAmount && e.limit_value == EQ::skills::SkillHandtoHand) {
+				limit_value = -1;
+			}
+			*/
+		}
+
 		// we default to 0 (SE_CurrentHP) for the effect, so if there aren't any base1/2 values, we'll just skip it
 		if (effect == 0 && base_value == 0 && limit_value == 0)
 			continue;
@@ -1362,7 +1385,11 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		}
 
 		case SE_CriticalSpellChance: {
-			newbon->CriticalSpellChance += base_value;
+			if (rank.base_ability->id == 210) { // Ingenuity
+				newbon->CriticalProcChance += base_value;
+			} else {
+				newbon->CriticalSpellChance += base_value;
+			}
 
 			if (limit_value > newbon->SpellCritDmgIncNoStack) //take the highest critdmg limit
 				newbon->SpellCritDmgIncNoStack = limit_value;
@@ -1380,6 +1407,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 		}
 
 		case SE_SkillDamageAmount: {
+			base_value = static_cast<int>(base_value * (GetLevel() / 70.0f));
 			// Bad data or unsupported new skill
 			if (limit_value > EQ::skills::HIGHEST_SKILL)
 				break;
@@ -1441,8 +1469,8 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 
 		case SE_SlayUndead: {
 			if (newbon->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] < base_value) {
-				newbon->SlayUndead[SBIndex::SLAYUNDEAD_RATE_MOD] = base_value; // Rate
-				newbon->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] = limit_value; // Damage Modifier
+				newbon->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] = base_value; // Rate
+				newbon->SlayUndead[SBIndex::SLAYUNDEAD_RATE_MOD] = limit_value; // Damage Modifier
 			}
 			break;
 		}
@@ -2081,7 +2109,7 @@ void Mob::CalcSpellBonuses(StatBonuses* newbon)
 	}
 
 	if (!RuleB(Custom, MulticlassingEnabled)) {
-		if (GetClass() == Class::Bard)
+		if (HasClass(Class::Bard))
 			newbon->ManaRegen = 0; // Bards do not get mana regen from spells.
 	}
 }
@@ -2238,7 +2266,7 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 			{
 				// These don't generate the IMMUNE_ATKSPEED message and the icon shows up
 				// but have no effect on the mobs attack speed
-				if (GetSpecialAbility(UNSLOWABLE))
+				if (GetSpecialAbility(SpecialAbility::SlowImmunity))
 					break;
 
 				if (effect_value < 0) //A few spells use negative values(Descriptions all indicate it should be a slow)
@@ -2250,6 +2278,12 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 						new_bonus->inhibitmelee = effect_value;
 				}
 
+				break;
+			}
+
+			case SE_IncreaseArchery:
+			{
+				new_bonus->increase_archery += effect_value;
 				break;
 			}
 
@@ -2450,6 +2484,10 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 			case SE_CastingLevel2:
 			{
 				new_bonus->effective_casting_level += effect_value;
+
+				if (RuleB(Spells, SnareOverridesSpeedBonuses) && effect_value < 0) {
+					new_bonus->movementspeed = effect_value;
+				}
 				break;
 			}
 
@@ -2804,6 +2842,25 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 					new_bonus->MinDamageModifier[skill] = effect_value;
 				else if (effect_value > 0 && new_bonus->MinDamageModifier[skill] < effect_value)
 					new_bonus->MinDamageModifier[skill] = effect_value;
+				break;
+			}
+
+			case SE_ReduceSkill: {
+				// Bad data or unsupported new skill
+				if (spells[spell_id].base_value[i] > EQ::skills::HIGHEST_SKILL) {
+					break;
+				}
+				//cap skill reducation at 100%
+				uint32 skill_reducation_percent = spells[spell_id].formula[i];
+				if (spells[spell_id].formula[i] > 100) {
+					skill_reducation_percent = 100;
+				}
+
+				if (spells[spell_id].base_value[i] <= EQ::skills::HIGHEST_SKILL) {
+					if (new_bonus->ReduceSkill[spells[spell_id].base_value[i]] < skill_reducation_percent) {
+						new_bonus->ReduceSkill[spells[spell_id].base_value[i]] = skill_reducation_percent;
+					}
+				}
 				break;
 			}
 
@@ -3369,6 +3426,10 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 				break;
 
 			case SE_Blind:
+				if (!RuleB(Combat, AllowRaidTargetBlind) && IsRaidTarget()) { // do not blind raid targets
+					break;
+				}
+
 				new_bonus->IsBlind = true;
 				break;
 
@@ -3594,8 +3655,8 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 
 			case SE_SlayUndead: {
 				if (new_bonus->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] < effect_value) {
-					new_bonus->SlayUndead[SBIndex::SLAYUNDEAD_RATE_MOD] = effect_value; // Rate
-					new_bonus->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] = limit_value; // Damage Modifier
+					new_bonus->SlayUndead[SBIndex::SLAYUNDEAD_RATE_MOD] = limit_value; // Rate
+					new_bonus->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] = effect_value; // Damage Modifier
 				}
 				break;
 			}
@@ -4166,7 +4227,7 @@ bool Client::CalcItemScale(uint32 slot_x, uint32 slot_y) {
 			continue;
 
 		// TEST CODE: test for bazaar trader crashing with charm items
-		if (Trader)
+		if (IsTrader())
 			if (i >= EQ::invbag::GENERAL_BAGS_BEGIN && i <= EQ::invbag::GENERAL_BAGS_END) {
 				EQ::ItemInstance* parent_item = m_inv.GetItem(EQ::InventoryProfile::CalcSlotId(i));
 				if (parent_item && parent_item->GetItem()->BagType == EQ::item::BagTypeTradersSatchel)
@@ -4258,7 +4319,7 @@ bool Client::DoItemEnterZone(uint32 slot_x, uint32 slot_y) {
 			continue;
 
 		// TEST CODE: test for bazaar trader crashing with charm items
-		if (Trader)
+		if (IsTrader())
 			if (i >= EQ::invbag::GENERAL_BAGS_BEGIN && i <= EQ::invbag::GENERAL_BAGS_END) {
 				EQ::ItemInstance* parent_item = m_inv.GetItem(EQ::InventoryProfile::CalcSlotId(i));
 				if (parent_item && parent_item->GetItem()->BagType == EQ::item::BagTypeTradersSatchel)
@@ -4550,6 +4611,12 @@ void Mob::NegateSpellEffectBonuses(uint16 spell_id)
 					if (negate_spellbonus) { spellbonuses.inhibitmelee = effect_value; }
 					if (negate_aabonus) { aabonuses.inhibitmelee = effect_value; }
 					if (negate_itembonus) { itembonuses.inhibitmelee = effect_value; }
+					break;
+
+				case SE_IncreaseArchery:
+					if (negate_spellbonus) { spellbonuses.increase_archery = effect_value; }
+					if (negate_aabonus) { aabonuses.increase_archery = effect_value; }
+					if (negate_itembonus) { itembonuses.increase_archery = effect_value; }
 					break;
 
 				case SE_TotalHP:

@@ -216,27 +216,27 @@ void Perl_Client_SetDeity(Client* self, uint32 deity_id) // @categories Account 
 
 void Perl_Client_AddEXP(Client* self, uint32 add_exp) // @categories Experience and Level
 {
-	self->AddEXP(add_exp);
+	self->AddEXP(ExpSource::Quest, add_exp);
 }
 
 void Perl_Client_AddEXP(Client* self, uint32 add_exp, uint8 conlevel) // @categories Experience and Level
 {
-	self->AddEXP(add_exp, conlevel);
+	self->AddEXP(ExpSource::Quest, add_exp, conlevel);
 }
 
 void Perl_Client_AddEXP(Client* self, uint32 add_exp, uint8 conlevel, bool resexp) // @categories Experience and Level
 {
-	self->AddEXP(add_exp, conlevel, resexp);
+	self->AddEXP(ExpSource::Quest, add_exp, conlevel, resexp);
 }
 
 void Perl_Client_SetEXP(Client* self, uint64 set_exp, uint64 set_aaxp) // @categories Experience and Level
 {
-	self->SetEXP(set_exp, set_aaxp);
+	self->SetEXP(ExpSource::Quest, set_exp, set_aaxp);
 }
 
 void Perl_Client_SetEXP(Client* self, uint64 set_exp, uint64 set_aaxp, bool resexp) // @categories Experience and Level
 {
-	self->SetEXP(set_exp, set_aaxp, resexp);
+	self->SetEXP(ExpSource::Quest, set_exp, set_aaxp, resexp);
 }
 
 void Perl_Client_SetBindPoint(Client* self) // @categories Account and Character, Stats and Attributes
@@ -1249,23 +1249,23 @@ void Perl_Client_AddPVPPoints(Client* self, uint32 points) // @categories Curren
 
 void Perl_Client_AddCrystals(Client* self, uint32 radiant_count, uint32 ebon_count) // @categories Currency and Points
 {
-	if (ebon_count != 0) {
-		if (ebon_count > 0) {
-			self->AddEbonCrystals(ebon_count);
-			return;
-		}
+    // Handling Ebon Crystals
+    if (ebon_count != 0) {
+        if (ebon_count > 0) {
+            self->AddEbonCrystals(ebon_count);
+        } else {
+            self->RemoveEbonCrystals(-ebon_count);  // Removing should use positive value
+        }
+    }
 
-		self->RemoveEbonCrystals(ebon_count);
-	}
-
-	if (radiant_count != 0) {
-		if (radiant_count > 0) {
-			self->AddRadiantCrystals(radiant_count);
-			return;
-		}
-
-		self->RemoveRadiantCrystals(radiant_count);
-	}
+    // Handling Radiant Crystals
+    if (radiant_count != 0) {
+        if (radiant_count > 0) {
+            self->AddRadiantCrystals(radiant_count);
+        } else {
+            self->RemoveRadiantCrystals(-radiant_count);  // Removing should use positive value
+        }
+    }
 }
 
 void Perl_Client_SetEbonCrystals(Client* self, uint32 value)
@@ -1370,22 +1370,27 @@ uint32_t Perl_Client_GetIP(Client* self) // @categories Script Utility
 
 void Perl_Client_AddLevelBasedExp(Client* self, uint8 exp_percentage) // @categories Experience and Level
 {
-	self->AddLevelBasedExp(exp_percentage);
+	self->AddLevelBasedExp(ExpSource::Quest, exp_percentage);
 }
 
 void Perl_Client_AddLevelBasedExp(Client* self, uint8 exp_percentage, uint8 max_level) // @categories Experience and Level
 {
-	self->AddLevelBasedExp(exp_percentage, max_level);
+	self->AddLevelBasedExp(ExpSource::Quest, exp_percentage, max_level);
 }
 
 void Perl_Client_AddLevelBasedExp(Client* self, uint8 exp_percentage, uint8 max_level, bool ignore_mods) // @categories Experience and Level
 {
-	self->AddLevelBasedExp(exp_percentage, max_level, ignore_mods);
+	self->AddLevelBasedExp(ExpSource::Quest, exp_percentage, max_level, ignore_mods);
 }
 
 void Perl_Client_IncrementAA(Client* self, uint32 aa_skill_id) // @categories Alternative Advancement
 {
 	self->IncrementAlternateAdvancementRank(aa_skill_id);
+}
+
+bool Perl_Client_ConsumeItemOnCursor(Client* self)
+{
+	return self->ConsumeItemOnCursor();
 }
 
 bool Perl_Client_GrantAlternateAdvancementAbility(Client* self, int aa_id, int points) // @categories Alternative Advancement
@@ -1566,6 +1571,11 @@ void Perl_Client_SetCustomItemData(Client* self, int16 slot_id, std::string iden
 std::string Perl_Client_GetCustomItemData(Client* self, int16 slot_id, std::string identifier) // @categories Inventory and Items, Corpse
 {
 	return self->GetInv().GetCustomItemData(slot_id, identifier);
+}
+
+void Perl_Client_ReloadDynamicItem(Client* self, int16 slot_id)
+{
+	self->ReloadDynamicItem(slot_id);
 }
 
 void Perl_Client_OpenLFGuildWindow(Client* self) // @categories Script Utility, Guild
@@ -2097,6 +2107,17 @@ bool Perl_Client_HasDisciplineLearned(Client* self, uint16 spell_id)
 	return self->HasDisciplineLearned(spell_id);
 }
 
+bool Perl_Client_HasClassID(Client* self, int class_id)
+{
+	return self->HasClass(class_id);
+}
+
+bool Perl_Client_HasClass(Client* self, std::string class_name)
+{
+	int class_id = GetPlayerClassIDByName(class_name);
+	return self->HasClass(class_id);
+}
+
 uint16_t Perl_Client_GetClassBitmask(Client* self)
 {
 	return GetPlayerClassBit(self->GetClass());
@@ -2107,14 +2128,14 @@ uint32_t Perl_Client_GetClassesBitmask(Client* self)
 	return self->GetClassesBits();
 }
 
-bool Perl_Client_AddExtraClass(Client* self, int class_id) 
+bool Perl_Client_AddExtraClass(Client* self, int class_id)
 {
 	return self->AddExtraClass(class_id);
 }
 
 uint32_t Perl_Client_GetDeityBitmask(Client* self)
 {
-	return static_cast<uint32_t>(EQ::deity::GetDeityBitmask(static_cast<EQ::deity::DeityType>(self->GetDeity())));
+	return Deity::GetBitmask(self->GetDeity());
 }
 
 uint16_t Perl_Client_GetRaceBitmask(Client* self) // @categories Stats and Attributes
@@ -3103,6 +3124,11 @@ bool Perl_Client_ReloadDataBuckets(Client* self)
 	return DataBucket::GetDataBuckets(self);
 }
 
+bool Perl_Client_IsTrader(Client* self)
+{
+	return self->IsTrader();
+}
+
 uint32 Perl_Client_GetEXPForLevel(Client* self, uint16 check_level)
 {
 	return self->GetEXPForLevel(check_level);
@@ -3268,12 +3294,48 @@ void Perl_Client_DescribeSpecialAbilities(Client* self, NPC* n)
 	n->DescribeSpecialAbilities(self);
 }
 
-bool Perl_Client_IsSeasonal(Client* self) {
-	return self->IsSeasonal();
+int Perl_Client_IsSeasonal(Client* self) {
+	return self->IsSeasonal() ? 1 : 0;
 }
 
-bool Perl_Client_IsHardcore(Client* self) {
-	return self->IsHardcore();
+int Perl_Client_IsHardcore(Client* self) {
+	return self->IsHardcore() ? 1 : 0;
+}
+
+void Perl_Client_ResetLeadershipAA(Client* self)
+{
+	self->ResetLeadershipAA();
+}
+
+uint8 Perl_Client_GetSkillTrainLevel(Client* self, int skill_id)
+{
+	return self->GetSkillTrainLevel(static_cast<EQ::skills::SkillType>(skill_id), self->GetClass());
+}
+
+bool Perl_Client_AreTasksCompleted(Client* self, perl::array task_ids)
+{
+	std::vector<int> v;
+
+	for (const auto& e : task_ids) {
+		v.push_back(static_cast<int>(e));
+	}
+
+	return self->AreTasksCompleted(v);
+}
+
+void Perl_Client_AreaTaunt(Client* self)
+{
+	entity_list.AETaunt(self);
+}
+
+void Perl_Client_AreaTaunt(Client* self, float range)
+{
+	entity_list.AETaunt(self, range);
+}
+
+void Perl_Client_AreaTaunt(Client* self, float range, int bonus_hate)
+{
+	entity_list.AETaunt(self, range, bonus_hate);
 }
 
 void perl_register_client()
@@ -3325,6 +3387,10 @@ void perl_register_client()
 	package.add("ApplySpellRaid", (void(*)(Client*, int, int, int, bool))&Perl_Client_ApplySpellRaid);
 	package.add("ApplySpellRaid", (void(*)(Client*, int, int, int, bool, bool))&Perl_Client_ApplySpellRaid);
 	package.add("ApplySpellRaid", (void(*)(Client*, int, int, int, bool, bool, bool))&Perl_Client_ApplySpellRaid);
+	package.add("AreTasksCompleted", (bool(*)(Client*, perl::array))&Perl_Client_AreTasksCompleted);
+	package.add("AreaTaunt", (void(*)(Client*))&Perl_Client_AreaTaunt);
+	package.add("AreaTaunt", (void(*)(Client*, float))&Perl_Client_AreaTaunt);
+	package.add("AreaTaunt", (void(*)(Client*, float, int))&Perl_Client_AreaTaunt);
 	package.add("AssignTask", (void(*)(Client*, int))&Perl_Client_AssignTask);
 	package.add("AssignTask", (void(*)(Client*, int, int))&Perl_Client_AssignTask);
 	package.add("AssignTask", (void(*)(Client*, int, int, bool))&Perl_Client_AssignTask);
@@ -3440,6 +3506,8 @@ void perl_register_client()
 	package.add("GetCharacterFactionLevel", &Perl_Client_GetCharacterFactionLevel);
 	package.add("GetClassAbbreviation", &Perl_Client_GetClassAbbreviation);
 	package.add("GetClassBitmask", &Perl_Client_GetClassBitmask);
+	package.add("HasClassID", (bool(*)(Client*, int))&Perl_Client_HasClassID);
+	package.add("HasClass", (bool(*)(Client*, std::string))&Perl_Client_HasClass);
 	package.add("GetClassesBitmask", &Perl_Client_GetClassesBitmask);
 	package.add("AddExtraClass", (bool(*)(Client*, int))&Perl_Client_AddExtraClass);
 	package.add("GetClientMaxLevel", &Perl_Client_GetClientMaxLevel);
@@ -3449,6 +3517,7 @@ void perl_register_client()
 	package.add("GetCorpseID", &Perl_Client_GetCorpseID);
 	package.add("GetCorpseItemAt", &Perl_Client_GetCorpseItemAt);
 	package.add("GetCustomItemData", &Perl_Client_GetCustomItemData);
+	package.add("ReloadDynamicItem", &Perl_Client_ReloadDynamicItem);
 	package.add("GetDeityBitmask", &Perl_Client_GetDeityBitmask);
 	package.add("GetDiscSlotBySpellID", &Perl_Client_GetDiscSlotBySpellID);
 	package.add("GetDisciplineTimer", &Perl_Client_GetDisciplineTimer);
@@ -3536,6 +3605,7 @@ void perl_register_client()
 	package.add("GetTaskActivityDoneCount", &Perl_Client_GetTaskActivityDoneCount);
 	package.add("GetThirst", &Perl_Client_GetThirst);
 	package.add("GetTotalSecondsPlayed", &Perl_Client_GetTotalSecondsPlayed);
+	package.add("GetSkillTrainLevel", &Perl_Client_GetSkillTrainLevel);
 	package.add("GetWeight", &Perl_Client_GetWeight);
 	package.add("GetPEQZoneFlags", &Perl_Client_GetPEQZoneFlags);
 	package.add("GetZoneFlags", &Perl_Client_GetZoneFlags);
@@ -3544,6 +3614,7 @@ void perl_register_client()
 	package.add("GrantAllAAPoints", (void(*)(Client*, uint8))&Perl_Client_GrantAllAAPoints);
 	package.add("GrantAlternateAdvancementAbility", (bool(*)(Client*, int, int))&Perl_Client_GrantAlternateAdvancementAbility);
 	package.add("GrantAlternateAdvancementAbility", (bool(*)(Client*, int, int, bool))&Perl_Client_GrantAlternateAdvancementAbility);
+	package.add("ConsumeItemOnCursor", (bool(*)(Client *))&Perl_Client_ConsumeItemOnCursor);
 	package.add("GuildID", &Perl_Client_GuildID);
 	package.add("GuildRank", &Perl_Client_GuildRank);
 	package.add("HasAugmentEquippedByID", &Perl_Client_HasAugmentEquippedByID);
@@ -3650,6 +3721,7 @@ void perl_register_client()
 	package.add("ReadBookByName", &Perl_Client_ReadBookByName);
 	package.add("RefundAA", &Perl_Client_RefundAA);
 	package.add("ReloadDataBuckets", &Perl_Client_ReloadDataBuckets);
+	package.add("IsTrader", &Perl_Client_IsTrader);
 	package.add("RemoveAAPoints", &Perl_Client_RemoveAAPoints);
 	package.add("RemoveAllExpeditionLockouts", (void(*)(Client*))&Perl_Client_RemoveAllExpeditionLockouts);
 	package.add("RemoveAllExpeditionLockouts", (void(*)(Client*, std::string))&Perl_Client_RemoveAllExpeditionLockouts);
@@ -3671,6 +3743,7 @@ void perl_register_client()
 	package.add("ResetCastbarCooldownBySpellID", &Perl_Client_ResetCastbarCooldownBySpellID);
 	package.add("ResetDisciplineTimer", &Perl_Client_ResetDisciplineTimer);
 	package.add("ResetItemCooldown", &Perl_Client_ResetItemCooldown);
+	package.add("ResetLeadershipAA", &Perl_Client_ResetLeadershipAA);
 	package.add("ResetTrade", &Perl_Client_ResetTrade);
 	package.add("Save", &Perl_Client_Save);
 	package.add("ScribeSpell", (void(*)(Client*, uint16, int))&Perl_Client_ScribeSpell);
@@ -3811,7 +3884,7 @@ void perl_register_client()
 	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32))&Perl_Client_SummonFixedItem);
 	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32))&Perl_Client_SummonFixedItem);
 	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32))&Perl_Client_SummonFixedItem);
-	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32, uint16))&Perl_Client_SummonFixedItem);	
+	package.add("SummonFixedItem", (void(*)(Client*, uint32, int16, bool, uint32, uint32, uint32, uint32, uint32, uint16))&Perl_Client_SummonFixedItem);
 	package.add("ReturnItem", (void(*)(Client*, uint32))&Perl_Client_ReturnItem);
 	package.add("ReturnItem", (void(*)(Client*, uint32, int16))&Perl_Client_ReturnItem);
 	package.add("ReturnItem", (void(*)(Client*, uint32, int16, bool))&Perl_Client_ReturnItem);
@@ -3867,8 +3940,8 @@ void perl_register_client()
 	package.add("UseDiscipline", &Perl_Client_UseDiscipline);
 	package.add("UseAugmentContainer", &Perl_Client_UseAugmentContainer);
 	package.add("WorldKick", &Perl_Client_WorldKick);
-	package.add("IsSeasonal", (void(*)(Client*))&Perl_Client_IsSeasonal);
-	package.add("IsHardcore", (void(*)(Client*))&Perl_Client_IsHardcore);
+	package.add("IsSeasonal", (int(*)(Client*))&Perl_Client_IsSeasonal);
+	package.add("IsHardcore", (int(*)(Client*))&Perl_Client_IsHardcore);
 }
 
 #endif //EMBPERL_XS_CLASSES

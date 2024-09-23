@@ -370,8 +370,6 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 	}
 
 	if (container->GetItem() && container->GetItem()->BagType == EQ::item::BagTypeDetransformationmold) {
-		LogTradeskillsDetail("Check 1");
-
 		const EQ::ItemInstance* inst = container->GetItem(0);
 		if (inst && inst->GetOrnamentationIcon()) {
 			const EQ::ItemData* new_weapon = inst->GetItem();
@@ -389,6 +387,22 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 		return;
 	}
 
+	if (container->GetItem() && container->GetItem()->BagType == EQ::item::BagTypeUnattuner) {
+		EQ::ItemInstance* inst = container->GetItem(0);
+		if (inst && inst->IsAttuned()) {
+			inst->SetAttuned(false);
+			user->PushItemOnCursor(*inst, true);
+
+			container->Clear();
+			user->DeleteItemInInventory(in_combine->container_slot, 0, true);
+
+			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+			user->QueuePacket(outapp);
+			safe_delete(outapp);
+			return;
+		}
+	}
+
 	DBTradeskillRecipe_Struct spec;
 	bool is_augmented = false;
 
@@ -402,9 +416,6 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 	}
 
 	if (!content_db.GetTradeRecipe(container, c_type, some_id, user, &spec, &is_augmented)) {
-
-		LogTradeskillsDetail("Check 2");
-
 		if (!is_augmented) {
 			user->MessageString(Chat::Emote, TRADESKILL_NOCOMBINE);
 		} else {
@@ -424,9 +435,6 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 	// bit 5 (0x10): no learn message, use unlisted flag to prevent it showing up on search
 	// bit 6 (0x20): unlisted recipe flag
 	if ((spec.must_learn & 0xF) == 1 && !spec.has_learnt) {
-
-		LogTradeskillsDetail("Check 3");
-
 		// Made up message for the client. Just giving a DNC is the other option.
 		user->Message(Chat::LightBlue, "You need to learn how to combine these first.");
 		auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
@@ -436,9 +444,6 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 	}
 	// Character does not have the required skill.
 	if(spec.skill_needed > 0 && user->GetSkill(spec.tradeskill) < spec.skill_needed ) {
-
-		LogTradeskillsDetail("Check 4");
-
 		// Notify client.
 		user->Message(Chat::LightBlue, "You are not skilled enough.");
 		auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
@@ -449,7 +454,7 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 
 	//changing from a switch to string of if's since we don't need to iterate through all of the skills in the SkillType enum
 	if (spec.tradeskill == EQ::skills::SkillAlchemy) {
-		if (user_pp.class_ != Class::Shaman) {
+		if (!user->HasClass(Class::Shaman)) {
 			user->Message(Chat::Red, "This tradeskill can only be performed by a shaman.");
 			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
 			user->QueuePacket(outapp);
@@ -465,7 +470,7 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 		}
 	}
 	else if (spec.tradeskill == EQ::skills::SkillTinkering) {
-		if (user_pp.race != GNOME) {
+		if (user_pp.race != GNOME && !RuleB(Custom, MulticlassingEnabled)) {
 			user->Message(Chat::Red, "Only gnomes can tinker.");
 			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
 			user->QueuePacket(outapp);
@@ -474,7 +479,7 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 		}
 	}
 	else if (spec.tradeskill == EQ::skills::SkillMakePoison) {
-		if (user_pp.class_ != Class::Rogue) {
+		if (!user->HasClass(Class::Rogue)) {
 			user->Message(Chat::Red, "Only rogues can mix poisons.");
 			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
 			user->QueuePacket(outapp);
@@ -623,6 +628,42 @@ void Object::HandleAutoCombine(Client* user, const RecipeAutoCombine_Struct* rac
 		user->QueuePacket(outapp);
 		safe_delete(outapp);
 		return;
+	}
+
+	//changing from a switch to string of if's since we don't need to iterate through all of the skills in the SkillType enum
+	if (spec.tradeskill == EQ::skills::SkillAlchemy) {
+		if (!user->HasClass(Class::Shaman)) {
+			user->Message(Chat::Red, "This tradeskill can only be performed by a shaman.");
+			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+			user->QueuePacket(outapp);
+			safe_delete(outapp);
+			return;
+		}
+		else if (user->GetLevel() < MIN_LEVEL_ALCHEMY) {
+			user->Message(Chat::Red, "You cannot perform alchemy until you reach level %i.", MIN_LEVEL_ALCHEMY);
+			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+			user->QueuePacket(outapp);
+			safe_delete(outapp);
+			return;
+		}
+	}
+	else if (spec.tradeskill == EQ::skills::SkillTinkering) {
+		if (user->GetRace() != GNOME && !RuleB(Custom, MulticlassingEnabled)) {
+			user->Message(Chat::Red, "Only gnomes can tinker.");
+			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+			user->QueuePacket(outapp);
+			safe_delete(outapp);
+			return;
+		}
+	}
+	else if (spec.tradeskill == EQ::skills::SkillMakePoison) {
+		if (!user->HasClass(Class::Rogue)) {
+			user->Message(Chat::Red, "Only rogues can mix poisons.");
+			auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+			user->QueuePacket(outapp);
+			safe_delete(outapp);
+			return;
+		}
 	}
 
     //pull the list of components
@@ -978,6 +1019,8 @@ bool Client::TradeskillExecute(DBTradeskillRecipe_Struct *spec) {
 	// Success modifiers based on recipes
 	// Skillup modifiers based on the rarity of the ingredients
 
+
+
 	// Some tradeskills are more eqal then others. ;-)
 	// If you want to customize the stage1 success rate do it here.
 	// Remember: skillup_modifier is (float). Lower is better
@@ -1087,7 +1130,17 @@ bool Client::TradeskillExecute(DBTradeskillRecipe_Struct *spec) {
 
 	const EQ::ItemData* item = nullptr;
 
-	if (((spec->tradeskill==75) || GetGM() || (chance > res)) || zone->random.Roll(aa_chance)) {
+	if (
+		(
+			spec->tradeskill == EQ::skills::SkillRemoveTraps ||
+			GetGM() ||
+			(chance > res)
+		) ||
+		zone->random.Roll(aa_chance)
+	) {
+		if (GetGM()) {
+			Message(Chat::White, "Your GM flag gives you a 100% chance to succeed in combining this tradeskill.");
+		}
 
 		success_modifier = 1;
 
@@ -1100,7 +1153,7 @@ bool Client::TradeskillExecute(DBTradeskillRecipe_Struct *spec) {
 		LogTradeskills("Tradeskill success");
 
 		itr = spec->onsuccess.begin();
-		
+
 		while(itr != spec->onsuccess.end() && !spec->quest) {
 
 			auto item_id = GetMaxItemUpgrade(itr->first);

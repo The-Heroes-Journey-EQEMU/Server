@@ -41,8 +41,6 @@
 
 char* strn0cpy(char* dest, const char* source, uint32 size);
 
-#define MAX_SPECIAL_ATTACK_PARAMS 9
-
 class Client;
 class EQApplicationPacket;
 class Group;
@@ -102,22 +100,22 @@ public:
 						CLIENT_KICKED, DISCONNECTED, CLIENT_ERROR, CLIENT_CONNECTINGALL };
 	enum eStandingPetOrder { SPO_Follow, SPO_Sit, SPO_Guard, SPO_FeignDeath };
 
-	struct SpecialAbility {
-		SpecialAbility() {
+	struct MobSpecialAbility {
+		MobSpecialAbility() {
 			level = 0;
 			timer = nullptr;
-			for(int i = 0; i < MAX_SPECIAL_ATTACK_PARAMS; ++i) {
+			for (int i = 0; i < SpecialAbility::MaxParameters; ++i) {
 				params[i] = 0;
 			}
 		}
 
-		~SpecialAbility() {
+		~MobSpecialAbility() {
 			safe_delete(timer);
 		}
 
 		int level;
 		Timer *timer;
-		int params[MAX_SPECIAL_ATTACK_PARAMS];
+		int params[SpecialAbility::MaxParameters];
 	};
 
 	struct AuraInfo {
@@ -145,7 +143,7 @@ public:
 		uint8 in_gender,
 		uint16 in_race,
 		uint8 in_class,
-		bodyType in_bodytype,
+		uint8 in_bodytype,
 		uint8 in_deity,
 		uint8 in_level,
 		uint32 in_npctype_id,
@@ -275,6 +273,8 @@ public:
 		return;
 	}
 
+	Mob* GetMeleeImpliedTarget(Mob* original_target);
+
 	bool HasAnInvisibilityEffect();
 	void BreakCharmPetIfConditionsMet();
 	//Invisible
@@ -307,7 +307,7 @@ public:
 	uint8 invisible, nobuff_invisible, invisible_undead, invisible_animals;
 	uint8 see_invis, innate_see_invis, see_invis_undead; //TODO: do we need a see_invis_animal ?
 
-	bool sneaking, hidden, improved_hidden;
+	bool sneaking, hidden, improved_hidden, fake_hidden;
 	bool see_hide, see_improved_hide;
 
 	/**
@@ -510,8 +510,6 @@ public:
 	void ApplySpellBuff(int spell_id, int duration = 0, int level_override = -1);
 	int GetBuffStatValueBySpell(int32 spell_id, const char* stat_identifier);
 	int GetBuffStatValueBySlot(uint8 slot, const char* stat_identifier);
-	
-	void ClearRestingDetrimentalEffects();
 
 	uint32 GetApocItemUpgrade(uint32 item_id);
 	uint32 GetMaxItemUpgrade(uint32 item_id);
@@ -558,7 +556,7 @@ public:
 	virtual inline uint8 GetBaseGender() const { return base_gender; }
 	virtual uint16 GetFactionRace();
 	virtual inline uint16 GetDeity() const { return deity; }
-	virtual EQ::deity::DeityTypeBit GetDeityBit() { return EQ::deity::GetDeityBitmask((EQ::deity::DeityType)deity); }
+	virtual uint32 GetDeityBit() { return Deity::GetBitmask(deity); }
 	inline uint16 GetRace() const { return race; }
 	inline uint16 GetModel() const { return (use_model == 0) ? race : use_model; }
 	inline uint8 GetGender() const { return gender; }
@@ -686,6 +684,7 @@ public:
 	inline const float GetRelativeHeading() const { return m_RelativePosition.w; }
 	inline const float GetSize() const { return size; }
 	inline const float GetBaseSize() const { return base_size; }
+	inline const float SetBestZ(float z_coord) const { return z_coord + GetZOffset(); }
 	inline const GravityBehavior GetFlyMode() const { return flymode; }
 	bool IsBoat() const; // Checks races - used on mob instantiation
 	bool GetIsBoat() const { return is_boat; } // Set on instantiation for speed
@@ -702,6 +701,8 @@ public:
 	virtual bool IsSitting() const { return false; }
 
 	void CopyHateList(Mob* to);
+
+	void GetRandPetName(char *name);
 
 	//Group
 	virtual bool HasRaid() = 0;
@@ -725,6 +726,7 @@ public:
 	float GetMovespeed() const { return IsRunning() ? GetRunspeed() : GetWalkspeed(); }
 	bool IsRunning() const { return m_is_running; }
 	void SetRunning(bool val) { m_is_running = val; }
+	float GetCurrentSpeed() { return current_speed; }
 	virtual void GMMove(float x, float y, float z, float heading = 0.01, bool save_guard_spot = true);
 	virtual void GMMove(const glm::vec4 &position, bool save_guard_spot = true);
 	void SetDelta(const glm::vec4& delta);
@@ -849,6 +851,7 @@ public:
 	bool IsIntelligenceCasterClass(uint8 class_id = 0) const;
 	bool IsPureMeleeClass(uint8 class_id = 0) const;
 	bool IsWisdomCasterClass(uint8 class_id = 0) const;
+	bool IsAnyCasterClass(uint8 class_id = 0) const;
 	uint8 GetArchetype() const;
 	const std::string GetArchetypeName();
 	void SetZone(uint32 zone_id, uint32 instance_id);
@@ -1027,15 +1030,15 @@ public:
 	int16 GetModVulnerability(const uint8 resist);
 
 	void SetAllowBeneficial(bool value) { m_AllowBeneficial = value; }
-	bool GetAllowBeneficial() { if (m_AllowBeneficial || GetSpecialAbility(ALLOW_BENEFICIAL)){return true;} return false; }
+	bool GetAllowBeneficial() { if (m_AllowBeneficial || GetSpecialAbility(SpecialAbility::AllowBeneficial)){return true;} return false; }
 	void SetDisableMelee(bool value) { m_DisableMelee = value; }
-	bool IsMeleeDisabled() { if (m_DisableMelee || GetSpecialAbility(DISABLE_MELEE)){return true;} return false; }
+	bool IsMeleeDisabled() { if (m_DisableMelee || GetSpecialAbility(SpecialAbility::DisableMelee)){return true;} return false; }
 
 	bool IsOffHandAtk() const { return offhand; }
 	inline void OffHandAtk(bool val) { offhand = val; }
 
-	void SetFlurryChance(uint8 value) { SetSpecialAbilityParam(SPECATK_FLURRY, 0, value); }
-	uint8 GetFlurryChance() { return GetSpecialAbilityParam(SPECATK_FLURRY, 0); }
+	void SetFlurryChance(uint8 value) { SetSpecialAbilityParam(SpecialAbility::Flurry, 0, value); }
+	uint8 GetFlurryChance() { return GetSpecialAbilityParam(SpecialAbility::Flurry, 0); }
 
 	static uint32 GetAppearanceValue(EmuAppearance in_appearance);
 	void SendAppearancePacket(uint32 type, uint32 value, bool whole_zone = true, bool ignore_self = false, Client* target = nullptr);
@@ -1061,13 +1064,26 @@ public:
 
 	EQ::LightSourceProfile* GetLightProfile() { return &m_Light; }
 
-	Mob* GetPet();
-	void SetPet(Mob* newpet);
+    uint16 GetPetID(uint8 idx = 0) const;            // Get the ID of the pet at the given index (default is index 0)
+    Mob* GetPet(uint8 idx = 0);                      // Get the Mob instance of the pet at the given index (default is index 0)
+	std::vector<Mob*> GetAllPets();  			 // Returns a vector of all Mob* pets associated with this Mob
+	bool RemovePetByIndex(uint8 idx = 0);            // Remove the pet at the given index (default is index 0)
+    bool RemovePet(Mob* pet);                        // Remove the pet corresponding to the given Mob pointer
+    bool RemovePet(uint16 pet_id);                   // Remove the pet corresponding to the given pet ID
+    void RemoveAllPets();                            // Remove all pets associated with this Mob
+    bool HasPet(uint8 idx = 0) const;                // Check if there is a valid pet at the given index (default is index 0)
+    bool AddPet(Mob* newpet);                        // Add a new pet to the pet list by Mob object
+    bool AddPet(uint16 pet_id);                      // Add a new pet to the pet list by pet ID
+    bool SetPet(Mob* newpet, uint8 idx = 0);         // Set a pet into the given index location using a Mob object (default is index 0)
+    bool SetPet(uint16 pet_id, uint8 idx = 0);       // Set a pet into the given index location using a pet ID (default is index 0)
+	void ValidatePetList();
+	Mob* GetPetByID(uint16 id);
+	void ConfigurePetWindow(Mob* focused_pet);
+	bool IsPetAllowed(uint16 spell_id);
+
 	virtual Mob* GetOwner();
 	virtual Mob* GetOwnerOrSelf();
 	Mob* GetUltimateOwner();
-	void SetPetID(uint16 NewPetID);
-	inline uint16 GetPetID() const { return petid; }
 	inline PetType GetPetType() const { return type_of_pet; }
 	void SetPetType(PetType p) { type_of_pet = p; }
 	inline int16 GetPetPower() const { return (petpower < 0) ? 0 : petpower; }
@@ -1082,7 +1098,7 @@ public:
 	inline uint16 GetOwnerID() const { return ownerid; }
 	inline virtual bool HasOwner() { if (!GetOwnerID()){ return false; } return entity_list.GetMob(GetOwnerID()) != 0; }
 	inline virtual bool IsPet() { return HasOwner() && !IsMerc(); }
-	bool HasPet() const;
+	virtual bool IsCharmedPet() { return IsPet() && IsCharmed(); }
 	inline bool HasTempPetsActive() const { return(hasTempPet); }
 	inline void SetTempPetsActive(bool i) { hasTempPet = i; }
 	inline int16 GetTempPetCount() const { return count_TempPet; }
@@ -1101,9 +1117,9 @@ public:
 	int GetPetACBonusFromOwner();
 	int GetPetATKBonusFromOwner();
 
-	inline const bodyType GetBodyType() const { return bodytype; }
-	inline const bodyType GetOrigBodyType() const { return orig_bodytype; }
-	void SetBodyType(bodyType new_body, bool overwrite_orig);
+	inline const uint8 GetBodyType() const { return bodytype; }
+	inline const uint8 GetOrigBodyType() const { return orig_bodytype; }
+	void SetBodyType(uint8 new_body, bool overwrite_orig);
 
 	bool invulnerable;
 	bool qglobal;
@@ -1111,12 +1127,15 @@ public:
 	virtual void SetAttackTimer();
 	inline void SetInvul(bool invul) { invulnerable=invul; }
 	inline bool GetInvul(void) { return invulnerable; }
-	inline void SetExtraHaste(int Haste) { ExtraHaste = Haste; }
+	void SetExtraHaste(int haste, bool need_to_save = true);
+	inline int GetExtraHaste() { return extra_haste; }
 	virtual int GetHaste();
 	int32 GetMeleeMitigation();
 
 	uint8 GetWeaponDamageBonus(const EQ::ItemData* weapon, bool offhand = false);
 	const DamageTable &GetDamageTable() const;
+	int GetMobFixedOffenseSkill();
+	int GetMobFixedWeaponSkill();
 	void ApplyDamageTable(DamageHitInfo &hit);
 	virtual int GetHandToHandDamage(void);
 
@@ -1216,14 +1235,20 @@ public:
 	int GetFearSpeed() { return _GetFearSpeed(); }
 	bool IsFeared() { return (spellbonuses.IsFeared || flee_mode); } // This returns true if the mob is feared or fleeing due to low HP
 	inline void StartFleeing() { flee_mode = true; CalculateNewFearpoint(); }
+	void StopFleeing();
+	inline bool IsFleeing() { return flee_mode; }
 	void ProcessFlee();
 	void CheckFlee();
+	void FleeInfo(Mob* client);
+	int GetFleeRatio(Mob* other = nullptr);
 	inline bool IsBlind() { return spellbonuses.IsBlind; }
 
 	inline bool			CheckAggro(Mob* other) {return hate_list.IsEntOnHateList(other);}
 	float				CalculateHeadingToTarget(float in_x, float in_y) { return HeadingAngleToMob(in_x, in_y); }
 	virtual void		WalkTo(float x, float y, float z);
 	virtual void		RunTo(float x, float y, float z);
+	virtual void		WalkToPrecise(float x, float y, float z);
+	virtual void		RunToPrecise(float x, float y, float z);
 	void				NavigateTo(float x, float y, float z);
 	void				RotateTo(float new_heading);
 	void				RotateToWalking(float new_heading);
@@ -1310,6 +1335,7 @@ public:
 	Trade* trade;
 
 	uint32 GetClassesBits() const;
+	bool HasClass(uint8 player_class, uint32 bitmask = 0) const;
 
 	bool ShieldAbility(uint32 target_id, int shielder_max_distance = 15, int shield_duration = 12000, int shield_target_mitigation = 50, int shielder_mitigation = 75, bool use_aa = false, bool can_shield_npc = true);
 	void DoShieldDamageOnShielder(Mob *shield_target, int64 hit_damage_done, EQ::skills::SkillType skillInUse);
@@ -1478,6 +1504,8 @@ public:
 
 	DataBucketKey GetScopedBucketKeys();
 
+	bool IsCloseToBanker();
+
 protected:
 	void CommonDamage(Mob* other, int64 &damage, const uint16 spell_id, const EQ::skills::SkillType attack_skill, bool &avoidable, const int8 buffslot, const bool iBuffTic, eSpecialAttacks specal = eSpecialAttacks::None);
 	static uint16 GetProcID(uint16 spell_id, uint8 effect_index);
@@ -1552,9 +1580,10 @@ protected:
 	StatBonuses itembonuses;
 	StatBonuses spellbonuses;
 	StatBonuses aabonuses;
-	uint16 petid;
+	std::vector<uint16> petids;
+	uint16 focused_pet_id;
 	uint16 ownerid;
-	PetType type_of_pet;
+	PetType type_of_pet; // This refers to what type of pet 'this' is
 	int16 petpower;
 	uint32 follow_id;
 	uint32 follow_dist;
@@ -1577,8 +1606,8 @@ protected:
 	uint8 base_gender;
 	uint16 base_race;
 	uint8 class_;
-	bodyType bodytype;
-	bodyType orig_bodytype;
+	uint8 bodytype;
+	uint8 orig_bodytype;
 	uint16 deity;
 	uint8 level;
 	uint8 orig_level;
@@ -1731,7 +1760,7 @@ protected:
 
 	uint8 aa_title;
 
-	int ExtraHaste; // for the #haste command
+	int extra_haste; // for the #haste command
 	bool mezzed;
 	bool stunned;
 	bool charmed; //this isnt fully implemented yet
@@ -1770,7 +1799,6 @@ public:
 
 	void SetSpawnedInWater(bool spawned_in_water);
 	bool turning;
-
 protected:
 
 	// Bind wound
@@ -1872,11 +1900,13 @@ protected:
 	void InsertQuestGlobal(int charid, int npcid, int zoneid, const char *name, const char *value, int expdate);
 	uint32 emoteid;
 
-	SpecialAbility SpecialAbilities[MAX_SPECIAL_ATTACK];
+	MobSpecialAbility SpecialAbilities[SpecialAbility::Max];
 	bool bEnraged;
 	bool destructibleobject;
 
 	std::unordered_map<uint32, std::pair<uint32, uint32>> aa_ranks;
+	std::unordered_set<uint16> suspendable_aa;
+
 	Timer aa_timers[aaTimerMax];
 
 	bool is_horse;

@@ -197,33 +197,30 @@ uint32 Mob::GetEquipmentMaterial(uint8 material_slot) const
 		const auto is_equipped_weapon = EQ::ValueWithin(material_slot, EQ::textures::weaponPrimary, EQ::textures::weaponSecondary);
 
 		if (is_equipped_weapon) {
-			if (IsClient()) {
-				const auto inventory_slot = EQ::InventoryProfile::CalcSlotFromMaterial(material_slot);
-				if (inventory_slot == INVALID_INDEX) {
-					return 0;
-				}
+			const auto inventory_slot = EQ::InventoryProfile::CalcSlotFromMaterial(material_slot);
+			if (inventory_slot == INVALID_INDEX) {
+				return 0;
+			}
+			const auto inst = IsClient() ? CastToClient()->m_inv[inventory_slot] : m_inv[inventory_slot];
 
-				const auto inst = CastToClient()->m_inv[inventory_slot];
-
-				if (inst) {
-					auto augment = inst->GetOrnamentationAugment();
-
-					if (augment) {
-						item = augment->GetItem();
-						if (item && strlen(item->IDFile) > 2 && Strings::IsNumber(&item->IDFile[2])) {
-							equipment_material = Strings::ToUnsignedInt(&item->IDFile[2]);
-						}
-					} else if (inst->GetOrnamentationIDFile()) {
-						equipment_material = inst->GetOrnamentationIDFile();
+			if (inst) {
+				const auto augment = inst->GetOrnamentationAugment();
+				if (augment) {
+					item = augment->GetItem();
+					if (item && strlen(item->IDFile) > 2 && Strings::IsNumber(&item->IDFile[2])) {
+						equipment_material = Strings::ToUnsignedInt(&item->IDFile[2]);
 					}
+				} else if (inst->GetOrnamentationIDFile()) {
+					equipment_material = inst->GetOrnamentationIDFile();
 				}
 			}
 
 			if (!equipment_material && strlen(item->IDFile) > 2 && Strings::IsNumber(&item->IDFile[2])) {
 				equipment_material = Strings::ToUnsignedInt(&item->IDFile[2]);
 			}
+
 		} else {
-			equipment_material = item->Material;
+			equipment_material = (IsClient() && HasClass(Class::Monk) && item->Material == 1) ? 4 : item->Material;
 		}
 	}
 
@@ -281,7 +278,8 @@ uint32 Mob::GetHerosForgeModel(uint8 material_slot) const
 			if (IsClient()) {
 				const auto inst = CastToClient()->m_inv[slot];
 				if (inst) {
-					auto augment = inst->GetOrnamentationAugment();
+					const auto augment = inst->GetOrnamentationAugment();
+
 					if (augment) {
 						item              = augment->GetItem();
 						heros_forge_model = item->HerosForgeModel;

@@ -58,10 +58,10 @@ Merc::Merc(const NPCType* d, float x, float y, float z, float heading)
 	memset(equipment, 0, sizeof(equipment));
 
 	SetMercID(0);
-	SetStance(EQ::constants::stanceBalanced);
+	SetStance(Stance::Balanced);
 	rest_timer.Disable();
 
-	if (GetClass() == Class::Rogue)
+	if (HasClass(Class::Rogue))
 		evade_timer.Start();
 
 	int r;
@@ -1076,7 +1076,7 @@ void Merc::AI_Process() {
 
 		float meleeDistance = GetMaxMeleeRangeToTarget(GetTarget());
 
-		if(GetClass() == Class::ShadowKnight || GetClass() == Class::Paladin || GetClass() == Class::Warrior) {
+		if(HasClass(Class::ShadowKnight) || HasClass(Class::Paladin) || HasClass(Class::Warrior)) {
 			meleeDistance = meleeDistance * .30;
 		}
 		else {
@@ -1104,7 +1104,7 @@ void Merc::AI_Process() {
 
 			if(AI_movement_timer->Check()) {
 				if (!IsMoving()) {
-					if (GetClass() == Class::Rogue) {
+					if (HasClass(Class::Rogue)) {
 						if (HasTargetReflection() && !GetTarget()->IsFeared() && !GetTarget()->IsStunned()) {
 							// Hate redux actions
 							if (evade_timer.Check(false)) {
@@ -1191,13 +1191,13 @@ void Merc::AI_Process() {
 							Attack(GetTarget(), EQ::invslot::slotPrimary, true);
 						}
 
-						if(GetOwner() && GetTarget() && GetSpecialAbility(SPECATK_TRIPLE)) {
+						if(GetOwner() && GetTarget() && GetSpecialAbility(SpecialAbility::TripleAttack)) {
 							tripleSuccess = true;
 							Attack(GetTarget(), EQ::invslot::slotPrimary, true);
 						}
 
 						//quad attack, does this belong here??
-						if(GetOwner() && GetTarget() && GetSpecialAbility(SPECATK_QUAD)) {
+						if(GetOwner() && GetTarget() && GetSpecialAbility(SpecialAbility::QuadrupleAttack)) {
 							Attack(GetTarget(), EQ::invslot::slotPrimary, true);
 						}
 					}
@@ -1226,7 +1226,7 @@ void Merc::AI_Process() {
 				}
 
 				// TODO: Do mercs berserk? Find this out on live...
-				//if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+				//if (HasClass(Class::Warrior) || HasClass(Class::Berserker)) {
 				//      if(GetHP() > 0 && !berserk && GetHPRatio() < 30) {
 				//              entity_list.MessageCloseString(this, false, 200, 0, BERSERK_START, GetName());
 				//              berserk = true;
@@ -1671,8 +1671,8 @@ bool Merc::AICastSpell(int8 iChance, uint32 iSpellTypes) {
 											continue;
 										}
 
-										if(IsEngaged() && (g->members[i]->GetClass() == Class::Necromancer && hpr >= 50)
-											|| (g->members[i]->GetClass() == Class::Shaman && hpr >= 80)) {
+										if(IsEngaged() && (g->members[i]->HasClass(Class::Necromancer) && hpr >= 50)
+											|| (g->members[i]->HasClass(Class::Shaman) && hpr >= 80)) {
 												//allow necros to lifetap & shaman to canni without wasting mana
 												continue;
 										}
@@ -1888,7 +1888,7 @@ bool Merc::AICastSpell(int8 iChance, uint32 iSpellTypes) {
 
 									selectedMercSpell = GetBestMercSpellForAENuke(this, tar);
 
-									if(selectedMercSpell.spellid == 0 && !tar->GetSpecialAbility(UNSTUNABLE) && !tar->IsStunned()) {
+									if(selectedMercSpell.spellid == 0 && !tar->GetSpecialAbility(SpecialAbility::StunImmunity) && !tar->IsStunned()) {
 										uint8 stunChance = 15;
 										if(zone->random.Roll(stunChance)) {
 											selectedMercSpell = GetBestMercSpellForStun(this);
@@ -3192,13 +3192,13 @@ MercSpell Merc::GetBestMercSpellForAENuke(Merc* caster, Mob* tar) {
 
 		switch(caster->GetStance())
 		{
-		case EQ::constants::stanceBurnAE:
+		case Stance::AEBurn:
 			initialCastChance = 50;
 			break;
-		case EQ::constants::stanceBalanced:
+		case Stance::Balanced:
 			initialCastChance = 25;
 			break;
-		case EQ::constants::stanceBurn:
+		case Stance::Burn:
 			initialCastChance = 0;
 			break;
 		}
@@ -3244,11 +3244,11 @@ MercSpell Merc::GetBestMercSpellForTargetedAENuke(Merc* caster, Mob* tar) {
 
 	switch(caster->GetStance())
 	{
-	case EQ::constants::stanceBurnAE:
+	case Stance::AEBurn:
 		numTargetsCheck = 1;
 		break;
-	case EQ::constants::stanceBalanced:
-	case EQ::constants::stanceBurn:
+	case Stance::Balanced:
+	case Stance::Burn:
 		numTargetsCheck = 2;
 		break;
 	}
@@ -3298,11 +3298,11 @@ MercSpell Merc::GetBestMercSpellForPBAENuke(Merc* caster, Mob* tar) {
 
 	switch(caster->GetStance())
 	{
-	case EQ::constants::stanceBurnAE:
+	case Stance::AEBurn:
 		numTargetsCheck = 2;
 		break;
-	case EQ::constants::stanceBalanced:
-	case EQ::constants::stanceBurn:
+	case Stance::Balanced:
+	case Stance::Burn:
 		numTargetsCheck = 3;
 		break;
 	}
@@ -3351,11 +3351,11 @@ MercSpell Merc::GetBestMercSpellForAERainNuke(Merc* caster, Mob* tar) {
 
 	switch(caster->GetStance())
 	{
-	case EQ::constants::stanceBurnAE:
+	case Stance::AEBurn:
 		numTargetsCheck = 1;
 		break;
-	case EQ::constants::stanceBalanced:
-	case EQ::constants::stanceBurn:
+	case Stance::Balanced:
+	case Stance::Burn:
 		numTargetsCheck = 2;
 		break;
 	}
@@ -5186,7 +5186,7 @@ void Client::SpawnMerc(Merc* merc, bool setMaxStats) {
 	merc->SetSuspended(false);
 	SetMerc(merc);
 	merc->Unsuspend(setMaxStats);
-	merc->SetStance((EQ::constants::StanceType)GetMercInfo().Stance);
+	merc->SetStance(GetMercInfo().Stance);
 
 	Log(Logs::General, Logs::Mercenaries, "SpawnMerc Success for %s.", GetName());
 

@@ -79,10 +79,10 @@ Bot::Bot(NPCType *npcTypeData, Client* botOwner) : NPC(npcTypeData, nullptr, glm
 	SetBotCharmer(false);
 	SetPetChooser(false);
 	SetRangerAutoWeaponSelect(false);
-	SetTaunting(GetClass() == Class::Warrior || GetClass() == Class::Paladin || GetClass() == Class::ShadowKnight);
+	SetTaunting(HasClass(Class::Warrior) || HasClass(Class::Paladin) || HasClass(Class::ShadowKnight));
 	SetDefaultBotStance();
 
-	SetAltOutOfCombatBehavior(GetClass() == Class::Bard); // will need to be updated if more classes make use of this flag
+	SetAltOutOfCombatBehavior(HasClass(Class::Bard)); // will need to be updated if more classes make use of this flag
 	SetShowHelm(true);
 	SetPauseAI(false);
 
@@ -117,6 +117,8 @@ Bot::Bot(NPCType *npcTypeData, Client* botOwner) : NPC(npcTypeData, nullptr, glm
 	hp_regen = CalcHPRegen();
 	mana_regen = CalcManaRegen();
 	end_regen = CalcEnduranceRegen();
+
+	SetExtraHaste(database.botdb.GetBotExtraHasteByID(GetBotID()), false);
 
 	strcpy(name, GetCleanName());
 	memset(&_botInspectMessage, 0, sizeof(InspectMessage_Struct));
@@ -202,7 +204,7 @@ Bot::Bot(
 		);
 	}
 
-	SetTaunting((GetClass() == Class::Warrior || GetClass() == Class::Paladin || GetClass() == Class::ShadowKnight) && (GetBotStance() == EQ::constants::stanceAggressive));
+	SetTaunting((HasClass(Class::Warrior) || HasClass(Class::Paladin) || HasClass(Class::ShadowKnight)) && (GetBotStance() == Stance::Aggressive));
 	SetPauseAI(false);
 
 	m_auto_defend_timer.Disable();
@@ -232,7 +234,7 @@ Bot::Bot(
 
 	EquipBot();
 
-	if (GetClass() == Class::Rogue) {
+	if (HasClass(Class::Rogue)) {
 		m_evade_timer.Start();
 	}
 
@@ -445,6 +447,8 @@ Bot::Bot(
 	}
 
 	cur_end = max_end;
+
+	SetExtraHaste(database.botdb.GetBotExtraHasteByID(GetBotID()), false);
 }
 
 Bot::~Bot() {
@@ -648,7 +652,7 @@ NPCType *Bot::FillNPCTypeStruct(
 	n->race = botRace;
 	n->class_ = botClass;
 	n->bodytype = 1;
-	n->deity = EQ::deity::DeityAgnostic;
+	n->deity = Deity::Agnostic1;
 	n->level = botLevel;
 	n->npc_spells_id = botSpellsID;
 	n->AC = ac;
@@ -708,7 +712,7 @@ NPCType *Bot::CreateDefaultNPCTypeStructForBot(
 	n->race = botRace;
 	n->class_ = botClass;
 	n->bodytype = 1;
-	n->deity = EQ::deity::DeityAgnostic;
+	n->deity = Deity::Agnostic1;
 	n->level = botLevel;
 	n->AC = 12;
 	n->ATK = 75;
@@ -1428,7 +1432,7 @@ bool Bot::LoadPet()
 	if (!bot_owner)
 		return false;
 
-	if (GetClass() == Class::Wizard) {
+	if (HasClass(Class::Wizard)) {
 		auto buffs_max = GetMaxBuffSlots();
 		auto my_buffs = GetBuffs();
 		if (buffs_max && my_buffs) {
@@ -1531,29 +1535,8 @@ bool Bot::SavePet()
 
 bool Bot::DeletePet()
 {
-	auto bot_owner = GetBotOwner();
-	if (!bot_owner)
-		return false;
-
-	if (!database.botdb.DeletePetItems(GetBotID())) {
-		return false;
-	}
-	if (!database.botdb.DeletePetBuffs(GetBotID())) {
-		return false;
-	}
-	if (!database.botdb.DeletePetStats(GetBotID())) {
-		return false;
-	}
-
-	if (!GetPet() || !GetPet()->IsNPC())
-		return true;
-
-	NPC* pet_inst = GetPet()->CastToNPC();
-	pet_inst->SetOwnerID(0);
-
-	SetPet(nullptr);
-
-	return true;
+	return false;
+	// NUKED BY CATAPULTAM
 }
 
 bool Bot::Process()
@@ -1713,7 +1696,7 @@ void Bot::AI_Bot_Init()
 void Bot::SpellProcess() {
 	if (spellend_timer.Check(false))	{
 		NPC::SpellProcess();
-		if (GetClass() == Class::Bard && casting_spell_id != 0) casting_spell_id = 0;
+		if (HasClass(Class::Bard) && casting_spell_id != 0) casting_spell_id = 0;
 	}
 }
 
@@ -1805,7 +1788,7 @@ bool Bot::CheckBotDoubleAttack(bool tripleAttack) {
 	//Check for bonuses that give you a double attack chance regardless of skill (ie Bestial Frenzy/Harmonious Attack AA)
 	uint32 bonusGiveDA = (aabonuses.GiveDoubleAttack + spellbonuses.GiveDoubleAttack + itembonuses.GiveDoubleAttack);
 	// If you don't have the double attack skill, return
-	if (!GetSkill(EQ::skills::SkillDoubleAttack) && !(GetClass() == Class::Bard || GetClass() == Class::Beastlord))
+	if (!GetSkill(EQ::skills::SkillDoubleAttack) && !(HasClass(Class::Bard) || HasClass(Class::Beastlord)))
 		return false;
 
 	// You start with no chance of double attacking
@@ -1895,8 +1878,8 @@ void Bot::AI_Process()
 #define NOT_GUARDING (!GetGuardFlag())
 #define HOLDING (GetHoldFlag())
 #define NOT_HOLDING (!GetHoldFlag())
-#define PASSIVE (GetBotStance() == EQ::constants::stancePassive)
-#define NOT_PASSIVE (GetBotStance() != EQ::constants::stancePassive)
+#define PASSIVE (GetBotStance() == Stance::Passive)
+#define NOT_PASSIVE (GetBotStance() != Stance::Passive)
 
 	Client* bot_owner = (GetBotOwner() && GetBotOwner()->IsClient() ? GetBotOwner()->CastToClient() : nullptr);
 
@@ -2060,7 +2043,7 @@ void Bot::AI_Process()
 				return;
 			}
 
-			if (AI_movement_timer->Check() && (!spellend_timer.Enabled() || GetClass() == Class::Bard)) {
+			if (AI_movement_timer->Check() && (!spellend_timer.Enabled() || HasClass(Class::Bard))) {
 
 				if (TryEvade(tar)) {
 					return;
@@ -2159,7 +2142,7 @@ void Bot::AI_Process()
 
 bool Bot::TryBardMovementCasts() {// Basically, bard bots get a chance to cast idle spells while moving
 
-	if (GetClass() == Class::Bard && IsMoving() && NOT_PASSIVE && !spellend_timer.Enabled() && AI_think_timer->Check()) {
+	if (HasClass(Class::Bard) && IsMoving() && NOT_PASSIVE && !spellend_timer.Enabled() && AI_think_timer->Check()) {
 
 		AI_IdleCastCheck();
 		return true;
@@ -2169,7 +2152,7 @@ bool Bot::TryBardMovementCasts() {// Basically, bard bots get a chance to cast i
 
 bool Bot::TryNonCombatMovementChecks(Client* bot_owner, const Mob* follow_mob, glm::vec3& Goal) {// Non-engaged movement checks
 
-	if (AI_movement_timer->Check() && (!IsCasting() || GetClass() == Class::Bard)) {
+	if (AI_movement_timer->Check() && (!IsCasting() || HasClass(Class::Bard))) {
 		if (GUARDING) {
 			Goal = GetGuardPoint();
 		}
@@ -2303,7 +2286,7 @@ bool Bot::TryMeditate() {
 // This code actually gets processed when we are too far away from target and have not engaged yet
 bool Bot::TryPursueTarget(float leash_distance, glm::vec3& Goal) {
 
-	if (AI_movement_timer->Check() && (!spellend_timer.Enabled() || GetClass() == Class::Bard)) {
+	if (AI_movement_timer->Check() && (!spellend_timer.Enabled() || HasClass(Class::Bard))) {
 		if (GetTarget() && !IsRooted()) {
 			LogAIDetail("Pursuing [{}] while engaged", GetTarget()->GetCleanName());
 			Goal = GetTarget()->GetPosition();
@@ -2350,7 +2333,7 @@ bool Bot::TrySecondaryWeaponAttacks(Mob* tar, const EQ::ItemInstance* s_item) {
 		const EQ::ItemData* s_itemdata = nullptr;
 
 		// Can only dual wield without a weapon if you're a monk
-		if (s_item || (GetClass() == Class::Monk)) {
+		if (s_item || (HasClass(Class::Monk))) {
 
 			if (s_item) {
 				s_itemdata = s_item->GetItem();
@@ -2414,14 +2397,14 @@ bool Bot::TryPrimaryWeaponAttacks(Mob* tar, const EQ::ItemInstance* p_item) {
 			}
 
 			if (GetAppearance() == eaDead) { return false; }
-			if (GetSpecialAbility(SPECATK_TRIPLE) && CheckBotDoubleAttack(true)) {
+			if (GetSpecialAbility(SpecialAbility::TripleAttack) && CheckBotDoubleAttack(true)) {
 
 				Attack(tar, EQ::invslot::slotPrimary, true);
 			}
 
 			if (GetAppearance() == eaDead) { return false; }
 			// quad attack, does this belong here??
-			if (GetSpecialAbility(SPECATK_QUAD) && CheckBotDoubleAttack(true)) {
+			if (GetSpecialAbility(SpecialAbility::QuadrupleAttack) && CheckBotDoubleAttack(true)) {
 				Attack(tar, EQ::invslot::slotPrimary, true);
 			}
 		}
@@ -2501,7 +2484,7 @@ bool Bot::TryEvade(Mob* tar) {
 		HasTargetReflection() &&
 		!tar->IsFeared() &&
 		!tar->IsStunned() &&
-		GetClass() == Class::Rogue &&
+		HasClass(Class::Rogue) &&
 		m_evade_timer.Check(false)
 	) {
 		int timer_duration = (HideReuseTime - GetSkillReuseTime(EQ::skills::SkillHide)) * 1000;
@@ -2527,7 +2510,7 @@ void Bot::CheckCombatRange(Mob* tar, float tar_distance, bool& atCombatRange, co
 	s_item= GetBotItem(EQ::invslot::slotSecondary);
 	bool behind_mob = false;
 	bool backstab_weapon = false;
-	if (GetClass() == Class::Rogue) {
+	if (HasClass(Class::Rogue)) {
 
 		behind_mob = BehindMob(tar, GetX(), GetY()); // Can be separated for other future use
 		backstab_weapon = p_item && p_item->GetItemBackstabDamage();
@@ -2917,7 +2900,7 @@ bool Bot::CheckIfIncapacitated() {
 }
 
 void Bot::SetBerserkState() {// Berserk updates should occur if primary AI criteria are met
-	if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+	if (HasClass(Class::Warrior) || HasClass(Class::Berserker)) {
 
 		if (!berserk && GetHP() > 0 && GetHPRatio() < 30.0f) {
 			entity_list.MessageCloseString(this, false, 200, 0, BERSERK_START, GetName());
@@ -4498,13 +4481,13 @@ int Bot::GetHandToHandDamage(void) {
 				7, 7, 7, 8, 8, 8, 8, 8, 8, 9,		// 21-30
 				9, 9, 9, 9, 9, 10, 10, 10, 10, 10,   // 31-40
 				10, 11, 11, 11, 11, 11, 11, 12, 12}; // 41-49
-	if (GetClass() == Class::Monk) {
+	if (HasClass(Class::Monk)) {
 		if (CastToNPC()->GetEquippedItemFromTextureSlot(EQ::textures::armorHands) == 10652 && GetLevel() > 50)
 			return 9;
 		if (level > 62)
 			return 15;
 		return mnk_dmg[level];
-	} else if (GetClass() == Class::Beastlord) {
+	} else if (HasClass(Class::Beastlord)) {
 		if (level > 49)
 			return 13;
 		return bst_dmg[level];
@@ -4550,7 +4533,7 @@ void Bot::DoRiposte(Mob* defender) {
 
 	DoubleRipChance = defender->GetAABonuses().GiveDoubleRiposte[1];
 	if (DoubleRipChance && (DoubleRipChance >= zone->random.Int(0, 100))) {
-		if (defender->GetClass() == Class::Monk)
+		if (defender->HasClass(Class::Monk))
 			defender->MonkSpecialAttack(this, defender->GetAABonuses().GiveDoubleRiposte[2]);
 		else if (defender->IsBot())
 			defender->CastToClient()->DoClassAttacks(this,defender->GetAABonuses().GiveDoubleRiposte[2], true);
@@ -5477,13 +5460,13 @@ bool Bot::IsImmuneToSpell(uint16 spell_id, Mob *caster) {
 		if (!Result) {
 			if (caster->IsBot()) {
 				if (spells[spell_id].target_type == ST_Undead) {
-					if ((GetBodyType() != BT_SummonedUndead) && (GetBodyType() != BT_Undead) && (GetBodyType() != BT_Vampire)) {
+					if ((GetBodyType() != BodyType::SummonedUndead) && (GetBodyType() != BodyType::Undead) && (GetBodyType() != BodyType::Vampire)) {
 						LogSpellsDetail("Bot's target is not an undead");
 						return true;
 					}
 				}
 				if (spells[spell_id].target_type == ST_Summoned) {
-					if ((GetBodyType() != BT_SummonedUndead) && (GetBodyType() != BT_Summoned) && (GetBodyType() != BT_Summoned2) && (GetBodyType() != BT_Summoned3)) {
+					if ((GetBodyType() != BodyType::SummonedUndead) && (GetBodyType() != BodyType::Summoned) && (GetBodyType() != BodyType::Summoned2) && (GetBodyType() != BodyType::Summoned3)) {
 						LogSpellsDetail("Bot's target is not a summoned creature");
 						return true;
 					}
@@ -5512,7 +5495,7 @@ bool Bot::DetermineSpellTargets(uint16 spell_id, Mob *&spell_target, Mob *&ae_ce
 
 bool Bot::DoCastSpell(uint16 spell_id, uint16 target_id, EQ::spells::CastingSlot slot, int32 cast_time, int32 mana_cost, uint32* oSpellWillFinish, uint32 item_slot, uint32 aa_id) {
 	bool Result = false;
-	if (GetClass() == Class::Bard)
+	if (HasClass(Class::Bard))
 		cast_time = 0;
 
 	Result = Mob::DoCastSpell(spell_id, target_id, slot, cast_time, mana_cost, oSpellWillFinish, item_slot, aa_id);
@@ -5630,8 +5613,8 @@ int32 Bot::GenerateBaseManaPoints()
 }
 
 void Bot::GenerateSpecialAttacks() {
-	if (((GetClass() == Class::Monk) || (GetClass() == Class::Warrior) || (GetClass() == Class::Ranger) || (GetClass() == Class::Berserker))	&& (GetLevel() >= 60))
-		SetSpecialAbility(SPECATK_TRIPLE, 1);
+	if (((HasClass(Class::Monk)) || (HasClass(Class::Warrior)) || (HasClass(Class::Ranger)) || (HasClass(Class::Berserker)))	&& (GetLevel() >= 60))
+		SetSpecialAbility(SpecialAbility::TripleAttack, 1);
 }
 
 bool Bot::DoFinishedSpellSingleTarget(uint16 spell_id, Mob* spellTarget, EQ::spells::CastingSlot slot, bool& stopLogic) {
@@ -5653,7 +5636,7 @@ bool Bot::DoFinishedSpellSingleTarget(uint16 spell_id, Mob* spellTarget, EQ::spe
 			bool spellequal = (j == thespell);
 			bool spelltypeequal = ((spelltype == 2) || (spelltype == 16) || (spelltype == 32));
 			bool spelltypetargetequal = ((spelltype == 8) && (spells[thespell].target_type == ST_Self));
-			bool spelltypeclassequal = ((spelltype == 1024) && (GetClass() == Class::Shaman));
+			bool spelltypeclassequal = ((spelltype == 1024) && (HasClass(Class::Shaman)));
 			bool slotequal = (slot == EQ::spells::CastingSlot::Item);
 			if (spellequal || slotequal) {
 				if ((spelltypeequal || spelltypetargetequal) || spelltypeclassequal || slotequal) {
@@ -5675,7 +5658,7 @@ bool Bot::DoFinishedSpellSingleTarget(uint16 spell_id, Mob* spellTarget, EQ::spe
 			if (g) {
 				for (int i = 0; i < MAX_GROUP_MEMBERS; i++) {
 					if (g->members[i]) {
-						if ((g->members[i]->GetClass() == Class::Necromancer) && (IsEffectInSpell(thespell, SE_AbsorbMagicAtt) || IsEffectInSpell(thespell, SE_Rune))) {
+						if ((g->members[i]->HasClass(Class::Necromancer)) && (IsEffectInSpell(thespell, SE_AbsorbMagicAtt) || IsEffectInSpell(thespell, SE_Rune))) {
 						}
 						else
 							SpellOnTarget(thespell, g->members[i]);
@@ -5980,7 +5963,7 @@ int32 Bot::CalcCHA() {
 
 int32 Bot::CalcMR() {
 	MR += (itembonuses.MR + spellbonuses.MR + aabonuses.MR);
-	if (GetClass() == Class::Warrior)
+	if (HasClass(Class::Warrior))
 		MR += (GetLevel() / 2);
 
 	if (MR < 1)
@@ -6763,7 +6746,7 @@ void Bot::CalcBotStats(bool showtext) {
 
 	taunt_timer.Start(1000);
 
-	if (GetClass() == Class::Monk && GetLevel() >= 10) {
+	if (HasClass(Class::Monk) && GetLevel() >= 10) {
 		monkattack_timer.Start(1000);
 	}
 
@@ -6775,7 +6758,7 @@ void Bot::CalcBotStats(bool showtext) {
 		GetBotOwner()->Message(Chat::Yellow, "Level: %i HP: %i AC: %i Mana: %i STR: %i STA: %i DEX: %i AGI: %i INT: %i WIS: %i CHA: %i", GetLevel(), base_hp, AC, max_mana, STR, STA, DEX, AGI, INT, WIS, CHA);
 		GetBotOwner()->Message(Chat::Yellow, "Resists-- Magic: %i, Poison: %i, Fire: %i, Cold: %i, Disease: %i, Corruption: %i.",MR,PR,FR,CR,DR,Corrup);
 		// Test Code
-		if (GetClass() == Class::Bard)
+		if (HasClass(Class::Bard))
 			GetBotOwner()->Message(Chat::Yellow, "Bard Skills-- Brass: %i, Percussion: %i, Singing: %i, Stringed: %i, Wind: %i",
 			GetSkill(EQ::skills::SkillBrassInstruments), GetSkill(EQ::skills::SkillPercussionInstruments), GetSkill(EQ::skills::SkillSinging), GetSkill(EQ::skills::SkillStringedInstruments), GetSkill(EQ::skills::SkillWindInstruments));
 	}
@@ -6792,7 +6775,7 @@ void Bot::CalcBotStats(bool showtext) {
 		GetBotOwner()->Message(Chat::Yellow, "Level: %i HP: %i AC: %i Mana: %i STR: %i STA: %i DEX: %i AGI: %i INT: %i WIS: %i CHA: %i", GetLevel(), max_hp, GetAC(), max_mana, GetSTR(), GetSTA(), GetDEX(), GetAGI(), GetINT(), GetWIS(), GetCHA());
 		GetBotOwner()->Message(Chat::Yellow, "Resists-- Magic: %i, Poison: %i, Fire: %i, Cold: %i, Disease: %i, Corruption: %i.",GetMR(),GetPR(),GetFR(),GetCR(),GetDR(),GetCorrup());
 		// Test Code
-		if (GetClass() == Class::Bard) {
+		if (HasClass(Class::Bard)) {
 			GetBotOwner()->Message(Chat::Yellow, "Bard Skills-- Brass: %i, Percussion: %i, Singing: %i, Stringed: %i, Wind: %i",
 				GetSkill(EQ::skills::SkillBrassInstruments) + GetBrassMod(),
 				GetSkill(EQ::skills::SkillPercussionInstruments) + GetPercMod(),
@@ -6847,11 +6830,11 @@ bool EntityList::Bot_AICheckCloseBeneficialSpells(Bot* caster, uint8 iChance, fl
 								if (caster->AICastSpell(iter->member, 100, SpellType_Heal))
 									return true;
 							}
-							else if ((iter->member->GetClass() == Class::Warrior || iter->member->GetClass() == Class::Paladin || iter->member->GetClass() == Class::ShadowKnight) && iter->member->GetHPRatio() < 95) {
+							else if ((iter->member->HasClass(Class::Warrior) || iter->member->HasClass(Class::Paladin) || iter->member->HasClass(Class::ShadowKnight)) && iter->member->GetHPRatio() < 95) {
 								if (caster->AICastSpell(iter->member, 100, SpellType_Heal))
 									return true;
 							}
-							else if (iter->member->GetClass() == Class::Enchanter && iter->member->GetHPRatio() < 80) {
+							else if (iter->member->HasClass(Class::Enchanter) && iter->member->GetHPRatio() < 80) {
 								if (caster->AICastSpell(iter->member, 100, SpellType_Heal))
 									return true;
 							}
@@ -6881,10 +6864,10 @@ bool EntityList::Bot_AICheckCloseBeneficialSpells(Bot* caster, uint8 iChance, fl
 							if (g->members[i]->IsClient() && g->members[i]->GetHPRatio() < 90) {
 								if (caster->AICastSpell(g->members[i], 100, SpellType_Heal))
 									return true;
-							} else if ((g->members[i]->GetClass() == Class::Warrior || g->members[i]->GetClass() == Class::Paladin || g->members[i]->GetClass() == Class::ShadowKnight) && g->members[i]->GetHPRatio() < 95) {
+							} else if ((g->members[i]->HasClass(Class::Warrior) || g->members[i]->HasClass(Class::Paladin) || g->members[i]->HasClass(Class::ShadowKnight)) && g->members[i]->GetHPRatio() < 95) {
 								if (caster->AICastSpell(g->members[i], 100, SpellType_Heal))
 									return true;
-							} else if (g->members[i]->GetClass() == Class::Enchanter && g->members[i]->GetHPRatio() < 80) {
+							} else if (g->members[i]->HasClass(Class::Enchanter) && g->members[i]->GetHPRatio() < 80) {
 								if (caster->AICastSpell(g->members[i], 100, SpellType_Heal))
 									return true;
 							} else if (g->members[i]->GetHPRatio() < 70) {
@@ -6908,16 +6891,16 @@ bool EntityList::Bot_AICheckCloseBeneficialSpells(Bot* caster, uint8 iChance, fl
 		if ((botCasterClass == Class::Paladin || botCasterClass == Class::Beastlord || botCasterClass == Class::Ranger) && (caster->HasGroup() || caster->IsRaidGrouped())) {
 			float hpRatioToHeal = 25.0f;
 			switch(caster->GetBotStance()) {
-			case EQ::constants::stanceReactive:
-			case EQ::constants::stanceBalanced:
+			case Stance::Reactive:
+			case Stance::Balanced:
 				hpRatioToHeal = 50.0f;
 				break;
-			case EQ::constants::stanceBurn:
-			case EQ::constants::stanceBurnAE:
+			case Stance::Burn:
+			case Stance::AEBurn:
 				hpRatioToHeal = 20.0f;
 				break;
-			case EQ::constants::stanceAggressive:
-			case EQ::constants::stanceEfficient:
+			case Stance::Aggressive:
+			case Stance::Efficient:
 			default:
 				hpRatioToHeal = 25.0f;
 				break;
@@ -6934,12 +6917,12 @@ bool EntityList::Bot_AICheckCloseBeneficialSpells(Bot* caster, uint8 iChance, fl
 									if (caster->AICastSpell(iter->member, 100, SpellType_Heal))
 										return true;
 								} else if (
-									(iter->member->GetClass() == Class::Warrior || iter->member->GetClass() == Class::Paladin ||
-									 iter->member->GetClass() == Class::ShadowKnight) &&
+									(iter->member->HasClass(Class::Warrior) || iter->member->HasClass(Class::Paladin) ||
+									 iter->member->HasClass(Class::ShadowKnight)) &&
 									iter->member->GetHPRatio() < hpRatioToHeal) {
 									if (caster->AICastSpell(iter->member, 100, SpellType_Heal))
 										return true;
-								} else if (iter->member->GetClass() == Class::Enchanter &&
+								} else if (iter->member->HasClass(Class::Enchanter) &&
 										   iter->member->GetHPRatio() < hpRatioToHeal) {
 									if (caster->AICastSpell(iter->member, 100, SpellType_Heal))
 										return true;
@@ -6969,12 +6952,12 @@ bool EntityList::Bot_AICheckCloseBeneficialSpells(Bot* caster, uint8 iChance, fl
 							if (g->members[i]->IsClient() && g->members[i]->GetHPRatio() < hpRatioToHeal) {
 								if (caster->AICastSpell(g->members[i], 100, SpellType_Heal))
 									return true;
-							} else if ((g->members[i]->GetClass() == Class::Warrior || g->members[i]->GetClass() == Class::Paladin ||
-										g->members[i]->GetClass() == Class::ShadowKnight) &&
+							} else if ((g->members[i]->HasClass(Class::Warrior) || g->members[i]->HasClass(Class::Paladin) ||
+										g->members[i]->HasClass(Class::ShadowKnight)) &&
 									   g->members[i]->GetHPRatio() < hpRatioToHeal) {
 								if (caster->AICastSpell(g->members[i], 100, SpellType_Heal))
 									return true;
-							} else if (g->members[i]->GetClass() == Class::Enchanter &&
+							} else if (g->members[i]->HasClass(Class::Enchanter) &&
 									   g->members[i]->GetHPRatio() < hpRatioToHeal) {
 								if (caster->AICastSpell(g->members[i], 100, SpellType_Heal))
 									return true;
@@ -7651,11 +7634,7 @@ bool Bot::HasOrMayGetAggro() {
 }
 
 void Bot::SetDefaultBotStance() {
-	EQ::constants::StanceType defaultStance = EQ::constants::stanceBalanced;
-	if (GetClass() == Class::Warrior)
-		defaultStance = EQ::constants::stanceAggressive;
-
-	_botStance = defaultStance;
+	_botStance = HasClass(Class::Warrior) ? Stance::Aggressive : Stance::Balanced;
 }
 
 void Bot::BotGroupSay(Mob* speaker, const char* msg, ...) {
@@ -9210,11 +9189,11 @@ void Bot::DoItemClick(const EQ::ItemData *item, uint16 slot_id)
 		CommonBreakInvisible();
 	}
 
-	if (GetClass() == Class::Bard && IsCasting() && casting_spell_slot < EQ::spells::CastingSlot::MaxGems) {
+	if (HasClass(Class::Bard) && IsCasting() && casting_spell_slot < EQ::spells::CastingSlot::MaxGems) {
 		is_casting_bard_song = true;
 	}
 
-	if (GetClass() == Class::Bard) {
+	if (HasClass(Class::Bard)) {
 		DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, tar->GetID(), EQ::spells::CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
 	} else {
 		if (!CastSpell(item->Click.Effect, tar->GetID(), EQ::spells::CastingSlot::Item, item->CastTime, 0, 0, slot_id)) {
@@ -9229,4 +9208,4 @@ void Bot::DoItemClick(const EQ::ItemData *item, uint16 slot_id)
 
 }
 
-uint8 Bot::spell_casting_chances[SPELL_TYPE_COUNT][Class::PLAYER_CLASS_COUNT][EQ::constants::STANCE_TYPE_COUNT][cntHSND] = { 0 };
+uint8 Bot::spell_casting_chances[SPELL_TYPE_COUNT][Class::PLAYER_CLASS_COUNT][Stance::AEBurn][cntHSND] = { 0 };

@@ -51,6 +51,9 @@
 #include "../common/repositories/character_corpse_items_repository.h"
 #include "../common/repositories/zone_repository.h"
 
+#include "../common/repositories/trader_repository.h"
+
+
 #include <ctime>
 #include <iostream>
 #include <fmt/format.h>
@@ -302,205 +305,115 @@ void ZoneDatabase::DeleteWorldContainer(uint32 parent_id, uint32 zone_id)
 	);
 }
 
-Trader_Struct* ZoneDatabase::LoadTraderItem(uint32 char_id)
+std::unique_ptr<EQ::ItemInstance> ZoneDatabase::LoadSingleTraderItem(uint32 char_id, int serial_number)
 {
-	auto loadti = new Trader_Struct;
-	memset(loadti,0,sizeof(Trader_Struct));
+	auto results = TraderRepository::GetWhere(
+		database,
+		fmt::format(
+			"`char_id` = '{}' AND `item_sn` = '{}' ORDER BY slot_id",
+			char_id,
+			serial_number
+		)
+	);
 
-	std::string query = StringFormat("SELECT * FROM trader WHERE char_id = %i ORDER BY slot_id LIMIT %i", char_id, EQ::invtype::BAZAAR_SIZE);
-	auto results = QueryDatabase(query);
-	if (!results.Success()) {
-		LogTrading("Failed to load trader information!\n");
-		return loadti;
+	if (results.empty()) {
+		LogTrading("Could not find item serial number {} for character id {}", serial_number, char_id);
+		return nullptr;
 	}
 
-	loadti->Code = BazaarTrader_ShowItems;
-	for (auto& row = results.begin(); row != results.end(); ++row) {
-		if (atoi(row[5]) >= EQ::invtype::BAZAAR_SIZE || atoi(row[4]) < 0) {
-			LogTrading("Bad Slot number when trying to load trader information!\n");
-			continue;
-		}
+	int item_id = results.at(0).item_id;
+	int charges = results.at(0).item_charges;
+	int cost    = results.at(0).item_cost;
 
-		loadti->Items[Strings::ToInt(row[5])] = Strings::ToInt(row[1]);
-		loadti->ItemCost[Strings::ToInt(row[5])] = Strings::ToInt(row[4]);
+	const EQ::ItemData *item = database.GetItem(item_id);
+	if (!item) {
+		LogTrading("Unable to create item.");
+		return nullptr;
 	}
-	return loadti;
+
+	if (item->NoDrop == 0) {
+		return nullptr;
+	}
+
+	std::unique_ptr<EQ::ItemInstance> inst(
+		database.CreateItem(
+			item_id,
+			charges,
+			results.at(0).aug_slot_1,
+			results.at(0).aug_slot_2,
+			results.at(0).aug_slot_3,
+			results.at(0).aug_slot_4,
+			results.at(0).aug_slot_5,
+			results.at(0).aug_slot_6
+		)
+	);
+	if (!inst) {
+		LogTrading("Unable to create item instance.");
+		return nullptr;
+	}
+
+	inst->SetCharges(charges);
+	inst->SetSerialNumber(serial_number);
+	inst->SetMerchantSlot(serial_number);
+	inst->SetPrice(cost);
+
+	if (inst->IsStackable()) {
+		inst->SetMerchantCount(charges);
+	}
+
+	return std::move(inst);
 }
 
-TraderCharges_Struct* ZoneDatabase::LoadTraderItemWithCharges(uint32 char_id)
-{
-	auto loadti = new TraderCharges_Struct;
-	memset(loadti,0,sizeof(TraderCharges_Struct));
+void ZoneDatabase::UpdateTraderItemPrice(int char_id, uint32 item_id, uint32 charges, uint32 new_price) {
 
-	std::string query = StringFormat("SELECT * FROM trader WHERE char_id=%i ORDER BY slot_id LIMIT %i", char_id, EQ::invtype::BAZAAR_SIZE);
-	auto results = QueryDatabase(query);
-	if (!results.Success()) {
-		LogTrading("Failed to load trader information!\n");
-		return loadti;
-	}
-
-	for (auto& row = results.begin(); row != results.end(); ++row) {
-		if (atoi(row[5]) >= EQ::invtype::BAZAAR_SIZE || atoi(row[5]) < 0) {
-			LogTrading("Bad Slot number when trying to load trader information!\n");
-			continue;
-		}
-
-		loadti->ItemID[Strings::ToInt(row[5])] = Strings::ToInt(row[1]);
-		loadti->SerialNumber[Strings::ToInt(row[5])] = Strings::ToInt(row[2]);
-		loadti->Charges[Strings::ToInt(row[5])] = Strings::ToInt(row[3]);
-		loadti->ItemCost[Strings::ToInt(row[5])] = Strings::ToInt(row[4]);
-	}
-	return loadti;
-}
-
-EQ::ItemInstance* ZoneDatabase::LoadSingleTraderItem(uint32 CharID, int SerialNumber) {
-	std::string query = StringFormat("SELECT * FROM trader WHERE char_id = %i AND serialnumber = %i "
-                                    "ORDER BY slot_id LIMIT %i", CharID, SerialNumber, EQ::invtype::BAZAAR_SIZE);
-    auto results = QueryDatabase(query);
-    if (!results.Success())
-        return nullptr;
-
-	if (results.RowCount() == 0) {
-    LogTrading("Bad result from query\n"); fflush(stdout);
-        return nullptr;
-    }
-
-    auto& row = results.begin();
-
-    int ItemID = Strings::ToInt(row[1]);
-	int Charges = Strings::ToInt(row[3]);
-	int Cost = Strings::ToInt(row[4]);
-
-	const EQ::ItemData *item = database.GetItem(ItemID);
+	LogTrading("ZoneDatabase::UpdateTraderPrice([{}], [{}], [{}], [{}])", char_id, item_id, charges, new_price);
+	const EQ::ItemData *item = database.GetItem(item_id);
 
 	if(!item) {
-		LogTrading("Unable to create item\n");
-		fflush(stdout);
-		return nullptr;
-	}
-
-    if (item->NoDrop == 0)
-        return nullptr;
-
-    EQ::ItemInstance* inst = database.CreateItem(item);
-	if(!inst) {
-		LogTrading("Unable to create item instance\n");
-		fflush(stdout);
-		return nullptr;
-	}
-
-    inst->SetCharges(Charges);
-	inst->SetSerialNumber(SerialNumber);
-	inst->SetMerchantSlot(SerialNumber);
-	inst->SetPrice(Cost);
-
-	if(inst->IsStackable())
-		inst->SetMerchantCount(Charges);
-
-	return inst;
-}
-
-void ZoneDatabase::SaveTraderItem(uint32 CharID, uint32 ItemID, uint32 SerialNumber, int32 Charges, uint32 ItemCost, uint8 Slot){
-
-	std::string query = StringFormat("REPLACE INTO trader VALUES(%i, %i, %i, %i, %i, %i)",
-                                    CharID, ItemID, SerialNumber, Charges, ItemCost, Slot);
-    auto results = QueryDatabase(query);
-    if (!results.Success())
-        LogDebug("[CLIENT] Failed to save trader item: [{}] for char_id: [{}], the error was: [{}]\n", ItemID, CharID, results.ErrorMessage().c_str());
-
-}
-
-void ZoneDatabase::UpdateTraderItemCharges(int CharID, uint32 SerialNumber, int32 Charges) {
-	LogTrading("ZoneDatabase::UpdateTraderItemCharges([{}], [{}], [{}])", CharID, SerialNumber, Charges);
-
-	std::string query = StringFormat("UPDATE trader SET charges = %i WHERE char_id = %i AND serialnumber = %i",
-                                    Charges, CharID, SerialNumber);
-    auto results = QueryDatabase(query);
-    if (!results.Success())
-		LogDebug("[CLIENT] Failed to update charges for trader item: [{}] for char_id: [{}], the error was: [{}]\n", SerialNumber, CharID, results.ErrorMessage().c_str());
-
-}
-
-void ZoneDatabase::UpdateTraderItemPrice(int CharID, uint32 ItemID, uint32 Charges, uint32 NewPrice) {
-
-	LogTrading("ZoneDatabase::UpdateTraderPrice([{}], [{}], [{}], [{}])", CharID, ItemID, Charges, NewPrice);
-
-	const EQ::ItemData *item = database.GetItem(ItemID);
-
-	if(!item)
 		return;
+	}
 
-	if(NewPrice == 0) {
-		LogTrading("Removing Trader items from the DB for CharID [{}], ItemID [{}]", CharID, ItemID);
+	if (new_price == 0) {
+		LogTrading("Removing Trader items from the DB for char_id [{}], item_id [{}]", char_id, item_id);
 
-        std::string query = StringFormat("DELETE FROM trader WHERE char_id = %i AND item_id = %i",CharID, ItemID);
-        auto results = QueryDatabase(query);
-        if (!results.Success())
-			LogDebug("[CLIENT] Failed to remove trader item(s): [{}] for char_id: [{}], the error was: [{}]\n", ItemID, CharID, results.ErrorMessage().c_str());
+		auto results = TraderRepository::DeleteWhere(
+			database,
+			fmt::format(
+				"`char_id` = '{}' AND `item_id` = {}",
+				char_id,
+				item_id
+			)
+		);
+		if (!results) {
+			LogDebug("[CLIENT] Failed to remove trader item(s): [{}] for char_id: [{}]",
+					 item_id,
+					 char_id
+			);
+		}
 
 		return;
 	}
 
-    if(!item->Stackable) {
-        std::string query = StringFormat("UPDATE trader SET item_cost = %i "
-                                        "WHERE char_id = %i AND item_id = %i AND charges=%i",
-                                        NewPrice, CharID, ItemID, Charges);
-        auto results = QueryDatabase(query);
-        if (!results.Success())
-            LogDebug("[CLIENT] Failed to update price for trader item: [{}] for char_id: [{}], the error was: [{}]\n", ItemID, CharID, results.ErrorMessage().c_str());
-
-        return;
-    }
-
-    std::string query = StringFormat("UPDATE trader SET item_cost = %i "
-                                    "WHERE char_id = %i AND item_id = %i",
-                                    NewPrice, CharID, ItemID);
-    auto results = QueryDatabase(query);
-    if (!results.Success())
-            LogDebug("[CLIENT] Failed to update price for trader item: [{}] for char_id: [{}], the error was: [{}]\n", ItemID, CharID, results.ErrorMessage().c_str());
-}
-
-void ZoneDatabase::DeleteTraderItem(uint32 char_id){
-
-	if(char_id==0) {
-        const std::string query = "DELETE FROM trader";
-        auto results = QueryDatabase(query);
-		if (!results.Success())
-			LogDebug("[CLIENT] Failed to delete all trader items data, the error was: [{}]\n", results.ErrorMessage().c_str());
-
-        return;
+	if (!item->Stackable) {
+		auto results = TraderRepository::UpdateItem(database, char_id, new_price, item_id, charges);
+		if (!results) {
+			LogTrading(
+				"Failed to update price for trader item [{}] for char_id: [{}]",
+				item_id,
+				char_id
+			);
+		}
+		return;
 	}
 
-	std::string query = StringFormat("DELETE FROM trader WHERE char_id = %i", char_id);
-	auto results = QueryDatabase(query);
-    if (!results.Success())
-        LogDebug("[CLIENT] Failed to delete trader item data for char_id: [{}], the error was: [{}]\n", char_id, results.ErrorMessage().c_str());
-
-}
-void ZoneDatabase::DeleteTraderItem(uint32 CharID,uint16 SlotID) {
-
-	std::string query = StringFormat("DELETE FROM trader WHERE char_id = %i And slot_id = %i", CharID, SlotID);
-	auto results = QueryDatabase(query);
-	if (!results.Success())
-		LogDebug("[CLIENT] Failed to delete trader item data for char_id: [{}], the error was: [{}]\n",CharID, results.ErrorMessage().c_str());
-}
-
-void ZoneDatabase::DeleteBuyLines(uint32 CharID) {
-
-	if(CharID==0) {
-        const std::string query = "DELETE FROM buyer";
-		auto results = QueryDatabase(query);
-        if (!results.Success())
-			LogDebug("[CLIENT] Failed to delete all buyer items data, the error was: [{}]\n",results.ErrorMessage().c_str());
-
-        return;
+	auto results = TraderRepository::UpdateItem(database, char_id, new_price, item_id, 0);
+	if (!results) {
+		LogTrading(
+			"Failed to update price for trader item [{}] for char_id: [{}]",
+			item_id,
+			char_id
+		);
 	}
-
-    std::string query = StringFormat("DELETE FROM buyer WHERE charid = %i", CharID);
-	auto results = QueryDatabase(query);
-	if (!results.Success())
-			LogDebug("[CLIENT] Failed to delete buyer item data for charid: [{}], the error was: [{}]\n",CharID,results.ErrorMessage().c_str());
-
 }
 
 void ZoneDatabase::AddBuyLine(uint32 CharID, uint32 BuySlot, uint32 ItemID, const char* ItemName, uint32 Quantity, uint32 Price) {
@@ -526,10 +439,22 @@ void ZoneDatabase::UpdateBuyLine(uint32 CharID, uint32 BuySlot, uint32 Quantity)
 		return;
 	}
 
-	std::string query = StringFormat("UPDATE buyer SET quantity = %i WHERE charid = %i AND buyslot = %i", Quantity, CharID, BuySlot);
-    auto results = QueryDatabase(query);
-	if (!results.Success())
-		LogDebug("[CLIENT] Failed to update quantity in buyslot [{}] for charid: [{}], the error was: [{}]\n", BuySlot, CharID, results.ErrorMessage().c_str());
+	std::string query = StringFormat(
+		"UPDATE buyer SET quantity = %i WHERE charid = %i AND buyslot = %i",
+		Quantity,
+		CharID,
+		BuySlot
+	);
+
+	auto results = QueryDatabase(query);
+	if (!results.Success()) {
+		LogTrading(
+			"Failed to update quantity in buyslot [{}] for charid [{}], the error was [{}]\n",
+			BuySlot,
+			CharID,
+			results.ErrorMessage().c_str()
+		);
+	}
 
 }
 
@@ -630,6 +555,7 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 	pp->raidAutoconsent          = e.raid_auto_consent;
 	pp->guildAutoconsent         = e.guild_auto_consent;
 	pp->RestTimer                = e.RestTimer;
+	pp->char_id                  = e.id;
 	m_epp->aa_effects            = e.e_aa_effects;
 	m_epp->perAA                 = e.e_percent_to_aa;
 	m_epp->expended_aa           = e.e_expended_aa_spent;
@@ -642,7 +568,7 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 		bool found = false;
 
 		for (auto& row = results.begin(); row != results.end(); ++row) {
-			if (row[0]) { 
+			if (row[0]) {
 				pp->classes = static_cast<uint32>(Strings::ToInt(row[0]));
 				found = true;
 				break;
@@ -763,12 +689,16 @@ bool ZoneDatabase::LoadCharacterLeadershipAbilities(uint32 character_id, PlayerP
 	return true;
 }
 
-bool ZoneDatabase::LoadCharacterDisciplines(uint32 character_id, PlayerProfile_Struct* pp){
+bool ZoneDatabase::LoadCharacterDisciplines(Client* c)
+{
+	if (!c) {
+		return false;
+	}
 
 	const auto& l = CharacterDisciplinesRepository::GetWhere(
 		database, fmt::format(
 			"`id` = {} ORDER BY `slot_id`",
-			character_id
+			c->CharacterID()
 		)
 	);
 
@@ -776,15 +706,17 @@ bool ZoneDatabase::LoadCharacterDisciplines(uint32 character_id, PlayerProfile_S
 		return false;
 	}
 
-	for (int slot_id = 0; slot_id < MAX_PP_DISCIPLINES; slot_id++) { // Initialize Disciplines
-		pp->disciplines.values[slot_id] = 0;
+	for (int slot_id = 0; slot_id < MAX_PP_DISCIPLINES; slot_id++) {
+		c->GetPP().disciplines.values[slot_id] = 0;
 	}
 
 	for (const auto& e : l) {
 		if (IsValidSpell(e.disc_id) && e.slot_id < MAX_PP_DISCIPLINES) {
-			pp->disciplines.values[e.slot_id] = e.disc_id;
+			c->GetPP().disciplines.values[e.slot_id] = e.disc_id;
 		}
 	}
+
+	c->SendDisciplineUpdate();
 
 	return true;
 }
@@ -1419,7 +1351,8 @@ bool ZoneDatabase::SaveCharacterInvSnapshot(uint32 character_id) {
 		" `custom_data`,"
 		" `ornamenticon`,"
 		" `ornamentidfile`,"
-		" `ornament_hero_model`"
+		" `ornament_hero_model`,"
+		" `guid`"
 		") "
 		"SELECT"
 		" %u,"
@@ -1438,7 +1371,8 @@ bool ZoneDatabase::SaveCharacterInvSnapshot(uint32 character_id) {
 		" `custom_data`,"
 		" `ornamenticon`,"
 		" `ornamentidfile`,"
-		" `ornament_hero_model` "
+		" `ornament_hero_model`,"
+		" `guid` "
 		"FROM"
 		" `inventory` "
 		"WHERE"
@@ -1699,7 +1633,8 @@ bool ZoneDatabase::RestoreCharacterInvSnapshot(uint32 character_id, uint32 times
 		" `custom_data`,"
 		" `ornamenticon`,"
 		" `ornamentidfile`,"
-		" `ornament_hero_model`"
+		" `ornament_hero_model`,"
+		" `guid`"
 		") "
 		"SELECT"
 		" `charid`,"
@@ -1717,7 +1652,8 @@ bool ZoneDatabase::RestoreCharacterInvSnapshot(uint32 character_id, uint32 times
 		" `custom_data`,"
 		" `ornamenticon`,"
 		" `ornamentidfile`,"
-		" `ornament_hero_model` "
+		" `ornament_hero_model`, "
+		" `guid` "
 		"FROM"
 		" `inventory_snapshots` "
 		"WHERE"
@@ -1734,6 +1670,805 @@ bool ZoneDatabase::RestoreCharacterInvSnapshot(uint32 character_id, uint32 times
 
 	return results.Success();
 }
+
+NPCType* ZoneDatabase::MutateRace(NPCType* npc) {
+	float level_size_scale = 1.0f + (npc->level / 50.0f);
+    switch (npc->race) {
+		case Race::Human:
+		case Race::Erudite:
+		case Race::Barbarian:
+		case Race::HalfElf:
+		case Race::HighElf:
+		case Race::WoodElf:
+		case Race::DarkElf:
+		case Race::Halfling:
+		case Race::Gnome:
+		case Race::Dwarf:
+		case Race::Troll:
+		case Race::Ogre:
+		case Race::Iksar:
+		case Race::Froglok2:
+			switch (npc->class_) {
+				case Class::Warrior:
+				case Class::Paladin:
+				case Class::ShadowKnight:
+				case Class::WarriorGM:
+				case Class::ShadowKnightGM:
+				case Class::PaladinGM:
+					npc->texture = std::max(npc->texture, static_cast<uint8>(zone->random.Int(2,3)));
+					npc->helmtexture = zone->random.Int(0,1) ? npc->texture : 0;
+					break;
+				case Class::Cleric:
+				case Class::Rogue:
+				case Class::Shaman:
+				case Class::Ranger:
+				case Class::Berserker:
+				case Class::ClericGM:
+				case Class::RogueGM:
+				case Class::ShamanGM:
+				case Class::RangerGM:
+				case Class::BerserkerGM:
+					npc->texture = std::max(npc->texture, static_cast<uint8>(zone->random.Int(1,2)));
+					npc->helmtexture = zone->random.Int(0,1) ? npc->texture : 0;
+					break;
+				case Class::Beastlord:
+				case Class::BeastlordGM:
+				case Class::Druid:
+				case Class::DruidGM:
+				case Class::Monk:
+				case Class::MonkGM:
+					npc->texture = std::max(npc->texture, static_cast<uint8>(1));
+					npc->helmtexture = zone->random.Int(0,1) ? npc->texture : 0;
+					break;
+				case Class::Wizard:
+				case Class::WizardGM:
+				case Class::Magician:
+				case Class::MagicianGM:
+				case Class::Necromancer:
+				case Class::NecromancerGM:
+				case Class::Enchanter:
+				case Class::EnchanterGM:
+					npc->texture = std::max(npc->texture, static_cast<uint8>(zone->random.Int(10,16)));
+					npc->helmtexture = 0;
+					break;
+				default:
+					npc->texture = std::max(npc->texture, static_cast<uint8>(zone->random.Int(0,2)));
+					npc->helmtexture = 0;
+					break;
+			}
+			break;
+
+		case Race::Fayguard:
+			npc->race = Race::WoodElf;
+			if (npc->texture == 0 && npc->gender == Gender::Male) {
+				npc->gender = zone->random.Int(0,1);
+				npc->texture = zone->random.Int(2,3);
+				npc->helmtexture = npc->texture;
+			} else {
+				npc->texture = zone->random.Int(0,1);
+				npc->helmtexture = 0;
+			}
+			break;
+
+        case Race::GiantRat:
+            npc->race = Race::Rat;
+			static const int defaultTextures[] = {0, 3, 4};
+			switch(npc->texture) {
+				case 1:
+					npc->texture = 2;
+					break;
+				case 2:
+					npc->texture = 1;
+					break;
+				case 0:
+				default:
+					npc->texture = defaultTextures[zone->random.Int(0, 2)];
+					break;
+
+			}
+            npc->size *= level_size_scale;
+            break;
+
+        case Race::GiantBat:
+            npc->race = Race::Bat2;
+            npc->gender = Gender::Neuter;
+            npc->size *= .25;
+            break;
+
+        case Race::GiantSpider:
+            npc->race = Race::Spider;
+            npc->gender = Gender::Neuter;
+            npc->size *= level_size_scale;
+            break;
+
+        case Race::Wolf:
+            npc->race = Race::Wolf2;
+            npc->gender = Gender::Neuter;
+            npc->size *= level_size_scale;
+            break;
+
+		case Race::Bear:
+			if (npc->texture < 2) {
+				npc->race = Race::Bear2;
+				npc->size *= level_size_scale;
+			}
+			break;
+
+		case Race::QeynosCitizen:
+			npc->race = Race::Human2;
+			if (npc->texture == 1 && npc->helmtexture == 1 && npc->class_ != Class::Merchant) {
+				npc->texture = 3;
+				npc->helmtexture = 3;
+			} else {
+				int choice = zone->random.Int(0,6);
+				npc->texture = 0;
+				switch(choice) {
+					case 0:
+					case 3:
+						npc->helmtexture = 0;
+						break;
+					case 1:
+						npc->helmtexture = 1;
+						break;
+					case 2:
+						npc->helmtexture = 2;
+						break;
+					case 4:
+						npc->helmtexture = 4;
+						break;
+					case 5:
+						npc->helmtexture = 5;
+						break;
+					case 6:
+						npc->helmtexture = npc->gender == Gender::Male ? 6 : 7;
+						break;
+				}
+			}
+			break;
+
+		case Race::Giant:
+			npc->race = Race::Giant3;
+			switch (npc->texture) {
+				case 0: // Cyclops
+					break;
+				case 1: // Fire Giant
+					npc->texture = 0;
+					npc->helmtexture = 0;
+					break;
+				case 2: // Hill Giant
+					npc->texture = 1;
+					npc->helmtexture = 1;
+					break;
+				case 3: // Ice Giant
+					npc->texture = 2;
+					npc->helmtexture = 2;
+					break;
+				case 4: // Sand Giant
+					break;
+			}
+			break;
+
+		case Race::OggokCitizen:
+			npc->race = Race::Ogre;
+			if (npc->gender == 0 && npc->texture == 0) {
+				npc->texture = 3;
+			} else {
+				npc->texture = 1;
+			}
+			break;
+
+		case Race::Spectre:
+			npc->race = Race::Spectre2;
+			break;
+
+		case Race::Gorgon:
+			npc->race = Race::DemonVulture;
+			break;
+
+		case Race::Denizen:
+			npc->race = Race::Amygdalan;
+			break;
+
+		case Race::FroglokGhoul:
+			npc->race = Race::UndeadFroglok;
+			break;
+
+		case Race::Alligator:
+			npc->race = Race::Crocodile;
+			npc->size *= .5;
+			break;
+
+		case Race::GrobbCitizen:
+			npc->race = Race::Troll;
+			if (npc->gender == Gender::Female) {
+				npc->texture = 1;
+			} else {
+				if (npc->texture = 1) {
+					npc->texture = 1;
+				} else {
+					npc->texture = 3;
+				}
+			}
+			break;
+
+		case Race::Froglok:
+			npc->race = Race::Froglok2;
+			npc->gender = zone->random.Int(0,1) ? Gender::Male : Gender::Female;
+
+			switch(npc->class_) {
+				case Class::Warrior:
+				case Class::ShadowKnight:
+				case Class::Paladin:
+				case Class::Cleric:
+					npc->texture = zone->random.Int(1,3);
+					npc->helmtexture = npc->texture;
+					break;
+				case Class::Wizard:
+				case Class::Magician:
+				case Class::Necromancer:
+				case Class::Enchanter:
+					npc->texture = zone->random.Int(10,16);
+					npc->helmtexture = 0;
+					break;
+				case Class::Druid:
+				case Class::Shaman:
+					npc->texture = zone->random.Int(2,3);
+					npc->helmtexture = npc->texture;
+					break;
+				default:
+					npc->texture = zone->random.Int(1,3);
+					npc->helmtexture = npc->texture;
+					break;
+			}
+
+			npc->luclinface = zone->random.Int(0,9);
+			npc->eyecolor1 = zone->random.Int(0,9);
+			npc->eyecolor2 = npc->eyecolor1;
+
+			break;
+
+		case Race::DragonSkeleton:
+			npc->race = Race::Dracolich;
+			npc->size = npc->size * 10;
+			break;
+
+		case Race::Coldain:
+			if (strstr(npc->name, "Dain_Frostreaver_IV") == nullptr) {
+				npc->race = Race::Coldain2;
+			}
+			break;
+
+		case Race::Trakanon:
+			npc->race = Race::Drake2;
+			npc->size = 130;
+			break;
+
+		case Race::CazicThule:
+			npc->race = Race::CazicThule2;
+			break;
+
+		case Race::Sphinx:
+			npc->race = Race::Sphinx2;
+			break;
+
+		case Race::Mammoth:
+			npc->race = Race::Mammoth2;
+			break;
+
+		case Race::ManEatingPlant:
+			npc->race = Race::VineMaw;
+			break;
+
+		case Race::Pegasus:
+			npc->race = Race::Pegasus2;
+			break;
+
+		case Race::UndeadIksar:
+			npc->race = Race::IksarSkeleton;
+			break;
+
+		case Race::Gorilla:
+			npc->race = Race::Gorilla2;
+			npc->texture = 0;
+			npc->helmtexture = 0;
+			break;
+
+		case Race::Scorpion:
+			npc->race = Race::Scorpion2;
+			break;
+
+		case Race::Burynai:
+			npc->race = Race::Burynai2;
+			npc->texture = zone->random.Int(0,4);
+			npc->helmtexture = npc->texture;
+			break;
+
+		case Race::Centaur:
+			npc->race = Race::Centaur2;
+			if (strstr(npc->name, "_foal") != nullptr) {
+				npc->texture = 0;
+				npc->helmtexture = 0;
+			} else {
+				npc->texture = zone->random.Int(1, 7);
+				npc->helmtexture = npc->texture;
+			}
+			break;
+
+		case Race::Griffin:
+			npc->race = Race::Griffin2;
+			break;
+
+		case Race::Lion:
+			npc->race = Race::Puma2;
+			npc->texture = 6;
+			npc->helmtexture = npc->gender == Gender::Male ? 7 : 0;
+			npc->gender = Gender::Neuter;
+			break;
+
+		case Race::Gnoll:
+			npc->race = Race::Gnoll2;
+			switch (npc->texture) {
+				default:
+				case 0:
+					npc->texture = zone->random.Int(0,1) == 1 ? 4 : 0;
+					break;
+				case 1:
+					npc->texture = 2;
+					break;
+				case 2:
+					npc->texture = 3;
+					break;
+				case 3:
+					npc->texture = 1;
+					break;
+			}
+			break;
+
+		case Race::Fairy:
+			npc->race = Race::Fairy2;
+			npc->gender = Gender::Neuter;
+			npc->size *= level_size_scale;
+			break;
+
+		case Race::Unicorn:
+			npc->race = Race::Unicorn3;
+			npc->helmtexture = npc->texture;
+			// This does not map super well. PoG Horses are broken.
+			break;
+
+		case Race::Gargoyle:
+			npc->race = Race::NightmareGargoyle;
+			break;
+
+		case Race::Vampire:
+			npc->race = Race::Vampire3;
+			npc->texture = 1;
+			npc->helmtexture = 1;
+			break;
+
+		case Race::Kobold:
+			if (strstr(npc->name, "werebat") == nullptr) {
+				npc->race = Race::Kobold2;
+				npc->texture = zone->random.Int(0, 6);
+				npc->helmtexture = zone->random.Int(0, 6);
+			}
+			break;
+
+		case Race::EruditeGhost:
+			npc->race = Race::HumanGhost;
+			break;
+
+		case Race::Imp:
+			npc->race = Race::Fiend;
+			break;
+
+		case Race::ForestGiant:
+			npc->race = Race::ForestGiant2;
+			npc->helmtexture = npc->texture;
+			break;
+
+		case Race::FrostGiant:
+			npc->race = Race::Giant2;
+			npc->texture = zone->random.Int(0,2);
+			npc->helmtexture = npc->texture;
+			break;
+
+		case Race::StormGiant:
+			npc->race = Race::Giant4;
+			npc->texture = zone->random.Int(0,2);
+			npc->helmtexture = npc->texture;
+			npc->size = 25;
+			break;
+
+		case Race::Golem:
+			npc->race = Race::Muddite;
+			npc->gender = Gender::Neuter;
+			switch (npc->texture) {
+				case 0:
+				default:
+					const static int defTextures[] = {0, 9, 8, 7};
+					npc->texture = defTextures[zone->random.Int(0, (sizeof(defTextures) / sizeof(defTextures[0])) - 1)];
+					break;
+				case 1:
+					npc->texture = 5;
+					break;
+				case 2:
+					npc->texture = 1;
+					break;
+				case 3:
+					npc->texture = 2;
+					break;
+			}
+			break;
+
+		case Race::IksarCitizen:
+			npc->helmtexture = 0;
+			npc->race = Race::Iksar;
+			if (npc->gender = 2) {
+				npc->gender = zone->random.Int(0,1);
+				npc->texture = 2;
+			} else {
+				npc->texture = 2;
+			}
+
+			switch (npc->class_) {
+				case Class::Wizard:
+				case Class::Necromancer:
+				case Class::Magician:
+				case Class::Enchanter:
+					npc->texture = zone->random.Int(10,16);
+					break;
+				default:
+					npc->texture = 2;
+					break;
+			}
+
+			npc->luclinface = zone->random.Int(0,9);
+			npc->eyecolor1 = zone->random.Int(0,9);
+			npc->eyecolor2 = npc->eyecolor1;
+			break;
+
+		case Race::TentacleTerror:
+			npc->race = Race::TentacleTerror2;
+			break;
+
+		case Race::IksarSpirit:
+			npc->race = Race::IksarGhost;
+			break;
+
+		case Race::Kerran:
+			npc->race = Race::Kerran2;
+			break;
+
+		case Race::EruditeCitizen:
+			npc->race = Race::Erudite2;
+			if (npc->gender == 0 && npc->texture == 0 && npc->helmtexture == 0) {
+				npc->gender = Gender::Male;
+				npc->texture = 4;
+				npc->helmtexture = 4;
+			} else {
+				npc->gender == Gender::Male;
+				npc->texture = zone->random.Int(0, 3);
+				npc->helmtexture = zone->random.Int(0, 3);
+			}
+			break;
+
+		case Race::Felguard:
+			npc->race = Race::HighElf;
+			npc->gender = zone->random.Int(0,1);
+			npc->luclinface = zone->random.Int(0,9);
+			npc->eyecolor1 = zone->random.Int(0,9);
+			npc->eyecolor2 = npc->eyecolor1;
+			npc->texture = zone->random.Int(2,3);
+			npc->helmtexture = zone->random.Int(0,1) == 1 ? 0 : npc->texture;
+			break;
+
+		case Race::Fungusman:
+			const static int defTextures[] = {0, 10, 11, 12, 2, 4, 6, 8};
+			npc->texture = defTextures[zone->random.Int(0, (sizeof(defTextures) / sizeof(defTextures[0])) - 1)];
+			npc->race = Race::Sporali;
+			break;
+
+		case Race::Aviak:
+			npc->race = Race::Aviak2;
+			break;
+
+		case Race::Harpy:
+			npc->race = Race::Harpy2;
+			break;
+
+		case Race::Minotaur:
+			npc->race = Race::Minotaur4;
+			break;
+
+		case Race::Puma:
+			npc->race = Race::Puma2;
+			// I think this maps correctly natively
+			break;
+
+		case Race::Goblin:
+			npc->race = Race::NewGoblin;
+			if (npc->texture == 3) {
+				npc->texture = 1;
+			}
+			break;
+
+		case Race::Beetle:
+			npc->race = Race::Beetle2;
+			switch (npc->texture) {
+				case 0:
+				case 1:
+					npc->texture = 0;
+					break;
+				case 3:
+					npc->texture = 1;
+					break;
+				default:
+					npc->texture = 2;
+					break;
+			}
+			npc->size  *= level_size_scale;
+			break;
+
+		case Race::PhinigelAutropos:
+			npc->race = Race::Kedge;
+			break;
+
+		case Race::Scarecrow:
+			npc->race = Race::Scarecrow2;
+			npc->texture = zone->random.Int(0,1);
+			npc->helmtexture =  zone->random.Int(0,3);
+			break;
+
+		case Race::Zombie:
+			npc->race = Race::Zombie2;
+			break;
+
+		case Race::Ghoul:
+			npc->race = Race::Ghoul2;
+			break;
+
+		case Race::GiantSnake:
+			npc->race = Race::Snake;
+			npc->size  *= level_size_scale;
+			break;
+
+		case Race::ClockworkGnome:
+			npc->race = Race::Gnomework;
+			npc->gender = Gender::Neuter;
+			npc->texture = zone->random.Int(0,3);
+			npc->helmtexture = zone->random.Int(0,3);
+			break;
+
+		case Race::Treant:
+			npc->race = Race::Treant3;
+			switch(zone->GetZoneID()) {
+				case Zones::GFAYDARK:
+				case Zones::LFAYDARK:
+					npc->texture 		= 2;
+					npc->helmtexture 	= zone->random.Int(0,3);
+					break;
+				case Zones::NORTHKARANA:
+				case Zones::EASTKARANA:
+				case Zones::QEY2HH1:
+				case Zones::SOUTHKARANA:
+				default:
+					npc->texture 		= 1;
+					npc->helmtexture 	= zone->random.Int(0,3);
+			}
+			npc->size  *= level_size_scale;
+			npc->gender = Gender::Neuter;
+			break;
+
+		case Race::Brownie:
+			npc->race = Race::Brownie2;
+			npc->texture = 0;
+			npc->helmtexture = 0;
+			break;
+
+        case Race::Orc: {
+			static const std::vector<std::pair<int, int>> deathfistCasters = {
+				{1, 1}, {1, 4}
+			};
+			static const std::vector<std::pair<int, int>> deathfistElites = {
+				{2, 2}
+			};
+			static const std::vector<std::pair<int, int>> deathfistTrash = {
+				{0, 0}, {0, 3}, {0, 9}, {1, 0}, {1, 3}, {1, 9}, {2, 0}, {2, 9}
+			};
+
+			static const std::vector<std::pair<int, int>> crushboneCasters = {
+				{3, 4}, {3, 9}, {4, 4}, {4, 9}, {5, 4}, {5, 6}, {5, 7}
+			};
+			static const std::vector<std::pair<int, int>> crushboneElites = {
+				{3, 0}, {5, 0}, {5, 5}
+			};
+			static const std::vector<std::pair<int, int>> crushboneTrash = {
+				{3, 3}, {4, 0}, {4, 3},  {5, 3}, {5, 9}
+			};
+
+			static const std::vector<std::pair<int, int>> frostCasters = {
+				{6, 6}, {7, 6}, {7, 7}
+			};
+			static const std::vector<std::pair<int, int>> frostElites = {
+				{7, 5}
+			};
+			static const std::vector<std::pair<int, int>> frostTrash = {
+				{6, 0}, {6, 3}, {7, 0}, {7, 3}, {7, 4}, {7, 9}, {8, 0}, {8, 3}, {8, 8}, {8, 9}
+			};
+
+            bool isCaster = IsCasterClass(npc->class_);
+            bool isElite = (strcasestr(npc->name, "centurion") != nullptr) ||
+                           (strcasestr(npc->name, "legionnaire") != nullptr) ||
+                           npc->rare_spawn || npc->raid_target || npc->unique_spawn_by_name;
+            bool isStandard = strcasestr(npc->name, "pawn") != nullptr;
+
+            const std::vector<std::pair<int, int>>* appearancePool = nullptr;
+            std::vector<std::pair<int, int>> combinedPool;
+
+            if (npc->texture == 0) {
+                // Deathfist
+                if (isCaster) {
+                    appearancePool = &deathfistCasters;
+                } else if (isElite) {
+                    appearancePool = &deathfistElites;
+                } else if (isStandard) {
+                    appearancePool = &deathfistTrash;
+                } else {
+                    combinedPool.insert(combinedPool.end(), deathfistCasters.begin(), deathfistCasters.end());
+                    combinedPool.insert(combinedPool.end(), deathfistElites.begin(), deathfistElites.end());
+                    combinedPool.insert(combinedPool.end(), deathfistTrash.begin(), deathfistTrash.end());
+                    appearancePool = &combinedPool;
+                }
+            } else if (npc->texture == 1) {
+                // Crushbone
+                if (isCaster) {
+                    appearancePool = &crushboneCasters;
+                } else if (isElite) {
+                    appearancePool = &crushboneElites;
+                } else if (isStandard) {
+                    appearancePool = &crushboneTrash;
+                } else {
+                    combinedPool.insert(combinedPool.end(), crushboneCasters.begin(), crushboneCasters.end());
+                    combinedPool.insert(combinedPool.end(), crushboneElites.begin(), crushboneElites.end());
+                    combinedPool.insert(combinedPool.end(), crushboneTrash.begin(), crushboneTrash.end());
+                    appearancePool = &combinedPool;
+                }
+            } else {
+                // Frost (default)
+                if (isCaster) {
+                    appearancePool = &frostCasters;
+                } else if (isElite) {
+                    appearancePool = &frostElites;
+                } else if (isStandard) {
+                    appearancePool = &frostTrash;
+                } else {
+                    combinedPool.insert(combinedPool.end(), frostCasters.begin(), frostCasters.end());
+                    combinedPool.insert(combinedPool.end(), frostElites.begin(), frostElites.end());
+                    combinedPool.insert(combinedPool.end(), frostTrash.begin(), frostTrash.end());
+                    appearancePool = &combinedPool;
+                }
+            }
+
+            if (appearancePool != nullptr && !appearancePool->empty()) {
+                int randomIndex = zone->random.Int(0, appearancePool->size() - 1);
+                npc->texture = (*appearancePool)[randomIndex].first;
+                npc->helmtexture = (*appearancePool)[randomIndex].second;
+				npc->race = Race::Orc2;
+				npc->gender = Gender::Neuter;
+            }
+
+            break;
+        }
+
+		case Race::GelatinousCube:
+			npc->race = Race::GelatinousCube2;
+			break;
+
+		case Race::Ratman:
+			npc->race = Race::Ratman2;
+			npc->texture = zone->random.Int(0,2);
+			break;
+
+		case Race::Dervish:
+			if (npc->texture != 0) {
+				npc->texture = zone->random.Int(0,2);
+				npc->helmtexture = npc->texture;
+				npc->race = Race::Dervish3;
+			}
+			break;
+
+		case Race::NeriakCitizen:
+			if (zone->GetZoneID() == Zones::HATEPLANEB) {
+				npc->gender = zone->random.Int(0,1);
+				if (npc->texture == 0) {
+					npc->race = Race::KnightOfHate;
+				} else {
+					npc->race = Race::ArcanistOfHate;
+				}
+			}
+			break;
+
+		case Race::ElfVampire:
+			npc->race = Race::UndeadVampire;
+			break;
+
+		case Race::Bixie:
+			npc->race = Race::Bixie2;
+			npc->texture = zone->random.Int(0,2);
+			npc->helmtexture = zone->random.Int(0,2);
+			break;
+
+		case Race::LavaDragon:
+			npc->race = Race::Dragon5;
+			switch(npc->texture) {
+				case 0:
+					npc->texture = 4;
+					break;
+				case 1:
+					npc->texture = 0;
+					break;
+				case 2:
+					npc->texture = 1;
+					break;
+				case 3:
+					npc->texture = 0;
+					break;
+				case 4:
+					npc->texture = 5;
+					break;
+				case 5:
+					npc->texture = 1;
+					break;
+				case 6:
+					npc->texture = 3;
+					break;
+				case 7:
+					npc->texture = 2;
+					break;
+			}
+			npc->helmtexture = npc->texture;
+			npc->size = 100;
+
+		break;
+
+        case Race::Drake:
+            npc->race = Race::Drake3;
+            npc->gender = Gender::Neuter;
+            if (npc->texture < 1 || npc->texture > 3) {
+                npc->texture = 0; // Black Drake
+            }
+            npc->size *= level_size_scale;
+            break;
+
+        case Race::Wurm:
+            npc->race = Race::Wurm2;
+            npc->gender = Gender::Neuter;
+            if (strstr(npc->name, "flame") != nullptr || strstr(npc->name, "fire") != nullptr) {
+                npc->texture = 1;
+            } else if (strstr(npc->name, "frost") != nullptr) {
+                npc->texture = 3;
+            } else {
+                npc->texture = zone->random.Int(0, 5);
+            }
+            break;
+
+        case Race::Wyvern:
+            npc->race = Race::Wyvern2;
+            break;
+
+        case Race::Raptor:
+            npc->race = Race::Raptor2;
+            break;
+
+        default:
+            // Handle other races if necessary
+            break;
+    }
+
+    return npc;
+}
+
 
 const NPCType *ZoneDatabase::LoadNPCTypesData(uint32 npc_type_id, bool bulk_load /*= false*/)
 {
@@ -1811,6 +2546,7 @@ const NPCType *ZoneDatabase::LoadNPCTypesData(uint32 npc_type_id, bool bulk_load
 		t->max_dmg            = n.maxdmg;
 		t->attack_count       = n.attack_count;
 		t->is_parcel_merchant = n.is_parcel_merchant ? true : false;
+		t->greed              = n.greed;
 
 		if (!n.special_abilities.empty()) {
 			strn0cpy(t->special_abilities, n.special_abilities.c_str(), 512);
@@ -1987,12 +2723,18 @@ const NPCType *ZoneDatabase::LoadNPCTypesData(uint32 npc_type_id, bool bulk_load
 		t->faction_amount         = n.faction_amount;
 		t->keeps_sold_items       = n.keeps_sold_items;
 
+
+
 		// If NPC with duplicate NPC id already in table,
 		// free item we attempted to add.
 		if (zone->npctable.find(t->npc_id) != zone->npctable.end()) {
 			std::cerr << "Error loading duplicate NPC " << t->npc_id << std::endl;
 			delete t;
 			return nullptr;
+		}
+
+		if (RuleB(Custom, UseTHJRaceMutations)) {
+			t = MutateRace(t);
 		}
 
 		zone->npctable[t->npc_id] = t;
@@ -3046,6 +3788,7 @@ void ZoneDatabase::LoadBuffs(Client *client)
 			continue;
 		}
 
+
 		Client* c = entity_list.GetClientByName(e.caster_name.c_str());
 
 		buffs[e.slot_id].spellid = e.spell_id;
@@ -3054,14 +3797,12 @@ void ZoneDatabase::LoadBuffs(Client *client)
 		if (c) {
 			buffs[e.slot_id].casterid = c->GetID();
 			buffs[e.slot_id].client   = true;
-
-			strncpy(buffs[e.slot_id].caster_name, c->GetName(), 64);
 		} else {
 			buffs[e.slot_id].casterid = 0;
 			buffs[e.slot_id].client   = false;
-
-			strncpy(buffs[e.slot_id].caster_name, "", 64);
 		}
+
+		strn0cpy(buffs[e.slot_id].caster_name, e.caster_name.c_str(), 64);
 
 		buffs[e.slot_id].ticsremaining     = e.ticsremaining;
 		buffs[e.slot_id].counters          = e.counters;
@@ -3151,140 +3892,226 @@ void ZoneDatabase::LoadAuras(Client *c)
 
 void ZoneDatabase::SavePetInfo(Client *client)
 {
-	PetInfo* p = nullptr;
-
-	std::vector<CharacterPetInfoRepository::CharacterPetInfo> pet_infos;
-	auto pet_info = CharacterPetInfoRepository::NewEntity();
-
-	std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> pet_buffs;
-	auto pet_buff = CharacterPetBuffsRepository::NewEntity();
-
-	std::vector<CharacterPetInventoryRepository::CharacterPetInventory> inventory;
-	auto item = CharacterPetInventoryRepository::NewEntity();
-
-	for (int pet_info_type = PetInfoType::Current; pet_info_type <= PetInfoType::Suspended; pet_info_type++) {
-		p = client->GetPetInfo(pet_info_type);
-		if (!p) {
-			continue;
-		}
-
-		pet_info.char_id  = client->CharacterID();
-		pet_info.pet      = pet_info_type;
-		pet_info.petname  = p->Name;
-		pet_info.petpower = p->petpower;
-		pet_info.spell_id = p->SpellID;
-		pet_info.hp       = p->HP;
-		pet_info.mana     = p->Mana;
-		pet_info.size     = p->size;
-		pet_info.taunting = p->taunting ? 1 : 0;
-
-		pet_infos.push_back(pet_info);
-
-		uint32 pet_buff_count = 0;
-
-		const uint32 max_slots = (
-			RuleI(Spells, MaxTotalSlotsPET) > PET_BUFF_COUNT ?
-			PET_BUFF_COUNT :
-			RuleI(Spells, MaxTotalSlotsPET)
-		);
-
-		for (int slot_id = 0; slot_id < max_slots; slot_id++) {
-			if (!IsValidSpell(p->Buffs[slot_id].spellid)) {
-				continue;
-			}
-
-			pet_buff_count++;
-		}
-
-		pet_buffs.reserve(pet_buff_count);
-
-		for (int slot_id = 0; slot_id < max_slots; slot_id++) {
-			if (!IsValidSpell(p->Buffs[slot_id].spellid)) {
-				continue;
-			}
-
-			pet_buff.char_id        = client->CharacterID();
-			pet_buff.pet            = pet_info_type;
-			pet_buff.slot           = slot_id;
-			pet_buff.spell_id       = p->Buffs[slot_id].spellid;
-			pet_buff.caster_level   = p->Buffs[slot_id].level;
-			pet_buff.ticsremaining  = p->Buffs[slot_id].duration;
-			pet_buff.counters       = p->Buffs[slot_id].counters;
-			pet_buff.instrument_mod = p->Buffs[slot_id].bard_modifier;
-			pet_buff.castername     = p->Buffs[slot_id].caster_name;			
-
-			pet_buffs.push_back(pet_buff);
-		}
-
-		uint32 pet_inventory_count = 0;
-
-		for (
-			int slot_id = EQ::invslot::EQUIPMENT_BEGIN;
-			slot_id <= EQ::invslot::EQUIPMENT_END;
-			slot_id++
-		) {
-			if (!p->Items[slot_id]) {
-				continue;
-			}
-
-			pet_inventory_count++;
-		}
-
-		inventory.reserve(pet_inventory_count);
-
-		for (
-			int slot_id = EQ::invslot::EQUIPMENT_BEGIN;
-			slot_id <= EQ::invslot::EQUIPMENT_END;
-			slot_id++
-		) {
-			if (!p->Items[slot_id]) {
-				continue;
-			}
-
-			item.char_id = client->CharacterID();
-			item.pet     = pet_info_type;
-			item.slot    = slot_id;
-			item.item_id = p->Items[slot_id];
-
-			inventory.push_back(item);
-		}
-	}
+    std::vector<PetInfo*> pets = client->GetPetsInfo();
 
 	CharacterPetInfoRepository::DeleteWhere(
-		database,
-		fmt::format(
-			"`char_id` = {}",
-			client->CharacterID()
-		)
-	);
-
-	if (!pet_infos.empty()) {
-		CharacterPetInfoRepository::InsertMany(database, pet_infos);
-	}
+        database,
+        fmt::format(
+            "`char_id` = {}",
+            client->CharacterID()
+        )
+    );
 
 	CharacterPetBuffsRepository::DeleteWhere(
-		database,
-		fmt::format(
-			"`char_id` = {}",
-			client->CharacterID()
-		)
-	);
-
-	if (!pet_buffs.empty()) {
-		CharacterPetBuffsRepository::InsertMany(database, pet_buffs);
-	}
+        database,
+        fmt::format(
+            "`char_id` = {}",
+            client->CharacterID()
+        )
+    );
 
 	CharacterPetInventoryRepository::DeleteWhere(
-		database,
-		fmt::format(
-			"`char_id` = {}",
-			client->CharacterID()
-		)
-	);
+        database,
+        fmt::format(
+            "`char_id` = {}",
+            client->CharacterID()
+        )
+    );
 
-	if (!inventory.empty()) {
-		CharacterPetInventoryRepository::InsertMany(database, inventory);
-	}
+    std::vector<CharacterPetInfoRepository::CharacterPetInfo> pet_infos;
+    std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> pet_buffs;
+    std::vector<CharacterPetInventoryRepository::CharacterPetInventory> inventory;
+
+    auto save_pet_info = [&](PetInfo* p, uint32 pet_id) {
+        if (!p) {
+            return;
+        }
+
+        auto pet_info = CharacterPetInfoRepository::NewEntity();
+        pet_info.char_id  = client->CharacterID();
+        pet_info.pet      = pet_id; // Use the given pet_id instead of index
+        pet_info.petname  = p->Name;
+        pet_info.petpower = p->petpower;
+        pet_info.spell_id = p->SpellID;
+        pet_info.hp       = p->HP;
+        pet_info.mana     = p->Mana;
+        pet_info.size     = p->size;
+        pet_info.taunting = p->taunting ? 1 : 0;
+
+        pet_infos.push_back(pet_info);
+
+        const uint32 max_slots = (
+            RuleI(Spells, MaxTotalSlotsPET) > PET_BUFF_COUNT ?
+            PET_BUFF_COUNT :
+            RuleI(Spells, MaxTotalSlotsPET)
+        );
+
+        for (int slot_id = 0; slot_id < max_slots; ++slot_id) {
+            if (!IsValidSpell(p->Buffs[slot_id].spellid) || IsShortDurationBuff(p->Buffs[slot_id].spellid)) {
+                continue;
+            }
+
+            auto pet_buff = CharacterPetBuffsRepository::NewEntity();
+            pet_buff.char_id        = client->CharacterID();
+            pet_buff.pet            = pet_id;
+            pet_buff.slot           = slot_id;
+            pet_buff.spell_id       = p->Buffs[slot_id].spellid;
+            pet_buff.castername		= p->Buffs[slot_id].caster_name;
+            pet_buff.caster_level   = p->Buffs[slot_id].level;
+            pet_buff.ticsremaining  = p->Buffs[slot_id].duration;
+            pet_buff.counters       = p->Buffs[slot_id].counters;
+            pet_buff.instrument_mod = p->Buffs[slot_id].bard_modifier;
+
+            pet_buffs.push_back(pet_buff);
+        }
+
+        for (int slot_id = EQ::invslot::EQUIPMENT_BEGIN; slot_id <= EQ::invslot::EQUIPMENT_END; ++slot_id) {
+            if (!p->Items[slot_id]) {
+                continue;
+            }
+
+            auto item = CharacterPetInventoryRepository::NewEntity();
+            item.char_id = client->CharacterID();
+            item.pet     = pet_id;
+            item.slot    = slot_id;
+            item.item_id = p->Items[slot_id];
+
+            inventory.push_back(item);
+        }
+    };
+
+    for (size_t i = 0; i < pets.size(); ++i) {
+        save_pet_info(pets[i], i);
+    }
+
+    // Save suspended minion to pet id 100
+	auto suspended_pet = client->GetSuspendedPetInfo();
+    save_pet_info(&suspended_pet, 100);
+
+    if (!pet_infos.empty()) {
+        CharacterPetInfoRepository::InsertMany(database, pet_infos);
+    }
+
+    if (!pet_buffs.empty()) {
+        CharacterPetBuffsRepository::InsertMany(database, pet_buffs);
+    }
+
+    if (!inventory.empty()) {
+        CharacterPetInventoryRepository::InsertMany(database, inventory);
+    }
+}
+
+
+void ZoneDatabase::LoadPetInfo(Client *client)
+{
+    // Get the vector of PetInfo pointers
+    auto& pets_info = client->GetPetsInfo();
+
+    // Clean up any existing PetInfo objects
+    for (auto& pet : pets_info) {
+        safe_delete(pet);
+    }
+
+    // Clear the vector to remove dangling pointers
+    pets_info.clear();
+
+    // Load new pet information from the database
+    const auto& info = CharacterPetInfoRepository::GetWhere(
+        database,
+        fmt::format(
+            "`char_id` = {} ORDER BY pet ASC",
+            client->CharacterID()
+        )
+    );
+
+    if (info.empty()) {
+        return;
+    }
+
+    // Load pet data into the vector and m_suspendedminion
+    for (const auto& e : info) {
+        PetInfo* p = new PetInfo;
+
+        strn0cpy(p->Name, e.petname.c_str(), sizeof(p->Name));
+
+        p->petpower = e.petpower;
+        p->SpellID  = e.spell_id;
+        p->HP       = e.hp;
+        p->Mana     = e.mana;
+        p->size     = e.size;
+        p->taunting = e.taunting;
+
+        memset(p->Buffs, 0, sizeof(p->Buffs));
+        memset(p->Items, 0, sizeof(p->Items));
+
+        if (e.pet == 100) {
+            // Assign this PetInfo to m_suspendedminion
+            client->GetSuspendedPetInfo() = *p;
+            delete p;
+        } else {
+            pets_info.push_back(p); // Store the new PetInfo pointer in the vector
+        }
+    }
+
+    // Load pet buffs from the database
+    const auto& buffs = CharacterPetBuffsRepository::GetWhere(
+        database,
+        fmt::format(
+            "`char_id` = {} ORDER BY pet ASC",
+            client->CharacterID()
+        )
+    );
+
+    if (!buffs.empty()) {
+        for (const auto& e : buffs) {
+            PetInfo* p = (e.pet == 100) ? &client->GetSuspendedPetInfo() : (e.pet < pets_info.size() ? pets_info[e.pet] : nullptr);
+
+            if (p) {
+                if (e.slot >= RuleI(Spells, MaxTotalSlotsPET)) {
+                    continue;
+                }
+
+                if (!IsValidSpell(e.spell_id)) {
+                    continue;
+                }
+
+                strn0cpy(p->Buffs[e.slot].caster_name, e.castername.c_str(), sizeof(p->Buffs[e.slot].caster_name));
+
+                auto caster = entity_list.GetClientByName(p->Buffs[e.slot].caster_name);
+
+                p->Buffs[e.slot].spellid       = e.spell_id;
+                p->Buffs[e.slot].level         = e.caster_level;
+                p->Buffs[e.slot].player_id     = caster ? caster->GetID() : 0;
+                p->Buffs[e.slot].effect_type   = BuffEffectType::Buff;
+                p->Buffs[e.slot].duration      = e.ticsremaining;
+                p->Buffs[e.slot].counters      = e.counters;
+                p->Buffs[e.slot].bard_modifier = e.instrument_mod;
+            }
+        }
+    }
+
+    // Load pet inventory from the database
+    const auto& inventory = CharacterPetInventoryRepository::GetWhere(
+        database,
+        fmt::format(
+            "`char_id` = {} ORDER BY pet ASC",
+            client->CharacterID()
+        )
+    );
+
+    if (!inventory.empty()) {
+        for (const auto& e : inventory) {
+            PetInfo* p = (e.pet == 100) ? &client->GetSuspendedPetInfo() : (e.pet < pets_info.size() ? pets_info[e.pet] : nullptr);
+
+            if (p) {
+                if (!EQ::ValueWithin(e.slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+                    continue;
+                }
+
+                p->Items[e.slot] = e.item_id;
+            }
+        }
+    }
 }
 
 void ZoneDatabase::RemoveTempFactions(Client *client) {
@@ -3317,112 +4144,6 @@ void ZoneDatabase::DeleteItemRecast(uint32 character_id, uint32 recast_type)
 			recast_type
 		)
 	);
-}
-
-void ZoneDatabase::LoadPetInfo(Client *client)
-{
-	// Load current pet and suspended pet
-	auto pet_info           = client->GetPetInfo(PetInfoType::Current);
-	auto suspended_pet_info = client->GetPetInfo(PetInfoType::Suspended);
-
-	memset(pet_info, 0, sizeof(PetInfo));
-	memset(suspended_pet_info, 0, sizeof(PetInfo));
-
-	const auto& info = CharacterPetInfoRepository::GetWhere(
-		database,
-		fmt::format(
-			"`char_id` = {}",
-			client->CharacterID()
-		)
-	);
-
-	if (info.empty()) {
-		return;
-	}
-
-	PetInfo* p;
-
-	for (const auto& e : info) {
-		if (e.pet == PetInfoType::Current) {
-			p = pet_info;
-		} else if (e.pet == PetInfoType::Suspended) {
-			p = suspended_pet_info;
-		} else {
-			continue;
-		}
-
-		strn0cpy(p->Name, e.petname.c_str(), sizeof(p->Name));
-
-		p->petpower = e.petpower;
-		p->SpellID  = e.spell_id;
-		p->HP       = e.hp;
-		p->Mana     = e.mana;
-		p->size     = e.size;
-		p->taunting = e.taunting;
-	}
-
-	const auto& buffs = CharacterPetBuffsRepository::GetWhere(
-		database,
-		fmt::format(
-			"`char_id` = {}",
-			client->CharacterID()
-		)
-	);
-
-	if (!buffs.empty()) {
-		for (const auto& e : buffs) {
-			if (e.pet == PetInfoType::Current) {
-				p = pet_info;
-			} else if (e.pet == PetInfoType::Suspended) {
-				p = suspended_pet_info;
-			} else {
-				continue;
-			}
-
-			if (e.slot >= RuleI(Spells, MaxTotalSlotsPET)) {
-				continue;
-			}
-
-			if (!IsValidSpell(e.spell_id)) {
-				continue;
-			}
-
-			p->Buffs[e.slot].spellid       = e.spell_id;
-			p->Buffs[e.slot].level         = e.caster_level;
-			p->Buffs[e.slot].player_id     = 0;
-			p->Buffs[e.slot].effect_type   = BuffEffectType::Buff;
-			p->Buffs[e.slot].duration      = e.ticsremaining;
-			p->Buffs[e.slot].counters      = e.counters;
-			p->Buffs[e.slot].bard_modifier = e.instrument_mod;
-			strn0cpy(p->Buffs[e.slot].caster_name, e.castername.c_str(), sizeof(p->Buffs[e.slot].caster_name));
-		}
-	}
-
-	const auto& inventory = CharacterPetInventoryRepository::GetWhere(
-		database,
-		fmt::format(
-			"`char_id` = {}",
-			client->CharacterID()
-		)
-	);
-
-	if (!inventory.empty()) {
-		for (const auto& e : inventory) {
-			if (e.pet == PetInfoType::Current) {
-				p = pet_info;
-			} else if (e.pet == PetInfoType::Suspended) {
-				p = suspended_pet_info;
-			} else {
-				continue;
-			}
-
-			if (!EQ::ValueWithin(e.slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
-				continue;
-			}
-
-			p->Items[e.slot] = e.item_id;
-		}
-	}
 }
 
 bool ZoneDatabase::GetFactionData(FactionMods* fm, uint32 class_mod, uint32 race_mod, uint32 deity_mod, int32 faction_id) {

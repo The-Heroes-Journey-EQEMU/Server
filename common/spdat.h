@@ -20,6 +20,7 @@
 
 #include "classes.h"
 #include "skills.h"
+#include <unordered_set>
 
 #define SPELL_UNKNOWN 0xFFFF
 #define POISON_PROC 0xFFFE
@@ -904,7 +905,7 @@ typedef enum {
 #define SE_AlterNPCLevel				107	// implemented - not used on live
 #define SE_Familiar						108	// implemented
 #define SE_SummonItemIntoBag			109	// implemented - summons stuff into container
-//#define SE_IncreaseArchery			110	// not used
+#define SE_IncreaseArchery				110	// implemented
 #define SE_ResistAll					111	// implemented - Note: Physical Resists are not modified by this effect.
 #define SE_CastingLevel					112	// implemented
 #define	SE_SummonHorse					113	// implemented
@@ -916,7 +917,7 @@ typedef enum {
 #define SE_AttackSpeed3					119	// implemented
 #define SE_HealRate						120	// implemented - reduces healing by a %
 #define SE_ReverseDS					121 // implemented
-//#define SE_ReduceSkill				122	// not implemented    TODO: Now used on live, decreases skills by percent
+#define SE_ReduceSkill					122	// implemented - base: skill id, limit: none, max: none, formula: % skill is reduced (positive)
 #define SE_Screech						123	// implemented Spell Blocker(If have buff with value +1 will block any effect with -1)
 #define SE_ImprovedDamage				124 // implemented
 #define SE_ImprovedHeal					125 // implemented
@@ -1522,6 +1523,7 @@ bool IsSummonPetSpell(uint16 spell_id);
 bool IsSummonPCSpell(uint16 spell_id);
 bool IsPetSpell(uint16 spell_id);
 bool IsCharmSpell(uint16 spell_id);
+bool IsResurrectionSicknessSpell(uint16 spell_id);
 bool IsBlindSpell(uint16 spell_id);
 bool IsHealthSpell(uint16 spell_id);
 bool IsCastTimeReductionSpell(uint16 spell_id);
@@ -1552,6 +1554,8 @@ bool IsHarmTouchSpell(uint16 spell_id);
 int GetSpellEffectIndex(uint16 spell_id, int effect_id);
 uint8 GetSpellMinimumLevel(uint16 spell_id);
 uint8 GetSpellLevel(uint16 spell_id, uint8 class_id);
+std::map<uint8, uint8> GetSpellClasses(uint16 spell_id);
+uint8 GetPetOriginClass(uint16 spell_id);
 int CalcBuffDuration_formula(int level, int formula, int duration);
 int32 CalculatePoisonCounters(uint16 spell_id);
 int32 CalculateDiseaseCounters(uint16 spell_id);
@@ -1624,5 +1628,8 @@ bool IsSpellUsableInThisZoneType(uint16 spell_id, uint8 zone_type);
 const char *GetSpellName(uint16 spell_id);
 int GetSpellStatValue(uint16 spell_id, const char* stat_identifier, uint8 slot = 0);
 bool IsCastRestrictedSpell(uint16 spell_id);
+bool IsAegolismSpell(uint16 spell_id);
+bool AegolismStackingIsSymbolSpell(uint16 spell_id);
+bool AegolismStackingIsArmorClassSpell(uint16 spell_id);
 
 #endif

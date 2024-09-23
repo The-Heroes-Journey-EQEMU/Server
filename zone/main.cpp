@@ -446,6 +446,21 @@ int main(int argc, char **argv)
 	auto perl_parser = new PerlembParser();
 	parse->RegisterQuestInterface(perl_parser, "pl");
 
+#ifdef __linux__
+	std::string current_version = CURRENT_VERSION;
+	// running release binaries
+	if (!Strings::Contains(current_version, "-dev")) {
+		if (!fs::exists("/opt/eqemu-perl")) {
+			LogError("You are running release binaries without having the required eqemu version of perl compiled and installed on this system present at /opt/eqemu-perl");
+			LogError("If you are running an old Linux install, you need to install the required perl version from the eqemu-perl");
+			LogError("Instructions can be referenced at https://github.com/Akkadius/akk-stack/blob/master/containers/eqemu-server/Dockerfile#L92-L106");
+			LogError("Press any key to continue");
+			getchar();
+			return 0;
+		}
+	}
+#endif
+
 	/* Load Perl Event Export Settings */
 	parse->LoadPerlEventExportSettings(parse->perl_event_export_settings);
 
@@ -456,7 +471,7 @@ int main(int argc, char **argv)
 			parse->EventItem(EVENT_ITEM_GENERATE, nullptr, inst, nullptr, std::string{}, 0, &args);
 		}
 	});
-	
+
 	//now we have our parser, load the quests
 	LogInfo("Loading quests");
 	parse->ReloadQuests();

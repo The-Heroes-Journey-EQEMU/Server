@@ -21,6 +21,7 @@
 #include "item_data.h"
 #include "classes.h"
 #include "races.h"
+#include <unordered_map>
 //#include "deity.h"
 
 
@@ -168,7 +169,7 @@ uint8 EQ::item::ConvertAugTypeBitToAugType(uint32 aug_type_bit)
 	}
 }
 
-bool EQ::ItemData::IsEquipable(uint16 race_id, uint16 class_bits) const {    
+bool EQ::ItemData::IsEquipable(uint16 race_id, uint16 class_bits) const {
     if (!(Races & GetPlayerRaceBit(race_id))) {
         return false;
     }
@@ -257,32 +258,4 @@ const char* EQ::ItemData::GetActualCharmFile() const {
     const char* delimiterPos = strchr(CharmFile, '#');
 
     return delimiterPos ? delimiterPos + 1 : CharmFile;
-}
-
-const uint64 EQ::ItemData::CalculateGearScore() const {
-	int gear_score = 5;
-	
-	// Basic Stats
-	gear_score += 5   * AStr + ASta + ADex + AAgi + AInt + AWis + ACha;
-	gear_score += 2   * MR + FR + CR + DR + PR;
-	gear_score += 2   * HP + Mana + Endur;	
-	gear_score += 10  * Attack + SpellDmg + HealAmt;
-	gear_score += 10  * AC;
-	gear_score += 10  * Haste;
-
-	gear_score *= 		(Damage / (Delay+1) + 1);
-
-	// Heroic Stats
-	gear_score += 10  * (HeroicStr + HeroicSta + HeroicDex + HeroicAgi + HeroicInt + HeroicWis + HeroicCha);
-	gear_score += 5   * (HeroicMR + HeroicFR + HeroicCR + HeroicDR + HeroicPR);
-
-	// Mod2 Stats
-	gear_score += 100 * (Shielding + SpellShield + Avoidance + CombatEffects);
-	gear_score += 50  * (Accuracy + StunResist + StrikeThrough + DotShielding);
-	gear_score += 25  * (Regen + ManaRegen + EnduranceRegen + DSMitigation + Clairvoyance + DamageShield);
-
-	// Tier Modifier
-	gear_score *= ((int)(OriginalID / 1000000) + 1) * 4;
-
-	return static_cast<uint64>(std::pow(gear_score, 2));
 }

@@ -48,6 +48,7 @@ static uint64 ScaleAAXPBasedOnCurrentAATotal(int earnedAA, uint64 add_aaxp)
 	int aaLimit = RuleI(AA, ModernAAScalingAALimit);
 
 	// Are we within the scaling window?
+	LogDebug("earnedAA: [{}], aaLimit: [{}], aaMinimum [{}]", earnedAA, aaMinimum, aaLimit);
 	if (earnedAA >= aaLimit || earnedAA < aaMinimum)
 	{
 		LogDebug("Not within AA scaling window");
@@ -78,7 +79,7 @@ static uint64 ScaleAAXPBasedOnCurrentAATotal(int earnedAA, uint64 add_aaxp)
 	}
 
 	Log(Logs::Detail,
-		Logs::None,
+		Logs::Debug,
 		"Total before the modifier %d :: NewTotal %d :: ScaleRange: %d, SpentAA: %d, RemainingAA: %d, normalizedScale: %0.3f",
 		add_aaxp, totalWithExpMod, scaleRange, earnedAA, remainingAA, normalizedScale);
 
@@ -128,8 +129,8 @@ uint64 Client::CalcEXP(uint8 consider_level, bool ignore_modifiers) {
 
 		if (RuleB(Character, UseRaceClassExpBonuses)) {
 			if (
-				GetClass() == Class::Warrior ||
-				GetClass() == Class::Rogue ||
+				HasClass(Class::Warrior) ||
+				HasClass(Class::Rogue) ||
 				GetBaseRace() == HALFLING
 			) {
 				total_modifier *= 1.05;
@@ -295,7 +296,7 @@ void Client::CalculateStandardAAExp(uint64 &add_aaxp, uint8 conlevel, bool resex
 			aatotalmod *= 1.05;
 		}
 
-		if (GetClass() == Class::Rogue || GetClass() == Class::Warrior) {
+		if (HasClass(Class::Rogue) || HasClass(Class::Warrior)) {
 			aatotalmod *= 1.05;
 		}
 	}
@@ -443,7 +444,7 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 				totalmod *= 1.05;
 			}
 
-			if (GetClass() == Class::Rogue || GetClass() == Class::Warrior) {
+			if (HasClass(Class::Rogue) || HasClass(Class::Warrior)) {
 				totalmod *= 1.05;
 			}
 		}
@@ -485,6 +486,43 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 
 	//Enforce Percent XP Cap per kill, if rule is enabled
 	int kill_percent_xp_cap = RuleI(Character, ExperiencePercentCapPerKill);
+	float max_scale 		= RuleR(Custom, FloatingExperienceMaxScaleFactor);
+	int terminal_level 		= RuleI(Custom, FloatingExperienceScaleTerminalLevel);
+
+	float level_scaling = 1.0f;
+	if (GetLevel() < terminal_level) {
+		level_scaling = max_scale - ((max_scale - 1.0f) * (GetLevel() - 1.0f) / (terminal_level - 1.0f));
+	}
+
+	int cap = 0;
+
+	switch (conlevel) {
+		case ConsiderColor::Red:
+			cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerRedKill) * level_scaling);
+			break;
+		case ConsiderColor::Yellow:
+			cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerYellowKill) * level_scaling);
+			break;
+		case ConsiderColor::White:
+			cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerWhiteKill) * level_scaling);
+			break;
+		case ConsiderColor::DarkBlue:
+			cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerBlueKill) * level_scaling);
+			break;
+		case ConsiderColor::LightBlue:
+			cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerLightBlueKill) * level_scaling);
+			break;
+		case ConsiderColor::Green:
+			cap = static_cast<int>(RuleR(Character, FloatingExperiencePercentCapPerGreenKill) * level_scaling);
+			break;
+		default:
+			break;
+	}
+	// Override kill_percent_xp_cap if a valid cap was calculated
+	if (cap > 0) {
+		kill_percent_xp_cap = std::min(kill_percent_xp_cap, cap);
+	}
+
 	if (kill_percent_xp_cap >= 0) {
 		auto experience_for_level = (GetEXPForLevel(GetLevel() + 1) - GetEXPForLevel(GetLevel()));
 		float exp_percent = (float)((float)add_exp / (float)(GetEXPForLevel(GetLevel() + 1) - GetEXPForLevel(GetLevel()))) * (float)100; //EXP needed for level
@@ -497,80 +535,275 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 	add_exp = GetEXP() + add_exp;
 }
 
-void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
+bool Client::ConsumeItemOnCursor() {
+	auto pow_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+	auto cur_item = m_inv.GetCursorItem();
+	if (!pow_item) {
+		Message(Chat::SpellFailure, "You must place an item in your Power Source slot in order to consume a similar item.");
+		return false;
+	}
+
+	if (!cur_item || cur_item->GetID() % 1000000 != pow_item->GetID() % 1000000 || cur_item->GetID() >= 2000000) {
+		Message(Chat::SpellFailure, "You can only Consume items similar which are similar, to what is equipped in your Power Source slot.");
+		return false;
+	}
+
+	if (cur_item->IsAttuned()) {
+		Message(Chat::SpellFailure, "You may not consume items which have already absorbed energy in this way.");
+		return false;
+	}
+
+	auto GetItemTier = [](EQ::ItemData* item) -> int {
+		if (item->ID <= 1000000) { return 0; }
+		else if (item->ID <= 2000000) { return 1; }
+		else if (item->ID <= 3000000) { return 2; }
+		else return 0;
+	};
+
+	int pow_item_tier = GetItemTier(pow_item->GetItem());
+	int cur_item_tier = GetItemTier(cur_item->GetItem());
+
+	float item_experience = Strings::ToFloat(pow_item->GetCustomData("Exp"), 0.0f);
+	float added_experience = 0.0f;
+
+	if (cur_item_tier > pow_item_tier) {
+		// If the cursor item is of a higher tier, set progress to 100%
+		added_experience = 100.0f;
+	} else if (cur_item_tier == pow_item_tier) {
+		// Same tier as before, add 33.33% progress
+		added_experience = 33.33f;
+	} else {
+		// Lower tier, add 6.65% progress
+		added_experience = 6.65f;
+	}
+
+	float new_experience = item_experience + added_experience;
+	float experience_overflow = 0.0f;
+
+	// If new experience exceeds 100%, calculate overflow
+	if (new_experience > 100.0f) {
+		experience_overflow = new_experience - 100.0f;
+		new_experience = 100.0f; // Cap experience at 100%
+	}
+
+	// Apply the new experience to the power source
+	pow_item->SetCustomData("Exp", fmt::to_string(new_experience));
+	database.UpdateInventorySlot(CharacterID(), pow_item, EQ::invslot::slotPowerSource);
+
+	if (AddItemExperience(pow_item, ConsiderColor::Green)) {
+		// Delete the item from the cursor
+		DeleteItemInInventory(EQ::invslot::slotCursor, 0, true, true);
+		return true;
+	}
+
+	return false;
+}
+
+bool Client::AddItemExperience(EQ::ItemInstance* item, int conlevel) {
+	if (!item || conlevel == 0xFF) {
+		LogError("Attempted to add experience to an invalid item, or from an invalid source.");
+        return false;
+    }
+
+	auto EjectItem = [&](int16 slot_id) {
+		const EQ::ItemInstance* pop_item = m_inv.PopItem(slot_id);
+		if (pop_item) {
+			database.SaveInventory(CharacterID(), NULL, slot_id);
+			DeleteItemInInventory(slot_id, 0, true, true);
+			PushItemOnCursor(*pop_item, true);
+		}
+	};
+
+	auto GetItemStatValue = [](EQ::ItemData* item) -> float {
+		if (item) {
+			float return_value = 0.0f;
+
+			if (item->HP >= 0) 	return_value  += item->HP 	/ 10.0f;
+			if (item->Mana >= 0) return_value += item->Mana / 10.0f;
+
+			if (item->AStr >= 0) return_value += item->AStr;
+			if (item->ASta >= 0) return_value += item->ASta;
+			if (item->ADex >= 0) return_value += item->ADex;
+			if (item->AAgi >= 0) return_value += item->AAgi;
+			if (item->AInt >= 0) return_value += item->AInt;
+			if (item->AWis >= 0) return_value += item->AWis;
+
+			if (item->MR >= 0) 	return_value += item->MR;
+			if (item->FR >= 0) 	return_value += item->FR;
+			if (item->CR >= 0) 	return_value += item->CR;
+			if (item->DR >= 0) 	return_value += item->DR;
+			if (item->PR >= 0) 	return_value += item->PR;
+
+			return std::max(10.0f, return_value);
+		} else {
+			return 100.0f;
+		}
+	};
+
+	/*
+		This calculates the direct % value of a kill, modified by the per-kill caps and item tier.
+		calibration is that am even-con kill at or above FloatingExperienceScaleTerminalLevel is
+		worth ~1% progress on a tier 0 item, and 0.1% progress for a tier1 item.
+	*/
+	auto GetBaseExpValueForKill = [&](int conlevel, int tier) -> float {
+		float exp_value 		= 0.0f;
+		float max_scale 		= RuleR(Custom, FloatingExperienceMaxScaleFactor);
+		int   terminal_level 	= RuleI(Custom, FloatingExperienceScaleTerminalLevel);
+
+		float level_scaling = 1.0f;
+		if (GetLevel() < terminal_level) {
+			level_scaling = max_scale - ((max_scale - 1.0f) * (GetLevel() - 1.0f) / (terminal_level - 1.0f));
+		}
+
+		// Adjust by a constant to keep these values reasonable...
+		level_scaling *= 0.33;
+
+		switch (conlevel) {
+			case 0xFA:
+				return 0.0f;
+			case ConsiderColor::Red:
+				exp_value = (RuleR(Character, FloatingExperiencePercentCapPerRedKill) * level_scaling);
+				break;
+			case ConsiderColor::Yellow:
+				exp_value = RuleR(Character, FloatingExperiencePercentCapPerYellowKill) * level_scaling;
+				break;
+			case ConsiderColor::White:
+				exp_value = RuleR(Character, FloatingExperiencePercentCapPerWhiteKill) * level_scaling;
+				break;
+			case ConsiderColor::DarkBlue:
+				exp_value = RuleR(Character, FloatingExperiencePercentCapPerBlueKill) * level_scaling;
+				break;
+			case ConsiderColor::LightBlue:
+				exp_value = RuleR(Character, FloatingExperiencePercentCapPerLightBlueKill) * level_scaling;
+				break;
+			case ConsiderColor::Green:
+				exp_value = RuleR(Character, FloatingExperiencePercentCapPerGreenKill) * level_scaling;
+				break;
+			default:
+				break;
+		}
+
+		exp_value *= (GetLevel() >= GetClientMaxLevel() ? 1.0f : 10.0f - ((GetLevel() - 1) * 9.0f / (GetClientMaxLevel() - 1)));
+
+		float norm_val = GetItemStatValue(m_inv.GetItem(EQ::invslot::slotPowerSource)->GetItem());
+
+		if (tier) {
+			exp_value /= 10;
+		}
+
+		// Add a little bit of randomization
+		exp_value *= zone->random.Real(0.5, 1.5);
+
+		// Reduce for Groups!
+		if (GetGroup()) {
+			exp_value /= GetGroup()->GroupCount();
+		}
+
+		return exp_value;
+	};
+
+	EQ::ItemInstance* upgrade_item = item->GetUpgrade(database);
+	if (!upgrade_item) {
+		EQ::SayLinkEngine linker;
+		linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+		linker.SetItemInst(item);
+		Message(Chat::Experience, "Your [%s] is fully upgraded.", linker.GenerateLink().c_str());
+
+		EjectItem(EQ::invslot::slotPowerSource);
+		return false;
+	}
+
+	int   item_tier 		  = item->GetID() / 1000000;
+	float cur_item_experience = Strings::ToFloat(item->GetCustomData("Exp"), 0);
+	float new_item_experience = GetBaseExpValueForKill(conlevel, item_tier);
+	float new_percentage 	  = std::min(100.0f, cur_item_experience + new_item_experience);
+
+	EQ::SayLinkEngine linker;
+	linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+	linker.SetItemInst(item);
+
+	LogDebug("Raw Values: [{}] [{}] [{}]", cur_item_experience, new_item_experience, new_percentage);
+
+	if (new_percentage <= (20.0f)) {
+		Message(Chat::Experience, "Your [%s] absorbs energy, emitting a faint shimmer.", linker.GenerateLink().c_str());
+	} else if (new_percentage <= (40.0f)) {
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing with a soft light.", linker.GenerateLink().c_str());
+	} else if (new_percentage <= (60.0f)) {
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing brightly.", linker.GenerateLink().c_str());
+	} else if (new_percentage <= (80.0f)) {
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing intensely.", linker.GenerateLink().c_str());
+	} else if (new_percentage <= (95.0f)) {
+		Message(Chat::Experience, "Your [%s] absorbs energy, shining brilliantly.", linker.GenerateLink().c_str());
+	} else {
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with immense power.", linker.GenerateLink().c_str());
+	}
+
+	item->SetCustomData("Exp", fmt::to_string(new_percentage));
+
+	if (new_percentage >= 100.0f) {
+		auto item_link = linker.GenerateLink().c_str();
+
+		if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(upgrade_item->GetID())) {
+			DiscoverItem(upgrade_item->GetID());
+		}
+
+		// Build new item
+		for (int r = EQ::invaug::SOCKET_BEGIN; r <= EQ::invaug::SOCKET_END; r++) {
+			const EQ::ItemInstance *aug_i = item->GetAugment(r);
+			if (!aug_i) // no aug, try next slot!
+				continue;
+
+			upgrade_item->PutAugment(r, *item->GetAugment(r));
+		}
+
+		if (item->IsCharged()) {
+			upgrade_item->SetCharges(item->GetCharges());
+		} else {
+
+			upgrade_item->SetCharges(-1);
+		}
+
+		item = m_inv.PopItem(EQ::invslot::slotPowerSource);
+		if (PutItemInInventory(EQ::invslot::slotPowerSource, *upgrade_item, true)) {
+			SendSound();
+
+			linker.SetItemInst(upgrade_item);
+			auto upgrade_item_link = linker.GenerateLink().c_str();
+
+			Message(Chat::Experience, "Your [%s] has been upgraded into a [%s]!", item_link, upgrade_item_link);
+		}
+
+		safe_delete(item);
+	}
+
+	EQ::ItemInstance* final_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+
+	if (final_item) { // wtf?
+		if (!final_item->IsAttuned()) {
+			final_item->SetAttuned(true);
+			linker.SetItemInst(final_item);
+			Message(Chat::Experience, "Your [%s] has become attuned to you.", linker.GenerateLink().c_str());
+			SendItemPacket(EQ::invslot::slotPowerSource, final_item, ItemPacketTrade);
+		}
+
+		database.UpdateInventorySlot(CharacterID(), final_item, EQ::invslot::slotPowerSource);
+
+		if (final_item->GetID() > 2000000) {
+			EjectItem(EQ::invslot::slotPowerSource);
+		}
+	}
+
+	return true;
+}
+
+void Client::AddEXP(ExpSource exp_source, uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	if (!IsEXPEnabled()) {
 		return;
-	}	
-	
-	LogDebug("Raw in_add_exp: [{}]", in_add_exp);
+	}
 
-	if (RuleB(Custom, PowerSourceItemUpgrade)) {		
-		EQ::ItemInstance* old_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
-
-		if (old_item) {
-			EQ::ItemInstance* new_item = old_item->GetUpgrade(database);
-			EQ::SayLinkEngine linker;
-
-			uint64 tar_item_exp   = old_item->GetItem()->CalculateGearScore() * RuleR(Custom, PowerSourceItemUpgradeRateScale);
-			uint64 cur_item_exp   = in_add_exp + Strings::ToUnsignedBigInt(old_item->GetCustomData("Exp"));			
-
-			double percentage = (static_cast<double>(cur_item_exp) / static_cast<double>(tar_item_exp)) * 100;
-
-			linker.SetLinkType(EQ::saylink::SayLinkItemInst);	
-			
-			if (!new_item) {
-				linker.SetItemInst(old_item);
-				Message(Chat::Experience, "Your [%s] is fully upgraded and cannot accumulate any additional experience.", linker.GenerateLink().c_str());
-				return;
-			}
-
-			linker.SetItemInst(old_item);
-			Message(Chat::Experience, "Your [%s] has gained experience! (%.3f%%)", linker.GenerateLink().c_str(), percentage);
-
-			if (cur_item_exp <= tar_item_exp) {			
-				old_item->SetCustomData("Exp", fmt::to_string(cur_item_exp));
-				database.UpdateInventorySlot(CharacterID(), old_item, EQ::invslot::slotPowerSource);
-			} else if (new_item) {
-				if (RuleB(Character, EnableDiscoveredItems) && !GetGM() && !IsDiscovered(new_item->GetItem()->ID)) {
-					DiscoverItem(new_item->GetItem()->ID);
-				}
-
-				if (!GetGM() && DiscoverArtifact(new_item)) {
-					DiscoverItem(new_item->GetItem()->ID);
-				}
-
-				for (int r = EQ::invaug::SOCKET_BEGIN; r <= EQ::invaug::SOCKET_END; r++) {
-					const EQ::ItemInstance *aug_i = old_item->GetAugment(r);
-					if (!aug_i) // no aug, try next slot!
-							continue;
-									
-					new_item->PutAugment(r, *old_item->RemoveAugment(r));		
-				}
-
-				old_item = m_inv.PopItem(EQ::invslot::slotPowerSource);
-				if (PutItemInInventory(EQ::invslot::slotPowerSource, *new_item, true)) {	
-					m_inv.GetItem(EQ::invslot::slotPowerSource)->SetAttuned(true);
-
-					linker.SetItemInst(old_item);
-					auto upgrade_item_lnk = linker.GenerateLink().c_str();
-
-					linker.SetItemInst(new_item);
-					auto  new_item_lnk = linker.GenerateLink().c_str();
-
-					Message(Chat::Experience, "Your [%s] has upgraded into [%s]!", upgrade_item_lnk, new_item_lnk);
-					SendSound();		
-				} else {
-					if (old_item) {
-						PutItemInInventory(EQ::invslot::slotPowerSource, *old_item, true);
-						Message(Chat::Red, "ERROR: Unable to upgrade item from power source, attempting to recover old item.");
-					}
-				}
-
-				safe_delete(old_item);
-			}			
-			return;
-		}
-	}	
+	if (RuleB(Custom, PowerSourceItemUpgrade) && m_inv.GetItem(EQ::invslot::slotPowerSource) && exp_source == ExpSource::Kill && conlevel != 0xFF) {
+		AddItemExperience(m_inv.GetItem(EQ::invslot::slotPowerSource), conlevel);
+	}
 
 	EVENT_ITEM_ScriptStopReturn();
 
@@ -596,7 +829,12 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	// Are we also doing linear AA acceleration?
 	if (RuleB(AA, ModernAAScalingEnabled) && aaexp > 0)
 	{
-		aaexp = ScaleAAXPBasedOnCurrentAATotal(GetAAPoints(), aaexp);
+		aaexp = ScaleAAXPBasedOnCurrentAATotal(GetSpentAA() + GetAAPoints(), aaexp);
+	}
+
+	// Check for AA XP Cap
+	if (RuleI(AA, MaxAAEXPPerKill) >= 0 && aaexp > RuleI(AA, MaxAAEXPPerKill)) {
+		aaexp = RuleI(AA, MaxAAEXPPerKill);
 	}
 
 	// Get current AA XP total
@@ -638,10 +876,32 @@ void Client::AddEXP(uint64 in_add_exp, uint8 conlevel, bool resexp) {
 	}
 
 	// Now update our character's normal and AA xp
-	SetEXP(exp, aaexp, resexp);
+	SetEXP(exp_source, exp, aaexp, resexp);
 }
 
-void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
+void Client::SetEXP(ExpSource exp_source, uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
+	uint64 current_exp = GetEXP();
+	uint64 current_aa_exp = GetAAXP();
+	uint64 total_current_exp = current_exp + current_aa_exp;
+	uint64 total_add_exp = set_exp + set_aaxp;
+
+#ifdef LUA_EQEMU
+	uint64 lua_ret = 0;
+	bool ignore_default = false;
+	lua_ret = LuaParser::Instance()->SetEXP(this, exp_source, current_exp, set_exp, isrezzexp, ignore_default);
+	if (ignore_default) {
+		set_exp = lua_ret;
+	}
+
+	lua_ret = 0;
+	ignore_default = false;
+	lua_ret = LuaParser::Instance()->SetAAEXP(this, exp_source, current_aa_exp, set_aaxp, isrezzexp, ignore_default);
+	if (ignore_default) {
+		set_aaxp = lua_ret;
+	}
+	total_add_exp = set_exp + set_aaxp;
+#endif
+
 	LogDebug("Attempting to Set Exp for [{}] (XP: [{}], AAXP: [{}], Rez: [{}])", GetCleanName(), set_exp, set_aaxp, isrezzexp ? "true" : "false");
 
 	auto max_AAXP = GetRequiredAAExperience();
@@ -649,6 +909,8 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 		Message(Chat::Red, "Error in Client::SetEXP. EXP not set.");
 		return; // Must be invalid class/race
 	}
+
+
 	uint32 i = 0;
 	uint32 membercount = 0;
 	if(GetGroup())
@@ -660,10 +922,6 @@ void Client::SetEXP(uint64 set_exp, uint64 set_aaxp, bool isrezzexp) {
 		}
 	}
 
-	uint64 current_exp = GetEXP();
-	uint64 current_aa_exp = GetAAXP();
-	uint64 total_current_exp = current_exp + current_aa_exp;
-	uint64 total_add_exp = set_exp + set_aaxp;
 	if (total_add_exp > total_current_exp) {
 		uint64 exp_gained = set_exp - current_exp;
 		uint64 aa_exp_gained = set_aaxp - current_aa_exp;
@@ -1135,15 +1393,15 @@ uint32 Client::GetEXPForLevel(uint16 check_level)
 	if(RuleB(Character,UseOldClassExpPenalties))
 	{
 		float classmod = 1.0;
-		if(GetClass() == Class::Paladin || GetClass() == Class::ShadowKnight || GetClass() == Class::Ranger || GetClass() == Class::Bard) {
+		if(HasClass(Class::Paladin) || HasClass(Class::ShadowKnight) || HasClass(Class::Ranger) || HasClass(Class::Bard)) {
 			classmod = 1.4;
-		} else if(GetClass() == Class::Monk) {
+		} else if(HasClass(Class::Monk)) {
 			classmod = 1.2;
-		} else if(GetClass() == Class::Wizard || GetClass() == Class::Enchanter || GetClass() == Class::Magician || GetClass() == Class::Necromancer) {
+		} else if(HasClass(Class::Wizard) || HasClass(Class::Enchanter) || HasClass(Class::Magician) || HasClass(Class::Necromancer)) {
 			classmod = 1.1;
-		} else if(GetClass() == Class::Rogue) {
+		} else if(HasClass(Class::Rogue)) {
 			classmod = 0.91;
-		} else if(GetClass() == Class::Warrior) {
+		} else if(HasClass(Class::Warrior)) {
 			classmod = 0.9;
 		}
 
@@ -1153,7 +1411,7 @@ uint32 Client::GetEXPForLevel(uint16 check_level)
 	return finalxp;
 }
 
-void Client::AddLevelBasedExp(uint8 exp_percentage, uint8 max_level, bool ignore_mods)
+void Client::AddLevelBasedExp(ExpSource exp_source, uint8 exp_percentage, uint8 max_level, bool ignore_mods)
 {
 	uint64	award;
 	uint64	xp_for_level;
@@ -1182,10 +1440,10 @@ void Client::AddLevelBasedExp(uint8 exp_percentage, uint8 max_level, bool ignore
 	}
 
 	uint64 newexp = GetEXP() + award;
-	SetEXP(newexp, GetAAXP());
+	SetEXP(exp_source, newexp, GetAAXP());
 }
 
-void Group::SplitExp(const uint64 exp, Mob* other) {
+void Group::SplitExp(ExpSource exp_source, const uint64 exp, Mob* other) {
 	if (other->CastToNPC()->MerchantType != 0) {
 		return;
 	}
@@ -1243,13 +1501,13 @@ void Group::SplitExp(const uint64 exp, Mob* other) {
 			if (diff >= max_diff) {
 				const uint64 tmp  = (m->GetLevel() + 3) * (m->GetLevel() + 3) * 75 * 35 / 10;
 				const uint64 tmp2 = group_experience / member_count;
-				m->CastToClient()->AddEXP(tmp < tmp2 ? tmp : tmp2, consider_level);
+				m->CastToClient()->AddEXP(exp_source, tmp < tmp2 ? tmp : tmp2, consider_level);
 			}
 		}
 	}
 }
 
-void Raid::SplitExp(const uint64 exp, Mob* other) {
+void Raid::SplitExp(ExpSource exp_source, const uint64 exp, Mob* other) {
 	if (other->CastToNPC()->MerchantType != 0) {
 		return;
 	}
@@ -1294,7 +1552,7 @@ void Raid::SplitExp(const uint64 exp, Mob* other) {
 			if (diff >= max_diff) {
 				const uint64 tmp  = (m.member->GetLevel() + 3) * (m.member->GetLevel() + 3) * 75 * 35 / 10;
 				const uint64 tmp2 = (raid_experience / member_modifier) + 1;
-				m.member->AddEXP(tmp < tmp2 ? tmp : tmp2, consider_level);
+				m.member->AddEXP(exp_source, tmp < tmp2 ? tmp : tmp2, consider_level);
 			}
 		}
 	}

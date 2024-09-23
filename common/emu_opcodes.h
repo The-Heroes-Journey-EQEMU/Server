@@ -35,14 +35,14 @@ so we know the enum type for the opcode defines must be at least
 
 typedef enum { //EQEmu internal opcodes list
 	OP_Unknown=0,
-
+	
 //a preprocessor hack so we dont have to maintain two lists
 #define N(x) x
 	#include "emu_oplist.h"
 	#include "mail_oplist.h"
 #undef N
 
-	_maxEmuOpcode
+    _maxEmuOpcode
 } EmuOpcode;
 
 constexpr int format_as(EmuOpcode opcode) { return static_cast<int>(opcode); }

@@ -48,6 +48,7 @@ Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
 extern WorldServer worldserver;
 extern QueryServ* QServ;
 
+
 void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, uint32 duration_override, bool followme, bool sticktarg, uint16 *eye_id) {
 
 	//It might not be a bad idea to put these into the database, eventually..
@@ -167,7 +168,7 @@ void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, u
 			if (RuleB(Spells, SwarmPetTargetLock) || sticktarg) {
 				swarm_pet_npc->GetSwarmInfo()->target = targ->GetID();
 				swarm_pet_npc->SetPetTargetLockID(targ->GetID());
-				swarm_pet_npc->SetSpecialAbility(IMMUNE_AGGRO, 1);
+				swarm_pet_npc->SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
 			}
 			else {
 				swarm_pet_npc->GetSwarmInfo()->target = 0;
@@ -193,7 +194,6 @@ void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, u
 	// The other pointers we make are handled elsewhere.
 	delete made_npc;
 }
-
 void Mob::TypesTemporaryPets(uint32 typesid, Mob *targ, const char *name_override, uint32 duration_override, bool followme, bool sticktarg) {
 
 	SwarmPet_Struct pet;
@@ -272,7 +272,7 @@ void Mob::TypesTemporaryPets(uint32 typesid, Mob *targ, const char *name_overrid
 			if (RuleB(Spells, SwarmPetTargetLock) || sticktarg) {
 				swarm_pet_npc->GetSwarmInfo()->target = targ->GetID();
 				swarm_pet_npc->SetPetTargetLockID(targ->GetID());
-				swarm_pet_npc->SetSpecialAbility(IMMUNE_AGGRO, 1);
+				swarm_pet_npc->SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
 			}
 			else {
 				swarm_pet_npc->GetSwarmInfo()->target = 0;
@@ -401,7 +401,7 @@ void Mob::WakeTheDead(uint16 spell_id, Corpse *corpse_to_use, Mob *tar, uint32 d
 		made_npc->npc_spells_id = 7;
 		break;
 	case Class::Paladin:
-		//SPECATK_TRIPLE
+		//SpecialAbility::TripleAttack
 		strcpy(made_npc->special_abilities, "6,1");
 		made_npc->current_hp = made_npc->current_hp * 150 / 100;
 		made_npc->max_hp = made_npc->max_hp * 150 / 100;
@@ -518,7 +518,7 @@ void Mob::WakeTheDead(uint16 spell_id, Corpse *corpse_to_use, Mob *tar, uint32 d
 
 void Client::ResetAA()
 {
-	SendClearAA();
+	SendClearPlayerAA();
 	RefundAA();
 
 	memset(&m_pp.aa_array[0], 0, sizeof(AA_Array) * MAX_PP_AA_ARRAY);
@@ -540,6 +540,13 @@ void Client::ResetAA()
 		++slot_id;
 	}
 
+	database.DeleteCharacterAAs(CharacterID());
+}
+
+void Client::ResetLeadershipAA()
+{
+	SendClearLeadershipAA();
+
 	for (int slot_id = 0; slot_id < _maxLeaderAA; ++slot_id) {
 		m_pp.leader_abilities.ranks[slot_id] = 0;
 	}
@@ -549,14 +556,7 @@ void Client::ResetAA()
 	m_pp.group_leadership_exp    = 0;
 	m_pp.raid_leadership_exp     = 0;
 
-	database.DeleteCharacterAAs(CharacterID());
 	database.DeleteCharacterLeadershipAbilities(CharacterID());
-}
-
-void Client::SendClearAA()
-{
-	SendClearLeadershipAA();
-	SendClearPlayerAA();
 }
 
 void Client::SendClearPlayerAA()
@@ -931,16 +931,20 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	auto outapp = new EQApplicationPacket(OP_SendAATable, size);
 	AARankInfo_Struct *aai = (AARankInfo_Struct*)outapp->pBuffer;
 
-
 	// Lie to the client about who can use this AA rank if we are multiclassing
 	if (RuleB(Custom, MulticlassingEnabled)) {
 		if ((ability->classes >> 1) & GetClassesBits() || (ability->classes & (1 << GetClass()))) {
 			aai->classes = 0xFFFFFFF;
 		} else {
 			aai->classes = ability->classes;
-		}	
+		}
+
+		if (ability->id == 215 && GetClassesBits() & 16412) {
+			aai->classes = 0xFFFFFFF;
+		}
 	} else {
 		if(!(ability->classes & (1 << GetClass()))) {
+			safe_delete(outapp);
 			return;
 		}
 		aai->classes = ability->classes;
@@ -949,7 +953,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	if(!CanUseAlternateAdvancementRank(rank)) {
 		return;
 	}
-	
+
 	aai->id = rank->id;
 	aai->upper_hotkey_sid = rank->upper_hotkey_sid;
 	aai->lower_hotkey_sid = rank->lower_hotkey_sid;
@@ -972,6 +976,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	} else {
 		aai->next_id = rank->next_id;
 	}
+
 	aai->total_cost = rank->total_cost;
 	aai->expansion = rank->expansion;
 	aai->category = ability->category;
@@ -999,6 +1004,52 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	for(auto &prereq : rank->prereqs) {
 		outapp->WriteSInt32(prereq.first);
 		outapp->WriteSInt32(prereq.second);
+	}
+
+	// Make a guess as to if an AA should be suspended or not
+	if (RuleB(Custom, SuspendGroupBuffs) && IsValidSpell(aai->spell)) {
+		auto spell = spells[aai->spell];
+		auto duration = CalcBuffDuration_formula(GetLevel(), spell.buff_duration_formula, spell.buff_duration) * 6;
+		if (duration >= aai->spell_refresh) {
+			suspendable_aa.insert(aai->spell);
+			LogDebugDetail("Adding [{}] to suspendable AA: [{}], [{}]", aai->spell, duration, aai->spell_refresh);
+		} else {
+			LogDebugDetail("NOT Adding [{}] to suspendable AA: [{}], [{}]", aai->spell, duration, aai->spell_refresh);
+		}
+	}
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		switch (ability->id) {
+			case 568: // Thief's Intuition
+			case 569: // Thief's Intuition
+			case 121: // Adv. Trap Negotiation
+			case 292: // Trap Circumvention
+			case 358: // Fury of Magic (Hybrids)
+			case 1218: // Extended Ingenuity for Bards
+			case 494: // Extra version of Silent Casting
+				safe_delete(outapp); // dump this AA
+				return;
+			case 585: // Glyphs
+			case 586:
+			case 587:
+			case 588:
+			case 589:
+			case 5000:
+			case 5002:
+			case 5003:
+			case 5004:
+			case 7016:
+			case 7017:
+			case 7018:
+			case 7019:
+				aai->grant_only = 1;
+				aai->cost = 0;
+				aai->total_cost = 0;
+				break;
+			case 17786: // Situational Awareness
+				aai->grant_only = 0; // Make these AA available
+				aai->spell_type = 99;
+		};
 	}
 
 	QueuePacket(outapp);
@@ -1077,13 +1128,13 @@ int Client::GetDynamicAATimer(int aa_id) {
     for (int i = 1; i < 100; i++) {
         std::string key = "aaTimer_" + std::to_string(i);
         std::string bucketValue = GetBucket(key);
-        
+
         // Check if the bucket has a value before attempting conversion
         if (!bucketValue.empty()) {
             int value = std::stoi(bucketValue); // Convert string value to integer
-			// LogDebug("Got TimerID: [{}]", value);
+			LogDebugDetail("Got TimerID: [{}]", value);
             if (value == aa_id) {
-				// LogDebug("Returning TimerID: [{}] - [{}]", i, value);
+				LogDebugDetail("Returning TimerID: [{}] - [{}]", i, value);
                 return i; // Return the timer ID associated with aa_id
             }
         }
@@ -1108,9 +1159,9 @@ int Client::SetDynamicAATimer(int aa_id) {
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
-	if(rank) {		
+	if(rank) {
 		SendAlternateAdvancementTimer(rank->spell_type, 0, time(0));
-		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);		
+		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);
 	}
 }
 
@@ -1372,6 +1423,7 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 
 	//check cooldown
 	if (!p_timers.Expired(&database, spell_type + pTimerAAStart, false)) {
+		LogDebug("Got Timer Expired: [{}]", spell_type + pTimerAAStart);
 		uint32 aaremain = p_timers.GetRemainingTime(spell_type + pTimerAAStart);
 		uint32 aaremain_hr = aaremain / (60 * 60);
 		uint32 aaremain_min = (aaremain / 60) % 60;
@@ -1393,6 +1445,8 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 	if (timer_duration < 0) {
 		timer_duration = 0;
 	}
+
+	LogDebug("Setting timer_duration to [{}]", timer_duration);
 
 	if (!IsCastWhileInvisibleSpell(rank->spell))
 		CommonBreakInvisible();
@@ -1422,20 +1476,25 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 	}
 	else {
 		//Bards can cast instant cast AAs while they are casting or channeling item cast.
-		
+
 		auto effective_cast_time = RuleB(Custom, MulticlassingEnabled) ? 0 : spells[rank->spell].cast_time;
 
-		if (!RuleB(Custom, MulticlassingEnabled) && GetClass() == Class::Bard && IsCasting() && spells[rank->spell].cast_time == 0) {
+		target_id = GetSpellImpliedTargetID(rank->spell, target_id);
+
+		if (RuleB(Custom, MulticlassingEnabled) || (HasClass(Class::Bard) && IsCasting() && spells[rank->spell].cast_time == 0)) {
 			if (!DoCastingChecksOnCaster(rank->spell, EQ::spells::CastingSlot::AltAbility)) {
 				return;
 			}
 
 			if (!SpellFinished(rank->spell, entity_list.GetMob(target_id), EQ::spells::CastingSlot::AltAbility, spells[rank->spell].mana, -1, spells[rank->spell].resist_difficulty, false, -1,
 				spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
+					LogDebug("Casting Failed?");
 				return;
 			}
-		} 
-		else { 
+
+			p_timers.Start(spell_type + pTimerAAStart, timer_duration);
+		}
+		else {
 			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, effective_cast_time, 0, 0, -1, spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
 				return;
 			}
@@ -1466,6 +1525,26 @@ int Mob::GetAlternateAdvancementCooldownReduction(AA::Rank *rank_in) {
 		for(auto &effect : rank->effects) {
 			if(effect.effect_id == SE_HastenedAASkill && effect.limit_value == ability_in->id) {
 				total_reduction += effect.base_value;
+			}
+		}
+	}
+
+	int buff_count = GetMaxTotalSlots();
+	for (int buffs_i = 0; buffs_i < buff_count; ++buffs_i) {
+		auto buff = buffs[buffs_i];
+		if (IsEffectInSpell(buff.spellid, SE_HastenedAASkill)) {
+			total_reduction += spells[buff.spellid].base_value[GetSpellEffectIndex(buff.spellid, SE_HastenedAASkill)];
+		}
+	}
+
+	if (IsClient()) {
+		for (int slot = EQ::invslot::EQUIPMENT_BEGIN; slot <= EQ::invslot::EQUIPMENT_END; slot++) {
+			auto * item = GetInv().GetItem(slot);
+			if (item) {
+				int worn_spellid = item->GetItem()->Worn.Effect;
+				if (worn_spellid > 0 && IsEffectInSpell(worn_spellid, SE_HastenedAASkill)) {
+					total_reduction += spells[worn_spellid].base_value[GetSpellEffectIndex(worn_spellid, SE_HastenedAASkill)];
+				}
 			}
 		}
 	}
@@ -1663,6 +1742,15 @@ bool Mob::CanUseAlternateAdvancementRank(AA::Rank *rank)
 
 	// Lie to the client about who can use this AA rank if we are multiclassing
 	if (RuleB(Custom, MulticlassingEnabled)) {
+		if (rank->id == 1071 || rank->id == 4764 || rank->id == 7553 || rank->id == 7681) {
+			return true;
+		}
+
+		// Fury of Magic for the Hybrids
+		if (a->id == 215 && GetClassesBits() & 16412 && rank->id <= 772) {
+			return true;
+		}
+
 		if (!(IsClient() && ((a->classes >> 1) & this->CastToClient()->GetClassesBits()))) {
 			return false;
 		}
@@ -1755,6 +1843,9 @@ bool Mob::CanPurchaseAlternateAdvancementRank(AA::Rank *rank, bool check_price, 
 	}
 
 	// You cannot purchase grant only AAs they can only be assigned
+	if (a->id == 17786) {
+		check_grant = false; // such a hack lol
+	}
 	if (check_grant && a->grant_only) {
 		return false;
 	}
@@ -1899,6 +1990,25 @@ bool ZoneDatabase::LoadAlternateAdvancementAbilities(
 		a->auto_grant_enabled = e.auto_grant_enabled;
 		a->first_rank_id      = e.first_rank_id;
 		a->first              = nullptr;
+
+		// Mangle some of this here to change root usability. Maybe need to refactor in future to all use this method?
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			if (a->id == 500 || a->id == 316) { // Silent Casting
+				a->classes = 15906 << 1;
+			}
+
+			if (a->id == 153) {
+				a->classes = 550 << 1;
+			}
+
+			if (a->id == 271) {
+				a->classes = 320 << 1;
+			}
+
+			if (a->id == 494 || a->id == 144 || a->id == 285 || a->id == 9301) { // Duplicate Silent Casting & Innate Enlightenment
+				a->classes = 0;
+			}
+		}
 
 		abilities[a->id] = std::unique_ptr<AA::Ability>(a);
 	}
@@ -2247,7 +2357,8 @@ void Client::AutoGrantAAPoints() {
 		}
 	}
 
-	SendClearAA();
+	SendClearLeadershipAA();
+	SendClearPlayerAA();
 	SendAlternateAdvancementTable();
 	SendAlternateAdvancementPoints();
 	SendAlternateAdvancementStats();
@@ -2280,7 +2391,8 @@ void Client::GrantAllAAPoints(uint8 unlock_level)
 	}
 
 	SaveAA();
-	SendClearAA();
+	SendClearLeadershipAA();
+	SendClearPlayerAA();
 	SendAlternateAdvancementTable();
 	SendAlternateAdvancementPoints();
 	SendAlternateAdvancementStats();
