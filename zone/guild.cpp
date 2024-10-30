@@ -564,11 +564,11 @@ void Client::SendGuildMemberAdd(
 
 	out->guild_id   = guild_id;
 	out->last_on    = time(nullptr);
-	out->level      = RuleB(Custom, MulticlassingEnabled) ? GetClassesBits() : level;
+	out->level      = level;
 	out->zone_id    = zone_id;
 	out->rank_      = rank_;
 	out->guild_show = guild_show;
-	out->class_     = RuleB(Custom, MulticlassingEnabled) ? level : class_;
+	out->class_     = class_;
 	strn0cpy(out->player_name, player_name.c_str(), sizeof(out->player_name));
 
 	QueuePacket(outapp);
