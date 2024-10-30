@@ -567,7 +567,7 @@ void Client::SendZoneInPackets()
 
 	if (IsInAGuild()) {
 		guild_mgr.UpdateDbMemberOnline(CharacterID(), true);
-		//SendGuildMembers();
+		SendGuildMembers();
 		SendGuildURL();
 		SendGuildChannel();
 		SendGuildLFGuildStatus();

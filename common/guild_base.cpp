@@ -844,7 +844,7 @@ bool BaseGuildManager::QueryWithLogging(std::string query, const char *errmsg)
 " g.`guild_id`, g.`rank`, g.`tribute_enable`, g.`total_tribute`, g.`last_tribute`," \
 " g.`banker`, g.`public_note`, g.`alt`, g.`online` " \
 " FROM `character_data` AS c LEFT JOIN `guild_members` AS g ON c.`id` = g.`char_id` "
-static void ProcessGuildMember(MySQLRequestRow row, CharGuildInfo &into)
+static void ProcessGuildMember(MySQLRequestRow row, CharGuildInfo &into, uint16 class_bitmask = 0)
 {
 	//fields from `characer_`
 	into.char_id      = Strings::ToUnsignedInt(row[0]);
@@ -872,6 +872,11 @@ static void ProcessGuildMember(MySQLRequestRow row, CharGuildInfo &into)
 	if (into.rank > GUILD_MAX_RANK + 1) {
 		into.rank = GUILD_RANK_NONE;
 	}
+
+	if (RuleB(Custom, MulticlassingEnabled) && class_bitmask) {
+		into.class_ = into.level;
+		into.level = class_bitmask;
+	}
 }
 
 
@@ -888,7 +893,19 @@ bool BaseGuildManager::GetEntireGuild(uint32 guild_id, std::vector<CharGuildInfo
 
 	for (auto row = results.begin(); row != results.end(); ++row) {
 		auto ci = new CharGuildInfo;
-		ProcessGuildMember(row, *ci);
+		int class_bitmask = 0;
+
+		if (RuleB(Custom, MulticlassingEnabled)) {
+			std::string classes_query = fmt::format("select data_buckets.value from data_buckets where data_buckets.key = 'GestaltClasses' and data_buckets.character_id = {} limit 1;", row[0]);
+			auto class_results = m_db->QueryDatabase(classes_query);
+
+			if (class_results.Success()) {
+				auto class_row = class_results.begin();
+				class_bitmask = std::stoi(class_row[0]);
+			}
+		}
+
+		ProcessGuildMember(row, *ci, class_bitmask);
 		members.push_back(ci);
 	}
 
@@ -917,7 +934,19 @@ bool BaseGuildManager::GetCharInfo(const char *char_name, CharGuildInfo &into)
 	}
 
 	auto row = results.begin();
-	ProcessGuildMember(row, into);
+
+	int class_bitmask = 0;
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		std::string classes_query = fmt::format("select data_buckets.value from data_buckets where data_buckets.key = 'GestaltClasses' and data_buckets.character_id = {} limit 1;", row[0]);
+		auto class_results = m_db->QueryDatabase(classes_query);
+
+		if (class_results.Success()) {
+			auto class_row = class_results.begin();
+			class_bitmask = std::stoi(class_row[0]);
+		}
+	}
+
+	ProcessGuildMember(row, into, class_bitmask);
 	LogGuilds("Retrieved guild member info for char [{}] from the database", char_name);
 
 	return true;
@@ -937,6 +966,18 @@ bool BaseGuildManager::GetCharInfo(uint32 char_id, CharGuildInfo &into)
 	}
 
 	auto row = results.begin();
+
+	int class_bitmask = 0;
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		std::string classes_query = fmt::format("select data_buckets.value from data_buckets where data_buckets.key = 'GestaltClasses' and data_buckets.character_id = {} limit 1;", char_id);
+		auto class_results = m_db->QueryDatabase(classes_query);
+
+		if (class_results.Success()) {
+			auto class_row = class_results.begin();
+			class_bitmask = std::stoi(class_row[0]);
+		}
+	}
+
 	ProcessGuildMember(row, into);
 	LogGuilds("Retrieved guild member info for char [{}]", char_id);
 

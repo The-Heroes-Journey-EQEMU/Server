@@ -371,7 +371,7 @@ void EntityList::SendGuildMembers(uint32 guild_id)
 	while (it != client_list.end()) {
 		Client *client = it->second;
 		if (client->GuildID() == guild_id) {
-			//client->SendGuildMembers();
+			client->SendGuildMembers();
 		}
 		++it;
 	}
@@ -564,11 +564,11 @@ void Client::SendGuildMemberAdd(
 
 	out->guild_id   = guild_id;
 	out->last_on    = time(nullptr);
-	out->level      = level;
+	out->level      = RuleB(Custom, MulticlassingEnabled) ? GetClassesBits() : level;
 	out->zone_id    = zone_id;
 	out->rank_      = rank_;
 	out->guild_show = guild_show;
-	out->class_     = class_;
+	out->class_     = RuleB(Custom, MulticlassingEnabled) ? level : class_;
 	strn0cpy(out->player_name, player_name.c_str(), sizeof(out->player_name));
 
 	QueuePacket(outapp);
@@ -611,6 +611,12 @@ void Client::SendGuildMemberLevel(uint32 guild_id, uint32 level, std::string pla
 
 	out->guild_id = guild_id;
 	out->level    = level;
+
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		out->level = GetClassesBits();
+		SetGuildListDirty(true);
+	}
+
 	strn0cpy(out->player_name, player_name.c_str(), sizeof(out->player_name));
 
 	QueuePacket(outapp);
@@ -775,6 +781,7 @@ void EntityList::SendGuildMemberLevel(uint32 guild_id, uint32 level, std::string
 
 			out->guild_id = guild_id;
 			out->level    = level;
+
 			strn0cpy(out->player_name, player_name.c_str(), sizeof(out->player_name));
 
 			c.second->QueuePacket(outapp);

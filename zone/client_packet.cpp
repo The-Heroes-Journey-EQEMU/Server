@@ -864,7 +864,7 @@ void Client::CompleteConnect()
 		GuildBanks->SendGuildBank(this);
 
 	if (ClientVersion() >= EQ::versions::ClientVersion::SoD)
-		entity_list.SendFindableNPCList(this);
+		entity_list.SendFindableNPCList(this); // Oh shit work on this later
 
 	if (IsInAGuild()) {
 		if (firstlogon == 1) {
@@ -875,7 +875,7 @@ void Client::CompleteConnect()
 		guild_mgr.SendGuildMemberUpdateToWorld(GetName(), GuildID(), zone->GetZoneID(), time(nullptr));
 
 		SendGuildList();
-		if (GetGuildListDirty()) {
+		if (GetGuildListDirty() || RuleB(Custom, MulticlassingEnabled)) {
 			SendGuildMembersList();
 		}
 
