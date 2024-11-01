@@ -864,22 +864,48 @@ void Client::QueuePacket(const EQApplicationPacket* app, bool ack_req, CLIENT_CO
 		return;
 	}
 
+	auto copy = app->Copy();
+
+	if (app->GetOpcode() == OP_NewSpawn && GetBucket("DisableFancyModels").empty()) {
+		NewSpawn_Struct* ns = reinterpret_cast<NewSpawn_Struct*>(copy->pBuffer);
+
+		if (ns->spawn.race == Race::Orc) {
+			ns->spawn.race = Race::Orc2;
+		}
+	}
+
 	if (client_state != CLIENT_CONNECTED && required_state == CLIENT_CONNECTED) {
-		AddPacket(app, ack_req);
+		AddPacket(copy, ack_req);
+		safe_delete(copy);
 		return;
 	}
 
 	// if the program doesnt care about the status or if the status isnt what we requested
 	if (required_state != CLIENT_CONNECTINGALL && client_state != required_state) {
 		// todo: save packets for later use
-		AddPacket(app, ack_req);
+		AddPacket(copy, ack_req);
 	}
 	else if (eqs) {
-		eqs->QueuePacket(app, ack_req);
+		eqs->QueuePacket(copy, ack_req);
 	}
+	safe_delete(copy);
 }
 
 void Client::FastQueuePacket(EQApplicationPacket** app, bool ack_req, CLIENT_CONN_STATUS required_state) {
+
+	if ((*app)->GetOpcode() == OP_ZoneSpawns && GetBucket("DisableFancyModels").empty()) {
+		uint32 numSpawns = (*app)->Size() / sizeof(NewSpawn_Struct);
+		NewSpawn_Struct* spawnArray = reinterpret_cast<NewSpawn_Struct*>((*app)->pBuffer);
+
+		for (uint32 i = 0; i < numSpawns; ++i) {
+			NewSpawn_Struct& data = spawnArray[i];
+
+			if (data.spawn.race == Race::Orc) {
+				data.spawn.race = Race::Orc2;
+			}
+		}
+	}
+
 	// if the program doesnt care about the status or if the status isnt what we requested
 	if (required_state != CLIENT_CONNECTINGALL && client_state != required_state) {
 		// todo: save packets for later use
