@@ -4086,9 +4086,9 @@ void ZoneDatabase::LoadPetInfo(Client *client)
         )
     );
 
-    if (!buffs.empty() && !pets_info.empty()) 
+    if (!buffs.empty() && !pets_info.empty())
 	{
-    for (const auto& e : buffs) 
+    for (const auto& e : buffs)
 		{
 			if (e.pet == 100)
 			{
