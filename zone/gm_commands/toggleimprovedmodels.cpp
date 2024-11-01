@@ -5,7 +5,7 @@ void command_toggleimprovedmodels(Client *c, const Seperator *sep)
 	std::string cur_val = c->GetBucket("DisableFancyModels");
 
 	if (cur_val.empty()) {
-		c->SetBucket("DisableFancyModels", "I love cock!");
+		c->SetBucket("DisableFancyModels", "I have no taste.");
 		c->Message(Chat::System, "You have disabled improved models. Please immediately use #tim to restore proper function.");
 	} else {
 		c->DeleteBucket("DisableFancyModels");
