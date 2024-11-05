@@ -1205,6 +1205,7 @@ bool Zone::Init(bool is_static) {
 	LoadBaseData();
 	LoadMerchants();
 	LoadTempMerchantData();
+	database.LoadGlobalBuffs();
 
 	// Merc data
 	if (RuleB(Mercs, AllowMercs)) {
