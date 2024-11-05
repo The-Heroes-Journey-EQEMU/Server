@@ -8767,49 +8767,7 @@ void Mob::ApplyGlobalBuffs()
 	int64 current_time = Timer::GetTimeSeconds();
 	for (auto& buff : all_global_buffs)
 	{
-		int64 time_difference = buff.second.duration - current_time;
-
-		if (time_difference > 0)
-		{
-			//unexpired
-			int64 duration = std::max((int64)1, time_difference / (int64)6);
-			uint16 slot = FindFirstBuffSlotBySpellId(buff.second.spell_id);
-			if (slot == 0xFFFFFFFF)
-			{
-				ApplySpellBuff(buff.second.spell_id, duration);
-			}
-			else if (slot < GetMaxTotalSlots())
-			{
-				//Update duration on server side.
-				buffs[slot].ticsremaining = duration;
-				if (IsClient())
-				{
-					//Send duration to client if client.
-					CastToClient()->SendBuffDurationPacket(buffs[slot], slot);
-					CastToClient()->SendBuffNumHitPacket(buffs[slot], slot);
-				}
-				else if (GetOwner())
-				{
-					//Send to pet owner, if any.
-					SendPetBuffsToClient();
-				}
-
-				//Send to interested targeters.
-				auto& clients = entity_list.GetClientList();
-				for (auto& c : clients)
-				{
-					if (c.second->GetTarget() && c.second->GetTarget()->GetID() == GetID())
-					{
-						SendBuffsToClient(c.second);
-					}
-				}
-			}
-		}
-		else
-		{
-			//expired
-			BuffFadeBySpellID(buff.first);
-		}
+		ApplyGlobalBuff(buff.second.spell_id, buff.second.duration, current_time);
 	}
 
 }
