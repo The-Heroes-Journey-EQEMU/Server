@@ -8760,3 +8760,49 @@ std::unordered_map<uint16, Mob *> &Mob::GetCloseMobList(float distance)
 {
 	return entity_list.GetCloseMobList(this, distance);
 }
+
+void Mob::ApplyGlobalBuffs()
+{
+	auto all_global_buffs = database.GetGlobalBuffs();
+	uint32 current_time = Timer::GetTimeSeconds();
+	for (auto& buff : all_global_buffs)
+	{
+		uint32 time_difference = buff.second.duration - current_time;
+
+		if (time_difference > 0)
+		{
+			//unexpired
+			uint32 duration = std::max((uint32)1, time_difference / (uint32)6);
+
+			SpellOnTarget(buff.first, this, 0, false, 0, false, -1, duration, true);
+		}
+		else
+		{
+			//expired
+			BuffFadeBySpellID(buff.first);
+		}
+	}
+
+}
+
+void Mob::ApplyGlobalBuff(GlobalBuffsRepository::GlobalBuffs& buff, time_t current_time)
+{
+	if (current_time == 0)
+		current_time = Timer::GetTimeSeconds();
+
+	uint32 time_difference = buff.duration - current_time;
+
+	if (time_difference > 0)
+	{
+		//unexpired, calc duration and refresh
+		uint32 duration = std::max((uint32)1, time_difference / (uint32)6);
+
+		SpellOnTarget(buff.spell_id, this, 0, false, 0, false, -1, duration, true);
+	}
+	else
+	{
+		//expired, remove
+		BuffFadeBySpellID(buff.spell_id);
+	}
+}
+

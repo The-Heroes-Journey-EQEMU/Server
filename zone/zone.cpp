@@ -3217,6 +3217,47 @@ void Zone::SetEXPModifierByCharacterID(const uint32 character_id, float exp_modi
 	);
 }
 
+void Zone::ReloadGlobalBuffs()
+{
+	auto pack = new ServerPacket(ServerOP_ReloadGlobalBuffs, 0);
+	worldserver.SendPacket(pack);
+	safe_delete(pack);
+}
+
+void Zone::AddGlobalBuffTime(uint32 spell_id, uint32 add_duration)
+{
+}
+
+void Zone::ApplyGlobalBuffs()
+{
+	time_t cur_time = Timer::GetTimeSeconds();
+
+	auto all_global_buffs = database.GetGlobalBuffs();
+	std::vector<Mob*> mobs_to_buff;
+
+	for (auto& e : entity_list.GetClientList()) {
+		if (e.second && e.second->IsClient())
+		{
+			auto pets_owned = e.second->GetAllPets();
+			for (auto client_pet : pets_owned)
+			{
+				mobs_to_buff.push_back(e.second);
+			}
+
+			mobs_to_buff.push_back(e.second);
+		}
+	}
+
+	for (auto& buff: all_global_buffs)
+	{
+		for (auto mob : mobs_to_buff)
+		{
+			mob->ApplyGlobalBuff(buff.second, cur_time);
+		}
+	}
+
+}
+
 bool Zone::IsIdleWhenEmpty() const
 {
 	return m_idle_when_empty;

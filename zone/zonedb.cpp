@@ -214,6 +214,8 @@ bool ZoneDatabase::SetSpecialAttkFlag(uint8 id, const char* flag) {
 	return results.RowsAffected() != 0;
 }
 
+void AddGlobalBuffTime(uint32 spell_id, uint32 time_to_add)
+
 void ZoneDatabase::LoadWorldContainer(uint32 parent_id, EQ::ItemInstance* container)
 {
 	if (!container) {
