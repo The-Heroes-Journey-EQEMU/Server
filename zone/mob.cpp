@@ -8769,7 +8769,16 @@ void Mob::ApplyGlobalBuffs()
 	{
 		ApplyGlobalBuff(buff.second.spell_id, buff.second.duration, current_time);
 	}
+}
 
+void Mob::RemoveGlobalBuffs()
+{
+	auto all_global_buffs = database.GetGlobalBuffs();
+	int64 current_time = Timer::GetTimeSeconds();
+	for (auto& buff : all_global_buffs)
+	{
+		BuffFadeBySpellID(buff.second.spell_id);
+	}
 }
 
 void Mob::ApplyGlobalBuff(uint32 spell_id, uint32 duration, time_t current_time)
