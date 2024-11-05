@@ -2102,6 +2102,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		if (zone && zone->IsLoaded()) {
 			zone->SendReloadMessage("Global Buffs");
 			database.LoadGlobalBuffs();
+			zone->ApplyGlobalBuffs();
 		}
 		break;
 	}

@@ -3267,7 +3267,7 @@ void Zone::ApplyGlobalBuffs()
 			auto pets_owned = e.second->GetAllPets();
 			for (auto& client_pet : pets_owned)
 			{
-				mobs_to_buff.push_back(e.second);
+				mobs_to_buff.push_back(client_pet);
 			}
 
 			mobs_to_buff.push_back(e.second);
@@ -3281,7 +3281,6 @@ void Zone::ApplyGlobalBuffs()
 			mob->ApplyGlobalBuff(buff.second.spell_id, buff.second.duration, cur_time);
 		}
 	}
-
 }
 
 bool Zone::IsIdleWhenEmpty() const
