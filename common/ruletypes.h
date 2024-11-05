@@ -1056,7 +1056,6 @@ RULE_BOOL(Custom, 	FadeNPCDebuffsOutofCombat, 				true, 	"Enable to to cause NPC
 RULE_BOOL(Custom, 	UseTHJItemMutations, 					true, 	"Rename items according to THJ standards and apply other mutations")
 RULE_BOOL(Custom, 	ClearRestingDetrimentalEffectsEnabled, 	true, 	"Remove detrimental spell effects from self and pets when OOC regen engages")
 RULE_REAL(Custom, 	ItemExtraSpellAmtMaximumPercentage, 	0.0, 	"Adjust the maximum effectiveness of Spell Damage and Heal Amount. 0.0 to Disable, 1.0 to allow adding up to the base effect value, 2.0 to allow double effect value, etc.")
-RULE_BOOL(Custom, 	UseTHJRaceMutations, 					false, 	"Enable to load New-Style Models for THJ")
 RULE_INT(Custom,    AbsolutePetLimit, 						1, 	    "Maximum number of permanent pets that a player can control.")
 RULE_REAL(Custom,	PetPlacementAdjustment,					-0.6,  	"Adjust pet formation positioning")
 RULE_REAL(Custom,	PetPlacementDistance ,					7.0,  	"Adjust pet formation positioning")
@@ -1096,6 +1095,8 @@ RULE_BOOL(Custom, 	TemporaryStunImmunity, 					true, "Clients become immune to S
 RULE_INT(Custom, 	MaximumMeleeMitigationEffects, 			75, "Maximum value which SPA 168 can reduce melee damage")
 RULE_INT(Custom,    AdditiveSpellCritDmgSoftCap,			700, "This is a soft cap for the additive spell crit damage multiplier. Additional increases to crit spell damage multiplier after this will be reduced by AdditiveSpellCritDmgMultiplier.")
 RULE_REAL(Custom,   AdditiveSpellCritDmgMultiplier,		    0.5, "The multiplier to apply after the soft cap for additive spell crit damage multiplier. Every point after the soft cap will be multiplied by this.")
+RULE_BOOL(Custom,   ForceNPCFearPathing, 					true, "Forces NPCs to Fear path even if Combat:EnableFearPathing is disabled.")
+RULE_INT(Custom,    EventEOMDropChance,						1,     "Increase this value to make EoM drops during event more rare")
 
 // Exploit Prevention
 RULE_BOOL(Custom, 	EatCombatTrades, 						true, "Don't return items traded to NPCs during combat. Prevents duplication bug.")

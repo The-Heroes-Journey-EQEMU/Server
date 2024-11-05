@@ -989,6 +989,8 @@ void Client::CompleteConnect()
 		GoToBind();
 		return;
 	}
+
+	SetWeaponAppearance(true);
 }
 
 // connecting opcode handlers
@@ -3641,6 +3643,8 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 		m_AutoAttackPosition       = glm::vec4();
 		m_AutoAttackTargetLocation = glm::vec3();
 		aa_los_them_mob            = nullptr;
+
+		SetWeaponAppearance(true);
 	}
 	else if (app->pBuffer[0] == 1) {
 		auto_attack = true;
@@ -3664,6 +3668,8 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 			los_status                 = false;
 			los_status_facing          = false;
 		}
+
+		SetWeaponAppearance();
 	}
 }
 
@@ -11043,7 +11049,7 @@ void Client::Handle_OP_MoveMultipleItems(const EQApplicationPacket *app)
 				}
 
 				// This sends '1' as the stack count for unstackable items, which our titanium-era SwapItem blows up
-				if (m_inv.GetItem(mi->from_slot)->IsStackable()) {
+				if (m_inv.GetItem(mi->from_slot) && m_inv.GetItem(mi->from_slot)->IsStackable()) {
 					mi->number_in_stack = multi_move->moves[i].number_in_stack;
 				} else {
 					mi->number_in_stack = 0;

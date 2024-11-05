@@ -418,6 +418,7 @@ public:
 	void FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho);
 	bool ShouldISpawnFor(Client *c) { return !GMHideMe(c) && !IsHoveringForRespawn(); }
 	virtual bool Process();
+	void FixModel(Spawn_Struct* npc);
 	void QueuePacket(const EQApplicationPacket* app, bool ack_req = true, CLIENT_CONN_STATUS = CLIENT_CONNECTINGALL, eqFilterType filter=FilterNone);
 	void FastQueuePacket(EQApplicationPacket** app, bool ack_req = true, CLIENT_CONN_STATUS = CLIENT_CONNECTINGALL);
 	void ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_skill, const char* orig_message, const char* targetname = nullptr, bool is_silent = false);
@@ -716,7 +717,7 @@ public:
 	void SetEbonCrystals(uint32 value);
 	void SendCrystalCounts();
 
-	bool GetItemStatValue(EQ::ItemData* item);
+	float GetItemStatValue(EQ::ItemData* item);
 
 	float GetBaseExpValueForKill(int conlevel, int tier, EQ::ItemInstance* upgrade_item);
 
@@ -1032,6 +1033,8 @@ public:
 	int GetDynamicAATimer(int aa_id);
 	int SetDynamicAATimer(int aa_id);
 	void ClearDynamicAATimers();
+
+	std::unordered_map<int, int> aa_timers_cache; // Cache to store AA timers as key-value pairs (aa_id -> timerID)
 
 	//New AA Methods
 	void SendAlternateAdvancementRank(int aa_id, int level);
@@ -1837,6 +1840,8 @@ public:
 	void PlayMP3(const char* fname);
 	void ExpeditionSay(const char *str, int ExpID);
 
+	void SetWeaponAppearance(bool bow_visible = false);
+
 	inline int32 GetEnvironmentDamageModifier() const { return environment_damage_modifier; }
 	void SetEnvironmentDamageModifier(int32 val) { environment_damage_modifier = val; }
 	inline bool GetInvulnerableEnvironmentDamage() const { return invulnerable_environment_damage; }
@@ -2071,6 +2076,7 @@ private:
 	int32 current_endurance;
 
 	int sent_inventory;
+	bool sent_weapon;
 
 	// https://github.com/EQEmu/Server/pull/2479
 	bool m_lock_save_position = false;

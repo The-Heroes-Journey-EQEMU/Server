@@ -509,7 +509,7 @@ int Client::GetItemTier(EQ::ItemData* item) {
 	else if (item->ID <= 3000000) {
 		return 2;
 	}
-	
+
 	return 0;
 };
 
@@ -584,7 +584,7 @@ void Client::EjectItemFromSlot(int16 slot_id) {
 	}
 }
 
-bool Client::GetItemStatValue(EQ::ItemData* item) {
+float Client::GetItemStatValue(EQ::ItemData* item) {
 	if (item) {
 		float return_value = 0.0f;
 
@@ -592,8 +592,10 @@ bool Client::GetItemStatValue(EQ::ItemData* item) {
 			return 5.0f;
 		}
 
-		return_value += item->HP / 10.0f;
+		return_value += item->HP   / 10.0f;
 		return_value += item->Mana / 10.0f;
+
+		return_value += item->Damage - (item->Delay / 2);
 
 		return_value += item->AStr;
 		return_value += item->ASta;
@@ -625,49 +627,65 @@ bool Client::GetItemStatValue(EQ::ItemData* item) {
 		return_value += 2 * item->HealAmt;
 		return_value += 2 * item->SpellDmg;
 
-		if (item->Click.Effect > 0) return_value += 25;
-		if (item->Worn.Effect > 0)  return_value += 25;
-		if (item->Focus.Effect > 0) return_value += 25;
+		if (item->Click.Effect > 0) return_value  += 25;
+		if (item->Worn.Effect  > 0)  return_value += 25;
+		if (item->Focus.Effect > 0) return_value  += 25;
 
-		return std::max(1.0f, (return_value));
+		return_value = std::max(1.0f, return_value);
+
+		LogDebug("EXPVAL: [{}]", return_value);
+
+		return return_value;
 	}
 }
 
-float Client::GetBaseExpValueForKill(int conlevel, int tier, EQ::ItemInstance* upgrade_item) {
-	float exp_value = 0.0f;
-	float norm_val = GetItemStatValue(upgrade_item->GetItem());
+float Client::GetBaseExpValueForKill(int conlevel, int target_tier, EQ::ItemInstance* upgrade_item) {
+	float exp_value   = 0.0f;
+	float norm_val 	  = GetItemStatValue(upgrade_item->GetItem());
+	float clamp_scale = 0.0f;
 
 	switch (conlevel) {
 	case ConsiderColor::Green:
+		clamp_scale = ((float)RuleI(Character, GreenModifier) / 100.0f);
 		exp_value = 1.0f;
 		break;
 	case ConsiderColor::LightBlue:
+		clamp_scale = ((float)RuleI(Character, LightBlueModifier) / 100.0f);
 		exp_value = 5.0f;
 		break;
 	case ConsiderColor::DarkBlue:
+		clamp_scale = ((float)RuleI(Character, BlueModifier) / 100.0f);
 		exp_value = 7.5f;
 		break;
 	case ConsiderColor::White:
+		clamp_scale = ((float)RuleI(Character, WhiteModifier) / 100.0f);
 		exp_value = 10.0f;
 		break;
 	case ConsiderColor::Yellow:
+		clamp_scale = ((float)RuleI(Character, YellowModifier) / 100.0f);
 		exp_value = 15.0f;
 		break;
 	case ConsiderColor::Red:
+		clamp_scale = ((float)RuleI(Character, RedModifier) / 100.0f);
 		exp_value = 25.0f;
 		break;
 	}
-
+	exp_value = exp_value * clamp_scale;
 	exp_value = exp_value / (norm_val * 0.75f);
+
+	// Clamp based on tier
+	if (target_tier == 1) {
+		exp_value = EQ::Clamp(exp_value, 1.0f * clamp_scale, 5.0f * clamp_scale);
+	}
+
+	if (target_tier == 2) {
+		exp_value = EQ::Clamp(exp_value, 0.1f * clamp_scale, 1.0f * clamp_scale);
+	}
 
 	exp_value = exp_value * (DataBucket::GetData("eom_17779").empty() ? 1 : 1.5);
 	exp_value = exp_value * (DataBucket::GetData("eom_43002").empty() ? 1 : 1.5);
 
-	if (tier == 1) {
-		exp_value *= 1.5;
-	}
-
-	LogDebug("norm_val: [{}], exp_value [{}], conlevel [{}]", norm_val, exp_value, conlevel);
+	LogDebug("tier: [{}], norm_val: [{}], exp_value [{}], conlevel [{}]", target_tier, norm_val, exp_value, conlevel);
 
 	return exp_value;
 }
@@ -703,45 +721,45 @@ bool Client::AddItemExperience(EQ::ItemInstance* item, int conlevel) {
 	LogDebug("Raw Values: [{}] [{}] [{}]", cur_item_experience, new_item_experience, new_percentage);
 
 	if (new_percentage <= 5.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, emitting a very faint shimmer.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, emitting a very faint shimmer. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 10.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, emitting a faint shimmer.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, emitting a faint shimmer. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 15.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing faintly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing faintly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 20.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing softly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing softly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 25.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing steadily.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing steadily. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 30.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing with a gentle light.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing with a gentle light. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 35.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing with a soft light.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing with a soft light. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 40.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing brightly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing brightly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 45.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, glowing intensely.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, glowing intensely. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 50.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, shining steadily.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, shining steadily. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 55.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, shining brightly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, shining brightly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 60.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, shining intensely.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, shining intensely. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 65.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, radiating softly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating softly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 70.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, radiating brightly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating brightly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 75.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, radiating intensely.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating intensely. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 80.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, shining brilliantly.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, shining brilliantly. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 85.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, shining with great power.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, shining with great power. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 90.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with great power.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with great power. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else if (new_percentage <= 95.0f) {
-		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with immense power.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with immense power. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	} else {
-		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with overwhelming power.", linker.GenerateLink().c_str());
+		Message(Chat::Experience, "Your [%s] absorbs energy, radiating with overwhelming power. (%05.2f)", linker.GenerateLink().c_str(), new_percentage);
 	}
 
 	LogDebug("New Exp for Item [{}] is [{}]", linker.GenerateLink().c_str(), new_percentage);
@@ -878,7 +896,7 @@ void Client::AddEXP(ExpSource exp_source, uint64 in_add_exp, uint8 conlevel, boo
 	// Check for AA XP Cap
 	int aaexp_cap = RuleI(AA, MaxAAEXPPerKill) * GetConLevelModifierPercent(conlevel) * (GetLevel()/50.0f) * (XPRate / 100.0f);
 
-	if (RuleI(AA, MaxAAEXPPerKill) >= 0 && aaexp > aaexp_cap) {
+	if (exp_source == ExpSource::Kill && RuleI(AA, MaxAAEXPPerKill) >= 0 && aaexp > aaexp_cap) {
 		aaexp = aaexp_cap;
 	}
 
