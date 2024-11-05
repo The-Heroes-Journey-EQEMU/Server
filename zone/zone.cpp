@@ -3236,17 +3236,17 @@ uint32 Zone::AddGlobalBuffTime(uint32 spell_id, uint32 add_duration)
 	{
 		//New DB row
 		new_timestamp = cur_time;
-		new_timestamp += add_duration;
 	}
 	else
 	{
 		//Update existing row, including expired data
-		if (time_difference <= 0)
+		if (time_difference <= 0 || global_buff.duration == 0)
 		{
 			new_timestamp = cur_time;
 		}
-		new_timestamp += add_duration;
 	}
+
+	new_timestamp += add_duration;
 
 	global_buff.duration = new_timestamp;
 	global_buff.spell_id = spell_id;
