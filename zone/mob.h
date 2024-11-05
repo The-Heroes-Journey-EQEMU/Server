@@ -1346,6 +1346,9 @@ public:
 	uint32 GetClassesBits() const;
 	bool HasClass(uint8 player_class, uint32 bitmask = 0) const;
 
+	void ApplyGlobalPersistentBuffs();
+	void DoApplyGlobalPersistentBuff(int spell_id, int duration);
+
 	bool ShieldAbility(uint32 target_id, int shielder_max_distance = 15, int shield_duration = 12000, int shield_target_mitigation = 50, int shielder_mitigation = 75, bool use_aa = false, bool can_shield_npc = true);
 	void DoShieldDamageOnShielder(Mob *shield_target, int64 hit_damage_done, EQ::skills::SkillType skillInUse);
 	void ShieldAbilityFinish();

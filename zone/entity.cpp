@@ -747,6 +747,10 @@ void EntityList::AddNPC(NPC *npc, bool send_spawn_packet, bool dont_queue)
 			npc->SetSpawnedInWater(true);
 		}
 	}
+
+	if (npc->GetOwner() && npc->GetOwner()->IsClient()) {
+		npc->GetOwner()->ApplyGlobalPersistentBuffs();
+	}
 }
 
 void EntityList::AddMerc(Merc *merc, bool SendSpawnPacket, bool dontqueue)

@@ -248,6 +248,16 @@ public:
 	Timer  spawn2_timer;
 	Timer  hot_reload_timer;
 
+	std::unordered_map<int, int> global_persistent_buffs;
+
+	void LoadGlobalPersistentBuffs();
+	void SaveGlobalPersistentBuffs();
+	int  GetGlobalPersistentBuff(int spell_id);
+	std::unordered_map<int, int> GetAllGlobalPersistentBuffs();
+	void AddGlobalPersistentBuff(int spell_id, int duration);
+	void _AddGlobalPersistentBuff(int spell_id, int duration);
+	void ApplyGlobalPersistentBuffs();
+
 	uint8  weather_intensity;
 	uint8  zone_weather;
 	uint8  loglevelvar;

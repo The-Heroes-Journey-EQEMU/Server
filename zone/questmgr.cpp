@@ -219,7 +219,7 @@ void QuestManager::summonitem(uint32 itemid, int16 charges) {
 	initiator->SummonApocItem(itemid, charges);
 }
 
-void QuestManager::summonfixeditem(uint32 itemid, int16 charges) {	
+void QuestManager::summonfixeditem(uint32 itemid, int16 charges) {
 	QuestManagerCurrentQuestVars();
 	if(!initiator)
 		return;
@@ -3986,6 +3986,11 @@ bool QuestManager::IsRunning()
 	if(!owner)
 		return false;
 	return owner->IsRunning();
+}
+
+void QuestManager::AddGlobalPersistentBuff(int spell_id, int duration) {
+	LogDebug("Check 1");
+	zone->AddGlobalPersistentBuff(spell_id, duration);
 }
 
 void QuestManager::FlyMode(GravityBehavior flymode)

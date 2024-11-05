@@ -750,6 +750,87 @@ void Zone::LoadMerchants()
 	}
 }
 
+void Zone::LoadGlobalPersistentBuffs() {
+    std::string data = DataBucket::GetData("GlobalBuffs");
+
+    if (data.empty()) {
+        return;
+    }
+
+    Json::Value root;
+    std::stringstream ss(data);
+    ss >> root;
+
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+    for (const auto& key : root.getMemberNames()) {
+        int spell_id = std::stoi(key);
+        time_t expiration_time = root[key].asInt();
+        int duration_ticks = (expiration_time - now) / 6;
+
+        // Only load buffs that are still valid (positive duration)
+        if (duration_ticks > 0) {
+            global_persistent_buffs[spell_id] = duration_ticks;
+        }
+    }
+}
+
+void Zone::SaveGlobalPersistentBuffs() {
+
+    Json::Value root;
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+    for (const auto& [spell_id, duration_ticks] : global_persistent_buffs) {
+        time_t expiration_time = now + (duration_ticks * 6);
+        root[std::to_string(spell_id)] = static_cast<Json::Int>(expiration_time);
+    }
+
+    Json::StreamWriterBuilder writerBuilder;
+    std::stringstream ss;
+    ss << root;
+
+    DataBucket::SetData("GlobalBuffs", ss.str());
+}
+
+int Zone::GetGlobalPersistentBuff(int spell_id) {
+    auto it = global_persistent_buffs.find(spell_id);
+    return (it != global_persistent_buffs.end()) ? it->second : -1;
+}
+
+void Zone::_AddGlobalPersistentBuff(int spell_id, int duration) {
+	LogDebug("Check 5, [{}], [{}], [{}]", spell_id, duration, global_persistent_buffs[spell_id]);
+	global_persistent_buffs[spell_id] = global_persistent_buffs[spell_id] + duration;
+	SaveGlobalPersistentBuffs();
+
+	LogDebug("Check 5.5, [{}], [{}]", spell_id, global_persistent_buffs[spell_id]);
+	ApplyGlobalPersistentBuffs();
+}
+
+void Zone::AddGlobalPersistentBuff(int spell_id, int duration) {
+	LogDebug("Check 2, [{}], [{}]", spell_id, duration);
+
+	auto pack = new ServerPacket(ServerOP_WWPersistBuff, sizeof(WWBuff_Struct));
+	WWBuff_Struct* WWS = (WWBuff_Struct*)pack->pBuffer;
+	WWS->duration = duration;
+	WWS->spell_id = spell_id;
+	worldserver.SendPacket(pack);
+	safe_delete(pack);
+}
+
+void Zone::ApplyGlobalPersistentBuffs() {
+	for (auto client_entry : entity_list.GetClientList()) {
+		Client* client = client_entry.second;
+
+		if (!client) {
+			continue;
+		}
+
+		client->ApplyGlobalPersistentBuffs();
+	}
+
+	SaveGlobalPersistentBuffs();
+}
+
 void Zone::LoadMercenaryTemplates()
 {
 	std::list<MercStanceInfo> mercenary_stances;
@@ -1096,6 +1177,7 @@ Zone::Zone(uint32 in_zoneid, uint32 in_instanceid, const char* in_short_name)
 
 	SetNpcPositionUpdateDistance(0);
 	SetQuestHotReloadQueued(false);
+	LoadGlobalPersistentBuffs();
 }
 
 Zone::~Zone() {
@@ -1223,6 +1305,8 @@ bool Zone::Init(bool is_static) {
 	LogSys.origination_info.zone_short_name = zone->short_name;
 	LogSys.origination_info.zone_long_name  = zone->long_name;
 	LogSys.origination_info.instance_id     = zone->instanceid;
+
+	LoadGlobalPersistentBuffs();
 
 	return true;
 }

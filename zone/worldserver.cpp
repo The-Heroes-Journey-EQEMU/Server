@@ -3410,6 +3410,21 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 
 		break;
 	}
+	case ServerOP_WWPersistBuff:
+	{
+		auto s = (WWBuff_Struct*) pack->pBuffer;
+
+		LogDebug("Check 3");
+
+		if (!IsValidSpell(s->spell_id) || !zone) {
+			break;
+		}
+
+		LogDebug("Check 4 [{}], [{}]", s->spell_id, s->duration);
+
+		zone->_AddGlobalPersistentBuff(s->spell_id, s->duration);
+		break;
+	}
 	case ServerOP_WWSignal:
 	{
 		auto s = (WWSignal_Struct*) pack->pBuffer;

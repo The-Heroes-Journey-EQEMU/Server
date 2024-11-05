@@ -4679,6 +4679,48 @@ bool Mob::CanThisClassTripleAttack() const
 	}
 }
 
+void Mob::ApplyGlobalPersistentBuffs() {
+	for (auto entry : zone->global_persistent_buffs) {
+		int spell_id = entry.first;
+		int duration = entry.second;
+		LogDebug("Found Spell [{}] Duration [{}]", spell_id, duration);
+		if (IsValidSpell(spell_id)) {
+			DoApplyGlobalPersistentBuff(spell_id, duration);
+			for (auto pet : GetAllPets()) {
+				pet->DoApplyGlobalPersistentBuff(spell_id, duration);
+			}
+		}
+	}
+}
+
+void Mob::DoApplyGlobalPersistentBuff(int spell_id, int duration) {
+	int buff_count = GetMaxTotalSlots();
+	LogDebug("Found Spell [{}] Duration [{}]", spell_id, duration);
+	for (int buff_index = 0; buff_index < buff_count; ++buff_index) {
+		if (buffs[buff_index].spellid == spell_id) {
+			buffs[buff_index].ticsremaining = duration;
+			LogDebug("Check 7 Spell [{}] Duration [{}]", spell_id, buffs[buff_index].ticsremaining);
+			if (IsClient()) {
+				CastToClient()->SendBuffDurationPacket(buffs[buff_index], buff_index);
+				CastToClient()->SendBuffNumHitPacket(buffs[buff_index], buff_index);
+			} else if (GetOwner()) {
+				SendPetBuffsToClient();
+			}
+
+			auto clients = entity_list.GetClientList();
+			for (auto c : clients) {
+				if (c.second->GetTarget() && c.second->GetTarget()->GetID() == GetID()) {
+					SendBuffsToClient(c.second);
+				}
+			}
+
+			return;
+		}
+	}
+
+	ApplySpellBuff(spell_id, duration);
+}
+
 uint32 Mob::GetClassesBits() const
 {
 	if (IsClient()) {

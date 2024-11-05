@@ -303,6 +303,7 @@
 #define ServerOP_WWSignal 0x4756
 #define ServerOP_WWSpell 0x4757
 #define ServerOP_WWTaskUpdate 0x4758
+#define ServerOP_WWPersistBuff 0x4759
 
 /**
  * QueryServer
@@ -1674,6 +1675,11 @@ struct WWSpell_Struct {
 	uint32 spell_id;
 	uint8  min_status;
 	uint8  max_status;
+};
+
+struct WWBuff_Struct {
+	uint16 spell_id;
+	uint32 duration;
 };
 
 struct WWTaskUpdate_Struct {

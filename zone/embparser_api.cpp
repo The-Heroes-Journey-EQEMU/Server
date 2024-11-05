@@ -2345,6 +2345,11 @@ void Perl__FlyMode(GravityBehavior flymode)
 	quest_manager.FlyMode(flymode);
 }
 
+void Perl__AddGlobalPersistentBuff(int spell_id, int duration)
+{
+	quest_manager.AddGlobalPersistentBuff(spell_id, duration);
+}
+
 int Perl__FactionValue()
 {
 	return quest_manager.FactionValue();
@@ -6023,6 +6028,7 @@ void perl_register_quest()
 	package.add("FlagInstanceByGroupLeader", &Perl__FlagInstanceByGroupLeader);
 	package.add("FlagInstanceByRaidLeader", &Perl__FlagInstanceByRaidLeader);
 	package.add("FlyMode", &Perl__FlyMode);
+	package.add("AddGlobalPersistentBuff", &Perl__AddGlobalPersistentBuff);
 	package.add("GetAutoLoginCharacterNameByAccountID", &Perl__GetAutoLoginCharacterNameByAccountID);
 	package.add("GetBotClassByID", &Perl__GetBotClassByID);
 	package.add("GetBotGenderByID", &Perl__GetBotGenderByID);

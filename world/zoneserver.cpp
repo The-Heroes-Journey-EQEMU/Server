@@ -1434,6 +1434,7 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p) {
 		case ServerOP_WWSetEntityVariable:
 		case ServerOP_WWSignal:
 		case ServerOP_WWSpell:
+		case ServerOP_WWPersistBuff:
 		case ServerOP_WWTaskUpdate:
 		case ServerOP_ZonePlayer: {
 			zoneserver_list.SendPacket(pack);

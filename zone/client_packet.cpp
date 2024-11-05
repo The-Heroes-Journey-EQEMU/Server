@@ -991,6 +991,8 @@ void Client::CompleteConnect()
 	}
 
 	SetWeaponAppearance(true);
+
+	ApplyGlobalPersistentBuffs();
 }
 
 // connecting opcode handlers

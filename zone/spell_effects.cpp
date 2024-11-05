@@ -835,6 +835,10 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 
 					SetPetType(petCharmed);
 
+					if (GetOwner() && GetOwner()->IsClient()) {
+						GetOwner()->ApplyGlobalPersistentBuffs();
+					}
+
 					// This was done in AddBuff, but we were not a pet yet, so
 					// the target windows didn't get updated.
 					EQApplicationPacket *outapp = MakeBuffsPacket();

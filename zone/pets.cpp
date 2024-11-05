@@ -323,6 +323,10 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 			}
 		}
 	}
+
+	if (npc->GetOwner() && npc->GetOwner()->IsClient()) {
+		npc->GetOwner()->ApplyGlobalPersistentBuffs();
+	}
 }
 void NPC::TryDepopTargetLockedPets(Mob* current_target) {
 
@@ -1205,7 +1209,7 @@ bool Mob::AddPet(uint16 pet_id) {
 	focused_pet_id = pet_id;
 	ConfigurePetWindow(newpet);
 
-    return true;  // Return true to indicate the pet was successfully added
+	return true;  // Return true to indicate the pet was successfully added
 }
 
 void Mob::ValidatePetList() {
