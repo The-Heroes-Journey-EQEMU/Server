@@ -577,7 +577,6 @@ public:
 	std::unordered_map<uint32, GlobalBuffsRepository::GlobalBuffs>& GetGlobalBuffs() { return global_buffs_cache; }
 	void ClearNPCSpells() { npc_spells_cache.clear(); npc_spells_loadtried.clear(); }
 	void ClearGlobalBuffs() { global_buffs_cache.clear(); }
-	void AddGlobalBuffTime(uint32 spell_id, uint32 time_to_add);
 	void LoadGlobalBuffs();
 	const NPCType* LoadNPCTypesData(uint32 id, bool bulk_load = false);
 

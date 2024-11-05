@@ -5998,9 +5998,9 @@ void Perl__reload_global_buffs()
 	quest_manager.ReloadGlobalBuffs();
 }
 
-void Perl__add_global_buffs()
+uint32_t Perl__add_global_buff_time(uint32 spell_id, uint32 duration)
 {
-	quest_manager.AddGlobalBuff(spell_id, duration);
+	return quest_manager.AddGlobalBuffTime(spell_id, duration);
 }
 
 void perl_register_quest()
@@ -7013,7 +7013,7 @@ void perl_register_quest()
 	* CUSTOM TO THJ: Global Buffs
 	*/
 	package.add("reload_global_buffs", &Perl__reload_global_buffs);
-	package.add("add_global_buff", &Perl__reload_global_buffs);
+	package.add("add_global_buff", (uint32_t(*)(uint32, uint32))&Perl__add_global_buff_time);
 
 }
 

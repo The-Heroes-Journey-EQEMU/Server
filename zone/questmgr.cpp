@@ -4202,10 +4202,12 @@ void QuestManager::ReloadGlobalBuffs()
 	}
 }
 
-void QuestManager::AddGlobalBuff(uint32 spell_id, uint32 add_duration)
+uint32 QuestManager::AddGlobalBuffTime(uint32 spell_id, uint32 add_duration)
 {
 	if (zone && zone->IsLoaded()) {
-		zone->AddGlobalBuffTime(spell_id, add_duration);
+		uint32 timestamp = zone->AddGlobalBuffTime(spell_id, add_duration);
+		zone->ReloadGlobalBuffs();
+		return timestamp;
 	}
 }
 
