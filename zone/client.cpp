@@ -72,6 +72,7 @@ extern volatile bool RunLoops;
 #include "../common/repositories/inventory_repository.h"
 #include "../common/repositories/keyring_repository.h"
 #include "../common/repositories/tradeskill_recipe_repository.h"
+#include "../common/repositories/account_kill_counts_repository.h"
 #include "../common/events/player_events.h"
 #include "../common/events/player_event_logs.h"
 #include "dialogue_window.h"
@@ -801,7 +802,28 @@ bool Client::Save(uint8 iCommitNow) {
 
 	database.SaveCharacterEXPModifier(this);
 
+	ProcessSlayerCredits();
+
 	return true;
+}
+
+void Client::ProcessSlayerCredits() {
+    int account_id = AccountID();
+
+    std::vector<AccountKillCountsRepository::AccountKillCounts> entries;
+
+    for (const auto& pair : kill_counters) {
+        AccountKillCountsRepository::AccountKillCounts entry;
+        entry.account_id = account_id;
+        entry.race_id = pair.first;
+        entry.count = pair.second;
+
+        entries.push_back(entry);
+    }
+
+    AccountKillCountsRepository::InsertMany(database, entries);
+
+    kill_counters.clear();
 }
 
 CLIENTPACKET::CLIENTPACKET()
@@ -8485,7 +8507,7 @@ bool Client::ReloadCharacterFaction(Client *c, uint32 facid, uint32 charid)
 
 FACTION_VALUE Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_race, uint32 p_class, uint32 p_deity, int32 pFaction, Mob* tnpc)
 {
-	if !(tnpc) {
+	if (!tnpc) {
 		return FACTION_VALUE::FACTION_ALLY; // Not sure how this could happen
 	}
 
