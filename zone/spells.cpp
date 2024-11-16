@@ -144,15 +144,8 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
 		// Shortcut Pet-Only spells, these only have one potential valid target
 		if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
-			ValidatePetList();
-
-			if (GetAllPets().size() > 0) {
-				for (const auto pet : GetAllPets()) {
-					if (spells[spell_id].target_type == ST_SummonedPet && pet->IsCharmedPet()) {
-						continue;
-					}
-					return pet->GetID();
-				}
+			if (GetPet()) {
+				return GetPet()->GetID();
 			} else {
 				Message(Chat::SpellFailure, "You must have a pet in order to cast this spell or ability (%s).", spells[spell_id].name);
 				return 0;
