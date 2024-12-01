@@ -422,7 +422,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (auto_attack && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
+		else if (auto_attack && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
 			//check if change
 			//only check on primary attack.. sorry offhand you gotta wait!
 			if (aa_los_them_mob) {
