@@ -1269,6 +1269,12 @@ void Mob::DoArcheryAttackDmg(Mob *other, const EQ::ItemInstance *RangeWeapon, co
 		my_hit.min_damage = 0;
 		my_hit.damage_done = 1;
 
+		auto shield_inc = spellbonuses.ShieldEquipDmgMod + itembonuses.ShieldEquipDmgMod + aabonuses.ShieldEquipDmgMod;
+		if (shield_inc > 0 && HasShieldEquipped()) {
+			my_hit.base_damage = my_hit.base_damage * (100 + shield_inc) / 100;
+			hate = hate * (100 + shield_inc) / 100;
+		}
+
 		my_hit.skill = EQ::skills::SkillArchery;
 		my_hit.offense = offense(my_hit.skill);
 		my_hit.tohit = GetTotalToHit(my_hit.skill, chance_mod);
