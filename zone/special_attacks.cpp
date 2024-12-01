@@ -1266,7 +1266,9 @@ void Mob::DoArcheryAttackDmg(Mob *other, const EQ::ItemInstance *RangeWeapon, co
 
 		DamageHitInfo my_hit {};
 		my_hit.base_damage = MaxDmg;
-		my_hit.min_damage = 0;
+		//allow damage bonus to apply to bows.
+		//Without new custom code in GetWeaponDamageBonus, this will use the 2Her formula by default.
+		my_hit.min_damage = GetWeaponDamageBonus(RangeWeapon ? RangeWeapon->GetItem() : (const EQ::ItemData*) nullptr);
 		my_hit.damage_done = 1;
 
 		auto shield_inc = spellbonuses.ShieldEquipDmgMod + itembonuses.ShieldEquipDmgMod + aabonuses.ShieldEquipDmgMod;
