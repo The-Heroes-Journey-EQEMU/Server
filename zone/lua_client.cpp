@@ -3542,9 +3542,16 @@ void Lua_Client::AreaTaunt(float range, int bonus_hate)
 	entity_list.AETaunt(self, range, bonus_hate);
 }
 
+int Lua_Client::GetKillCount(int race_id)
+{
+	Lua_Safe_Call_Int();
+	return self->kill_counters[race_id];
+}
+
 luabind::scope lua_register_client() {
 	return luabind::class_<Lua_Client, Lua_Mob>("Client")
 	.def(luabind::constructor<>())
+	.def("GetKillCount", (int(Lua_Client::*)(int))&Lua_Client::GetKillCount)
 	.def("AccountID", (uint32(Lua_Client::*)(void))&Lua_Client::AccountID)
 	.def("AccountName", (const char *(Lua_Client::*)(void))&Lua_Client::AccountName)
 	.def("AddAAPoints", (void(Lua_Client::*)(int))&Lua_Client::AddAAPoints)
