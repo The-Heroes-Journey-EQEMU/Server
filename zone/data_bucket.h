@@ -40,6 +40,7 @@ struct DataBucketKey {
 	int64_t     character_id;
 	int64_t     npc_id;
 	int64_t     bot_id;
+	int64_t		account_id;
 };
 
 namespace DataBucketLoadType {
@@ -47,6 +48,7 @@ namespace DataBucketLoadType {
 		Bot,
 		Client,
 		NPC,
+		Account,
 		MaxType
 	};
 
@@ -67,6 +69,7 @@ public:
 	static std::string GetDataRemaining(const std::string &bucket_key);
 
 	static bool GetDataBuckets(Mob *mob);
+	static bool GetAccountDataBuckets(uint32_t account_id);
 
 	static int64_t GetCurrentTimeUNIX();
 

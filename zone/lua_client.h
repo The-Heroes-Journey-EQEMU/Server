@@ -485,6 +485,12 @@ public:
 	std::string GetBucketRemaining(std::string bucket_name);
 	void SetBucket(std::string bucket_name, std::string bucket_value);
 	void SetBucket(std::string bucket_name, std::string bucket_value, std::string expiration);
+	void DeleteAccountBucket(std::string bucket_name);
+	std::string GetAccountBucket(std::string bucket_name);
+	std::string GetAccountBucketExpires(std::string bucket_name);
+	std::string GetAccountBucketRemaining(std::string bucket_name);
+	void SetAccountBucket(std::string bucket_name, std::string bucket_value);
+	void SetAccountBucket(std::string bucket_name, std::string bucket_value, std::string expiration);
 	void GrantAllAAPoints();
 	void GrantAllAAPoints(uint8 unlock_level);
 	void GrantAllAAPoints(uint8 unlock_level, bool skip_grant_only);
@@ -586,6 +592,7 @@ public:
 	void DialogueWindow(std::string markdown);
 
 	bool ReloadDataBuckets();
+	bool ReloadAccountDataBuckets();
 
 	Lua_Expedition  CreateExpedition(luabind::object expedition_info);
 	Lua_Expedition  CreateExpedition(std::string zone_name, uint32 version, uint32 duration, std::string expedition_name, uint32 min_players, uint32 max_players);

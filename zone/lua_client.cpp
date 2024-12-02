@@ -3144,6 +3144,11 @@ bool Lua_Client::ReloadDataBuckets() {
 	return DataBucket::GetDataBuckets(self);
 }
 
+bool Lua_Client::ReloadAccountDataBuckets() {
+	Lua_Safe_Call_Bool();
+	return DataBucket::GetAccountDataBuckets(self->AccountID());
+}
+
 uint32 Lua_Client::GetEXPForLevel(uint16 check_level)
 {
 	Lua_Safe_Call_Int();
@@ -3202,6 +3207,42 @@ void Lua_Client::SetBucket(std::string bucket_name, std::string bucket_value, st
 {
 	Lua_Safe_Call_Void();
 	self->SetBucket(bucket_name, bucket_value, expiration);
+}
+
+void Lua_Client::DeleteAccountBucket(std::string bucket_name)
+{
+	Lua_Safe_Call_Void();
+	self->DeleteAccountBucket(bucket_name);
+}
+
+std::string Lua_Client::GetAccountBucket(std::string bucket_name)
+{
+	Lua_Safe_Call_String();
+	return self->GetAccountBucket(bucket_name);
+}
+
+std::string Lua_Client::GetAccountBucketExpires(std::string bucket_name)
+{
+	Lua_Safe_Call_String();
+	return self->GetAccountBucketExpires(bucket_name);
+}
+
+std::string Lua_Client::GetAccountBucketRemaining(std::string bucket_name)
+{
+	Lua_Safe_Call_String();
+	return self->GetAccountBucketRemaining(bucket_name);
+}
+
+void Lua_Client::SetAccountBucket(std::string bucket_name, std::string bucket_value)
+{
+	Lua_Safe_Call_Void();
+	self->SetAccountBucket(bucket_name, bucket_value);
+}
+
+void Lua_Client::SetAccountBucket(std::string bucket_name, std::string bucket_value, std::string expiration)
+{
+	Lua_Safe_Call_Void();
+	self->SetAccountBucket(bucket_name, bucket_value, expiration);
 }
 
 void Lua_Client::GrantAllAAPoints()
@@ -3525,6 +3566,7 @@ luabind::scope lua_register_client() {
 	.def("DecreaseByID", (bool(Lua_Client::*)(uint32,int))&Lua_Client::DecreaseByID)
 	.def("DescribeSpecialAbilities", (void(Lua_Client::*)(Lua_NPC))&Lua_Client::DescribeSpecialAbilities)
 	.def("DeleteBucket", (void(Lua_Client::*)(std::string))&Lua_Client::DeleteBucket)
+	.def("DeleteAccountBucket", (void(Lua_Client::*)(std::string))&Lua_Client::DeleteAccountBucket)
 	.def("DeleteItemInInventory", (void(Lua_Client::*)(int,int))&Lua_Client::DeleteItemInInventory)
 	.def("DeleteItemInInventory", (void(Lua_Client::*)(int,int,bool))&Lua_Client::DeleteItemInInventory)
 	.def("DiaWind", (void(Lua_Client::*)(std::string))&Lua_Client::DialogueWindow)
@@ -3605,6 +3647,9 @@ luabind::scope lua_register_client() {
 	.def("GetBucket", (std::string(Lua_Client::*)(std::string))&Lua_Client::GetBucket)
 	.def("GetBucketExpires", (std::string(Lua_Client::*)(std::string))&Lua_Client::GetBucketExpires)
 	.def("GetBucketRemaining", (std::string(Lua_Client::*)(std::string))&Lua_Client::GetBucketRemaining)
+	.def("GetAccountBucket", (std::string(Lua_Client::*)(std::string))&Lua_Client::GetAccountBucket)
+	.def("GetAccountBucketExpires", (std::string(Lua_Client::*)(std::string))&Lua_Client::GetAccountBucketExpires)
+	.def("GetAccountBucketRemaining", (std::string(Lua_Client::*)(std::string))&Lua_Client::GetAccountBucketRemaining)
 	.def("GetCarriedMoney", (uint64(Lua_Client::*)(void))&Lua_Client::GetCarriedMoney)
 	.def("GetCarriedPlatinum", (uint32(Lua_Client::*)(void))&Lua_Client::GetCarriedPlatinum)
 	.def("GetCharacterFactionLevel", (int(Lua_Client::*)(int))&Lua_Client::GetCharacterFactionLevel)
@@ -3820,6 +3865,7 @@ luabind::scope lua_register_client() {
 	.def("ReadBookByName", (void(Lua_Client::*)(std::string,uint8))&Lua_Client::ReadBookByName)
 	.def("RefundAA", (void(Lua_Client::*)(void))&Lua_Client::RefundAA)
 	.def("ReloadDataBuckets", (bool(Lua_Client::*)(void))&Lua_Client::ReloadDataBuckets)
+	.def("ReloadAccountDataBuckets", (bool(Lua_Client::*)(void))&Lua_Client::ReloadDataBuckets)
 	.def("RemoveAAPoints", (bool(Lua_Client::*)(uint32))&Lua_Client::RemoveAAPoints)
 	.def("RemoveAllExpeditionLockouts", (void(Lua_Client::*)(std::string))&Lua_Client::RemoveAllExpeditionLockouts)
 	.def("RemoveAllExpeditionLockouts", (void(Lua_Client::*)(void))&Lua_Client::RemoveAllExpeditionLockouts)
@@ -3894,6 +3940,8 @@ luabind::scope lua_register_client() {
 	.def("SetBotSpawnLimit", (void(Lua_Client::*)(int,uint8))&Lua_Client::SetBotSpawnLimit)
 	.def("SetBucket", (void(Lua_Client::*)(std::string,std::string))&Lua_Client::SetBucket)
 	.def("SetBucket", (void(Lua_Client::*)(std::string,std::string,std::string))&Lua_Client::SetBucket)
+	.def("SetAccountBucket", (void(Lua_Client::*)(std::string,std::string))&Lua_Client::SetAccountBucket)
+	.def("SetAccountBucket", (void(Lua_Client::*)(std::string,std::string,std::string))&Lua_Client::SetAccountBucket)
 	.def("SetClientMaxLevel", (void(Lua_Client::*)(int))&Lua_Client::SetClientMaxLevel)
 	.def("SetConsumption", (void(Lua_Client::*)(int, int))&Lua_Client::SetConsumption)
 	.def("SetDeity", (void(Lua_Client::*)(int))&Lua_Client::SetDeity)

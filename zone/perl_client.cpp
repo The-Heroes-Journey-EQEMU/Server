@@ -2829,6 +2829,36 @@ perl::array Perl_Client_GetZoneFlags(Client* self)
 	return a;
 }
 
+void Perl_Client_DeleteAccountBucket(Client* self, std::string bucket_name) // @categories Script Utility
+{
+	self->DeleteBucket(bucket_name);
+}
+
+std::string Perl_Client_GetAccountBucket(Client* self, std::string bucket_name) // @categories Script Utility
+{
+	return self->GetAccountBucket(bucket_name);
+}
+
+std::string Perl_Client_GetAccountBucketExpires(Client* self, std::string bucket_name) // @categories Script Utility
+{
+	return self->GetAccountBucketExpires(bucket_name);
+}
+
+std::string Perl_Client_GetAccountBucketRemaining(Client* self, std::string bucket_name) // @categories Script Utility
+{
+	return self->GetAccountBucketRemaining(bucket_name);
+}
+
+void Perl_Client_SetAccountBucket(Client* self, std::string bucket_name, std::string bucket_value) // @categories Script Utility
+{
+	self->SetAccountBucket(bucket_name, bucket_value);
+}
+
+void Perl_Client_SetAccountBucket(Client* self, std::string bucket_name, std::string bucket_value, std::string expiration) // @categories Script Utility
+{
+	self->SetAccountBucket(bucket_name, bucket_value, expiration);
+}
+
 void Perl_Client_SendPayload(Client* self, int payload_id) // @categories Script Utility
 {
 	self->SendPayload(payload_id);
@@ -2999,6 +3029,11 @@ bool Perl_Client_IsAutoFireEnabled(Client* self)
 bool Perl_Client_ReloadDataBuckets(Client* self)
 {
 	return DataBucket::GetDataBuckets(self);
+}
+
+bool Perl_Client_ReloadAccountDataBuckets(Client* self)
+{
+	return DataBucket::GetAccountDataBuckets(self->AccountID());
 }
 
 uint32 Perl_Client_GetEXPForLevel(Client* self, uint16 check_level)
@@ -3303,6 +3338,7 @@ void perl_register_client()
 	package.add("CreateTaskDynamicZone", &Perl_Client_CreateTaskDynamicZone);
 	package.add("DecreaseByID", &Perl_Client_DecreaseByID);
 	package.add("DescribeSpecialAbilities", &Perl_Client_DescribeSpecialAbilities);
+	package.add("DeleteAccountBucket", &Perl_Client_DeleteAccountBucket);
 	package.add("DeleteItemInInventory", (void(*)(Client*, int16))&Perl_Client_DeleteItemInInventory);
 	package.add("DeleteItemInInventory", (void(*)(Client*, int16, int16))&Perl_Client_DeleteItemInInventory);
 	package.add("DeleteItemInInventory", (void(*)(Client*, int16, int16, bool))&Perl_Client_DeleteItemInInventory);
@@ -3340,6 +3376,9 @@ void perl_register_client()
 	package.add("GetAAPoints", &Perl_Client_GetAAPoints);
 	package.add("GetAFK", &Perl_Client_GetAFK);
 	package.add("GetAccountAge", &Perl_Client_GetAccountAge);
+	package.add("GetAccountBucket", &Perl_Client_GetAccountBucket);
+	package.add("GetAccountBucketExpires", &Perl_Client_GetAccountBucketExpires);
+	package.add("GetAccountBucketRemaining", &Perl_Client_GetAccountBucketRemaining);
 	package.add("GetAccountFlag", &Perl_Client_GetAccountFlag);
 	package.add("GetAccountFlags", &Perl_Client_GetAccountFlags);
 	package.add("GetAggroCount", &Perl_Client_GetAggroCount);
@@ -3591,6 +3630,7 @@ void perl_register_client()
 	package.add("ReadBookByName", &Perl_Client_ReadBookByName);
 	package.add("RefundAA", &Perl_Client_RefundAA);
 	package.add("ReloadDataBuckets", &Perl_Client_ReloadDataBuckets);
+	package.add("ReloadAccountDataBuckets", &Perl_Client_ReloadAccountDataBuckets);
 	package.add("RemoveAAPoints", &Perl_Client_RemoveAAPoints);
 	package.add("RemoveAllExpeditionLockouts", (void(*)(Client*))&Perl_Client_RemoveAllExpeditionLockouts);
 	package.add("RemoveAllExpeditionLockouts", (void(*)(Client*, std::string))&Perl_Client_RemoveAllExpeditionLockouts);
@@ -3643,6 +3683,8 @@ void perl_register_client()
 	package.add("SetAATitle", (void(*)(Client*, std::string))&Perl_Client_SetAATitle);
 	package.add("SetAATitle", (void(*)(Client*, std::string, bool))&Perl_Client_SetAATitle);
 	package.add("SetAFK", &Perl_Client_SetAFK);
+	package.add("SetAccountBucket", (void(*)(Client*, std::string, std::string))&Perl_Client_SetAccountBucket);
+	package.add("SetAccountBucket", (void(*)(Client*, std::string, std::string, std::string))&Perl_Client_SetAccountBucket);
 	package.add("SetAccountFlag", &Perl_Client_SetAccountFlag);
 	package.add("SetAlternateCurrencyValue", &Perl_Client_SetAlternateCurrencyValue);
 	package.add("SetAnon", &Perl_Client_SetAnon);

@@ -1214,6 +1214,13 @@ public:
 	void EnableTitle(int titleset);
 	void RemoveTitle(int titleset);
 
+	// Account Data Bucket Methods
+	void DeleteAccountBucket(std::string bucket_name);
+	std::string GetAccountBucket(std::string bucket_name);
+	std::string GetAccountBucketExpires(std::string bucket_name);
+	std::string GetAccountBucketRemaining(std::string bucket_name);
+	void SetAccountBucket(std::string bucket_name, std::string bucket_value, std::string expiration = "");
+
 	void EnteringMessages(Client* client);
 	void SendRules();
 

@@ -13075,3 +13075,67 @@ void Client::ClientToNpcAggroProcess()
 		LogAggro("Checking Reverse Aggro (client->npc) scanned_npcs ([{}])", npc_scan_count);
 	}
 }
+
+void Client::DeleteAccountBucket(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id 	= account_id;
+	k.key 			= bucket_name;
+
+	DataBucket::DeleteData(k);
+}
+
+std::string Client::GetAccountBucket(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id 	= account_id;
+	k.key 			= bucket_name;
+
+	auto b = DataBucket::GetData(k);
+	if (!b.value.empty()) {
+		return b.value;
+	}
+	return {};
+}
+
+std::string Client::GetAccountBucketExpires(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id 	= account_id;
+	k.key 			= bucket_name;
+
+	std::string bucket_expiration = DataBucket::GetDataExpires(k);
+	if (!bucket_expiration.empty()) {
+		return bucket_expiration;
+	}
+
+	return {};
+}
+
+std::string Client::GetAccountBucketRemaining(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id 	= account_id;
+	k.key 			= bucket_name;
+
+	std::string bucket_remaining = DataBucket::GetDataRemaining(k);
+	if (!bucket_remaining.empty() && Strings::ToInt(bucket_remaining) > 0) {
+		return bucket_remaining;
+	}
+	else if (Strings::ToInt(bucket_remaining) == 0) {
+		return "0";
+	}
+
+	return {};
+}
+
+void Client::SetAccountBucket(std::string bucket_name, std::string bucket_value, std::string expiration)
+{
+	DataBucketKey k = {};
+	k.account_id 	= account_id;
+	k.key     		= bucket_name;
+	k.expires 		= expiration;
+	k.value   		= bucket_value;
+
+	DataBucket::SetData(k);
+}

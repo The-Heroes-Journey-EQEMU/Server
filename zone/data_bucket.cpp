@@ -42,6 +42,8 @@ void DataBucket::SetData(const DataBucketKey &k)
 	}
 	else if (k.bot_id > 0) {
 		b.bot_id = k.bot_id;
+	} else if (k.account_id > 0) {
+		b.account_id = k.account_id;
 	}
 
 	const uint64 bucket_id         = b.id;
@@ -252,6 +254,20 @@ bool DataBucket::GetDataBuckets(Mob *mob)
 	return true;
 }
 
+// GetAccountDataBuckets bulk loads all data buckets for an account
+bool DataBucket::GetAccountDataBuckets(uint32_t account_id)
+{
+	DataBucketLoadType::Type t;
+
+	if (!account_id) {
+		return false;
+	}
+
+	BulkLoadEntities(t, {account_id});
+
+	return true;
+}
+
 bool DataBucket::DeleteData(const DataBucketKey &k)
 {
 	size_t size_before = g_data_bucket_cache.size();
@@ -388,6 +404,8 @@ void DataBucket::BulkLoadEntities(DataBucketLoadType::Type t, std::vector<uint32
 			}
 			else if (t == DataBucketLoadType::NPC) {
 				has_cache = ce.e.npc_id == ids[0];
+			} else if (t == DataBucketLoadType::Account) {
+				has_cache = ce.e.account_id == ids[0];
 			}
 		}
 
