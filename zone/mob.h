@@ -441,7 +441,7 @@ public:
 	bool UseBardSpellLogic(uint16 spell_id = 0xffff, int slot = -1);
 
 	//Buff
-	bool IsGroupSuspendableBuff(uint16 spell_id, Buffs_Struct buff);
+	bool IsGroupSuspendableBuff(uint16 spell_id, const char* caster_name);
 	void BuffProcess();
 	virtual void DoBuffTic(const Buffs_Struct &buff, int slot, Mob* caster = nullptr);
 	void BuffFadeBySpellID(uint16 spell_id);

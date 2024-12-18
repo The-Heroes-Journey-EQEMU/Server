@@ -765,7 +765,7 @@ bool Client::Save(uint8 iCommitNow) {
 
 		auto pets = GetAllPets(); // Assuming this function returns std::vector<Mob*>
 
-		if (!dead || RuleB(Custom, SuspendGroupBuffs)) {
+		if (!dead || (RuleB(Custom, SuspendGroupBuffs) && IsGroupSuspendableBuff(mob->CastToNPC()->GetPetSpellID(), GetName()))) {
 			for (Mob* mob : pets) {
 				if (mob)
 				{

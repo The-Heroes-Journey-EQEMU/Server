@@ -3931,7 +3931,7 @@ snare has both of them negative, yet their range should work the same:
 	return result;
 }
 
-bool Mob::IsGroupSuspendableBuff(uint16 spell_id, Buffs_Struct buff) {
+bool Mob::IsGroupSuspendableBuff(uint16 spell_id, const char* caster_name) {
 	if (!RuleB(Custom, SuspendGroupBuffs)) {
 		return false;
 	}
@@ -3948,11 +3948,11 @@ bool Mob::IsGroupSuspendableBuff(uint16 spell_id, Buffs_Struct buff) {
 		return false;
 	}
 
-	if (strlen(buff.caster_name) == 0) {
+	if (strlen(caster_name) == 0) {
 		return false;
 	}
 
-	Client* caster = entity_list.GetClientByName(buff.caster_name);
+	Client* caster = entity_list.GetClientByName(caster_name);
 	Client* client = GetOwnerOrSelf()->CastToClient();
 
 	if (caster && client) {
@@ -4009,7 +4009,7 @@ void Mob::BuffProcess()
 
 				if(!zone->BuffTimersSuspended() || !IsSuspendableSpell(buffs[buffs_i].spellid))
 				{
-					bool suspended = IsGroupSuspendableBuff(buffs[buffs_i].spellid, buffs[buffs_i]);
+					bool suspended = IsGroupSuspendableBuff(buffs[buffs_i].spellid, buffs[buffs_i].caster_name);
 
 					if (!suspended || !RuleB(Custom, SuspendGroupBuffs)) {
 						--buffs[buffs_i].ticsremaining;

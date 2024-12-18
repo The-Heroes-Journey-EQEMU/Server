@@ -5006,7 +5006,7 @@ void Mob::BuffFadeNonPersistDeath()
 			IsValidSpell(current_spell_id) &&
 			!IsPersistDeathSpell(current_spell_id) &&
 			!HasPersistDeathIllusion(current_spell_id) &&
-			!IsGroupSuspendableBuff(current_spell_id, buffs[buff_slot])
+			!IsGroupSuspendableBuff(current_spell_id, buffs[buff_slot].caster_name)
 		) {
 			BuffFadeBySlot(buff_slot, false);
 			recalc_bonus = true;
