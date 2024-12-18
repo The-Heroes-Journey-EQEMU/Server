@@ -44,8 +44,6 @@ public:
 	static bool GetDataBuckets(Mob *mob);
 	static bool GetAccountDataBuckets(uint32_t account_id);
 
-	static int64_t GetCurrentTimeUNIX();
-
 	// scoped bucket methods
 	static void SetData(const DataBucketKey &k);
 	static bool DeleteData(const DataBucketKey &k);
