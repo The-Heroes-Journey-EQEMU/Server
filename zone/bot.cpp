@@ -1265,7 +1265,7 @@ void Bot::LoadAAs() {
 		}
 
 		while(current) {
-			if (!CanUseAlternateAdvancementRank(current)) {
+			if (current->level_req > GetLevel() || !CanUseAlternateAdvancementRank(current)) {
 				current = nullptr;
 			} else {
 				current = current->next;
@@ -3089,6 +3089,7 @@ bool Bot::Spawn(Client* botCharacterOwner) {
 		m_targetable = true;
 		entity_list.AddBot(this, true, true);
 
+		ClearDataBucketCache();
 		DataBucket::GetDataBuckets(this);
 		LoadBotSpellSettings();
 		if (!AI_AddBotSpells(GetBotSpellID())) {
@@ -4192,14 +4193,7 @@ void Bot::PerformTradeWithClient(int16 begin_slot_id, int16 end_slot_id, Client*
 
 				std::vector<std::any> args = { return_iterator.return_item_instance };
 
-				parse->EventBot(
-					EVENT_UNEQUIP_ITEM_BOT,
-					this,
-					nullptr,
-					export_string,
-					return_iterator.return_item_instance->GetID(),
-					&args
-				);
+				parse->EventBot(EVENT_UNEQUIP_ITEM_BOT, this, nullptr, export_string, return_iterator.return_item_instance->GetID(), &args);
 			}
 
 			if (return_instance) {
@@ -4264,14 +4258,7 @@ void Bot::PerformTradeWithClient(int16 begin_slot_id, int16 end_slot_id, Client*
 
 			std::vector<std::any> args = { trade_iterator.trade_item_instance };
 
-			parse->EventBot(
-				EVENT_EQUIP_ITEM_BOT,
-				this,
-				nullptr,
-				export_string,
-				trade_iterator.trade_item_instance->GetID(),
-				&args
-			);
+			parse->EventBot(EVENT_EQUIP_ITEM_BOT, this, nullptr, export_string, trade_iterator.trade_item_instance->GetID(), &args);
 		}
 
 		trade_iterator.trade_item_instance = nullptr; // actual deletion occurs in client delete below

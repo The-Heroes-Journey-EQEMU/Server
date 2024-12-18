@@ -583,19 +583,21 @@ namespace RoF2
 				auto outapp = new EQApplicationPacket(OP_TraderShop, sizeof(BecomeTrader_Struct));
 				auto eq     = (BecomeTrader_Struct *) outapp->pBuffer;
 
-				eq->action    = emu->action;
-				eq->entity_id = emu->entity_id;
-				eq->trader_id = emu->trader_id;
-				eq->zone_id   = emu->zone_id;
+				eq->action           = emu->action;
+				eq->entity_id        = emu->entity_id;
+				eq->trader_id        = emu->trader_id;
+				eq->zone_id          = emu->zone_id;
+				eq->zone_instance_id = emu->zone_instance_id;
 				strn0cpy(eq->trader_name, emu->trader_name, sizeof(eq->trader_name));
 
 				LogTrading(
-					"(RoF2) AddTraderToBazaarWindow action <green>[{}] trader_id <green>[{}] entity_id <green>[{}] zone_id <green>[{}]",
+					"(RoF2) AddTraderToBazaarWindow action <green>[{}] trader_id <green>[{}] entity_id <green>[{}] "
+					"zone_id <green>[{}] zone_instance_id <green>[{}]",
 					eq->action,
 					eq->trader_id,
 					eq->entity_id,
-					eq->zone_id
-				);
+					eq->zone_id,
+					eq->zone_instance_id);
 				dest->FastQueuePacket(&outapp);
 				break;
 			}
@@ -6218,6 +6220,11 @@ namespace RoF2
 				FINISH_DIRECT_DECODE();
 				break;
 			}
+			case structs::RoF2BazaarTraderBuyerActions::FirstOpenSearch: {
+				__packet->SetOpcode(OP_BazaarSearch);
+				LogTrading("(RoF2) First time opening Bazaar Search since zoning. Action <green>[{}]", action);
+				break;
+			}
 			case structs::RoF2BazaarTraderBuyerActions::WelcomeMessage: {
 				__packet->SetOpcode(OP_BazaarSearch);
 				LogTrading("(RoF2) WelcomeMessage action <green>[{}]", action);
@@ -6358,9 +6365,18 @@ namespace RoF2
 		//sprintf(hdr.unknown000, "06e0002Y1W00");
 		strn0cpy(hdr.unknown000, fmt::format("{:016}\0", inst->GetSerialNumber()).c_str(),sizeof(hdr.unknown000));
 
-		hdr.stacksize =
-			item->ID == PARCEL_MONEY_ITEM_ID ? inst->GetPrice() : (inst->IsStackable() ? ((inst->GetCharges() > 1000)
-				? 0xFFFFFFFF : inst->GetCharges()) : 1);
+		hdr.stacksize = 1;
+
+		if (item->ID == PARCEL_MONEY_ITEM_ID) {
+			hdr.stacksize = inst->GetPrice();
+		} else if (inst->IsStackable()) {
+			if (inst->GetCharges() > std::numeric_limits<int16>::max()) {
+				hdr.stacksize = std::numeric_limits<uint32>::max();
+			} else {
+				hdr.stacksize = inst->GetCharges();
+			}
+		}
+
 		hdr.unknown004 = 0;
 
 		structs::InventorySlot_Struct slot_id{};

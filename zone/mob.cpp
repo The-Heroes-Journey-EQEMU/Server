@@ -572,6 +572,8 @@ Mob::~Mob()
 
 	m_close_mobs.clear();
 
+	ClearDataBucketCache();
+
 	LeaveHealRotationTargetPool();
 }
 
@@ -5325,14 +5327,7 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 		//It should be safe as we don't have any truly const EQ::ItemInstance floating around anywhere.
 		//So we'll live with it for now
 		if (parse->ItemHasQuestSub(const_cast<EQ::ItemInstance*>(inst), EVENT_WEAPON_PROC)) {
-			int i = parse->EventItem(
-				EVENT_WEAPON_PROC,
-				CastToClient(),
-				const_cast<EQ::ItemInstance*>(inst),
-				on,
-				"",
-				spell_id
-			);
+			int i = parse->EventItem(EVENT_WEAPON_PROC, CastToClient(), const_cast<EQ::ItemInstance*>(inst), on, "", spell_id);
 
 			if (i != 0) {
 				return;
@@ -8612,4 +8607,22 @@ void Mob::CheckScanCloseMobsMovingTimer()
 std::unordered_map<uint16, Mob *> &Mob::GetCloseMobList(float distance)
 {
 	return entity_list.GetCloseMobList(this, distance);
+}
+
+void Mob::ClearDataBucketCache()
+{
+	if (IsOfClientBot()) {
+		uint64 id = 0;
+		DataBucketLoadType::Type t{};
+		if (IsBot()) {
+			id = CastToBot()->GetBotID();
+			t = DataBucketLoadType::Bot;
+		}
+		else if (IsClient()) {
+			id = CastToClient()->CharacterID();
+			t = DataBucketLoadType::Client;
+		}
+
+		DataBucket::DeleteFromCache(id, t);
+	}
 }
