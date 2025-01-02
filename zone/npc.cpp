@@ -4509,9 +4509,13 @@ bool NPC::CheckHandin(
 		}
 	}
 
+	// if we started the hand-in process, we want to use the hand-in items from the member variable hand-in bucket
 	auto &handin_items = !m_handin_started ? h.items : m_hand_in.items;
 
+	// remove items from the hand-in bucket that were used to fulfill the requirement
 	std::vector<HandinEntry> items_to_remove;
+
+	// check if the hand-in items fulfill the requirement
 	bool items_met = true;
 	if (!handin_items.empty() && !r.items.empty()) {
 		for (const auto &r_item : r.items) {
