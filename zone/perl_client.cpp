@@ -1863,11 +1863,6 @@ void Perl_Client_ShowZoneShardMenu(Client* self) // @categories Script Utility
 	self->ShowZoneShardMenu();
 }
 
-void Perl_Client_ShowZoneShardMenu(Client* self) // @categories Script Utility
-{
-	self->ShowZoneShardMenu();
-}
-
 DynamicZoneLocation GetDynamicZoneLocationFromHash(perl::hash table)
 {
 	// dynamic zone helper method, defaults invalid/missing keys to 0
@@ -3384,9 +3379,17 @@ perl::array Perl_Client_GetInventorySlots(Client* self)
 	return result;
 }
 
-void Perl_Client_ChangePetName(Client* self)
+void Perl_Client_ChangePetName(Client* self, int class_id)
 {
-	self->GrantPetNameChange();
+	self->GrantPetNameChange(class_id);
+}
+
+int Perl_Client_GetPetNameChangeClass(Client* self) {
+	return self->GetPetNameChangeClass();
+}
+
+bool Perl_Client_IsPetNameChangeAllowed(Client* self) {
+	return self->IsPetNameChangeAllowed();
 }
 
 void perl_register_client()
@@ -3461,7 +3464,9 @@ void perl_register_client()
 	package.add("CanHaveSkill", &Perl_Client_CanHaveSkill);
 	package.add("CashReward", &Perl_Client_CashReward);
 	package.add("ChangeLastName", &Perl_Client_ChangeLastName);
-	package.add("ChangePetName", &Perl_Client_ChangePetName);
+	package.add("ChangePetName", (void(*)(Client*, int))&Perl_Client_ChangePetName);
+	package.add("GetPetNameChangeClass", (int(*)(Client*))&Perl_Client_GetPetNameChangeClass);
+	package.add("IsPetNameChangeAllowed", (bool(*)(Client*))&Perl_Client_IsPetNameChangeAllowed);
 	package.add("CharacterID", &Perl_Client_CharacterID);
 	package.add("CheckIncreaseSkill", (bool(*)(Client*, int))&Perl_Client_CheckIncreaseSkill);
 	package.add("CheckIncreaseSkill", (bool(*)(Client*, int, int))&Perl_Client_CheckIncreaseSkill);

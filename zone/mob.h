@@ -442,6 +442,13 @@ public:
 	bool CheckItemRaceClassDietyRestrictionsOnCast(uint32 inventory_slot);
 	bool IsFromTriggeredSpell(EQ::spells::CastingSlot slot, uint32 item_slot = 0xFFFFFFFF);
 
+	std::string GenerateDruidPetName();
+	std::string GenerateUndeadPetName();
+	std::string GenerateElementalPetName();
+	std::string GenerateBeastlordPetName();
+	std::string GenerateShamanPetName();
+	std::string GenerateEnchanterPetName();
+
 	//Bard
 	bool ApplyBardPulse(int32 spell_id, Mob *spell_target, EQ::spells::CastingSlot slot);
 	bool IsActiveBardSong(int32 spell_id);

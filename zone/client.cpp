@@ -5769,6 +5769,80 @@ void Client::KeyRingList()
 	}
 }
 
+void Client::DeletePetVanityName(int class_id) {
+	CharacterPetNameRepository::DeleteWhere(
+		database,
+		fmt::format(
+			"`char_id` = '{}' AND `class_id` = '{}'",
+			CharacterID(), class_id
+		)
+	);
+}
+
+void Client::SetPetVanityName(std::string vanity_name, int class_id) {
+    if (vanity_name.empty()) {
+        LogError("Vanity name cannot be empty.");
+        return;
+    }
+
+	LogDebug("Setting Vanity Name for class [{}], name [{}]", class_id, vanity_name);
+	CharacterPetNameRepository::ReplaceOne(
+		database,
+		{ static_cast<int>(CharacterID()), vanity_name, static_cast<int8_t>(class_id) }
+	);
+	LogDebug("Completed");
+}
+
+std::string Client::GetPetVanityName(int class_id) {
+	const std::vector<CharacterPetNameRepository::CharacterPetName>& vanity_name = CharacterPetNameRepository::GetWhere(
+		database,
+		fmt::format(
+			"`char_id` = '{}' AND `class_id` = '{}'",
+			CharacterID(), class_id
+		)
+	);
+
+	LogDebug("Checking for vanity name");
+
+	if (!vanity_name.empty()) {
+		LogDebug("Got Vanity name");
+		return vanity_name.front().name;
+	}
+
+	LogDebug("Generating Vanity Name");
+
+	std::string new_name;
+
+	do {
+		switch (class_id) {
+			case Class::Magician:
+				new_name = GenerateElementalPetName();
+				break;
+			case Class::Beastlord:
+				new_name = GenerateBeastlordPetName();
+				break;
+			case Class::Druid:
+				new_name = GenerateDruidPetName();
+				break;
+			case Class::Necromancer:
+			case Class::ShadowKnight:
+				new_name = GenerateUndeadPetName();
+				break;
+			case Class::Enchanter:
+				new_name = GenerateEnchanterPetName();
+				break;
+			case Class::Shaman:
+				new_name = GenerateShamanPetName();
+				break;
+			default:
+				new_name = fmt::format("{}'s Pet", GetCleanName());
+		}
+	} while (database.CheckNameFilter(new_name) || database.IsNameUsed(new_name));
+
+	SetPetVanityName(new_name, class_id);
+	return new_name;
+}
+
 bool Client::IsPetNameChangeAllowed() {
 	DataBucketKey k = GetScopedBucketKeys();
 	k.key = "PetNameChangesAllowed";
@@ -5781,7 +5855,29 @@ bool Client::IsPetNameChangeAllowed() {
 	return false;
 }
 
+int8 Client::GetPetNameChangeClass() {
+	DataBucketKey k = GetScopedBucketKeys();
+	k.key = "PetNameChangesAllowed";
+
+	auto b = DataBucket::GetData(k);
+	if (!b.value.empty() && Strings::IsNumber(b.value)) {
+		return Strings::ToUnsignedInt(b.value);
+	}
+
+	return -1;
+}
+
 void Client::InvokeChangePetName() {
+	if (!IsPetNameChangeAllowed()) {
+		return;
+	}
+
+	auto outapp = new EQApplicationPacket(OP_InvokeChangePetNameImmediate, 0);
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+void Client::InvokeChangePetNameNag() {
 	if (!IsPetNameChangeAllowed()) {
 		return;
 	}
@@ -5791,10 +5887,10 @@ void Client::InvokeChangePetName() {
 	safe_delete(outapp);
 }
 
-void Client::GrantPetNameChange() {
+void Client::GrantPetNameChange(uint8 class_id) {
 	DataBucketKey k = GetScopedBucketKeys();
 	k.key = "PetNameChangesAllowed";
-	k.value = "true";
+	k.value = std::to_string(class_id);
 	DataBucket::SetData(k);
 
 	InvokeChangePetName();
@@ -5831,12 +5927,15 @@ bool Client::ChangePetName(char* new_name) {
 
 	CharacterPetNameRepository::ReplaceOne(database, {
 		.char_id = static_cast<int32_t>(CharacterID()),
-		.name = new_name
+		.name = new_name,
+		.class_id = GetPetNameChangeClass()
 	});
 
 
-	if (GetPet()) {
-		GetPet()->TempName(new_name);
+	for (auto pet : GetAllPets()) {
+		if (pet->CastToNPC()->GetPetOriginClass() == GetPetNameChangeClass()) {
+			pet->TempName(new_name);
+		}
 	}
 
 	ClearPetNameChange();
@@ -12100,20 +12199,6 @@ void Client::SetWeaponAppearance(bool bow_visible) {
 	}
 }
 
-void Client::SetWeaponAppearance(bool bow_visible) {
-	if (!HasClass(Class::Ranger)) {
-		return;
-	}
-
-	if (bow_visible && m_inv.GetItem(EQ::invslot::slotRange) && m_inv.GetItem(EQ::invslot::slotRange)->GetItemType() == EQ::item::ItemTypeBow) {
-		SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, 0);
-		SendTextureWC(EQ::textures::TextureSlot::weaponSecondary, GetWeaponMaterial(m_inv.GetItem(EQ::invslot::slotRange)));
-	} else {
-		SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, GetEquipmentMaterial(EQ::textures::TextureSlot::weaponPrimary));
-		SendTextureWC(EQ::textures::TextureSlot::weaponSecondary, GetEquipmentMaterial(EQ::textures::TextureSlot::weaponSecondary));
-	}
-}
-
 void Client::SetGMStatus(int new_status) {
 	if (Admin() != new_status) {
 		database.UpdateGMStatus(AccountID(), new_status);
@@ -14649,56 +14734,6 @@ void Client::ClientToNpcAggroProcess()
 			npc_scan_count++;
 		}
 		LogAggro("Checking Reverse Aggro (client->npc) scanned_npcs ([{}])", npc_scan_count);
-	}
-}
-void Client::ShowZoneShardMenu()
-{
-	auto z = GetZone(GetZoneID());
-	if (z && !z->shard_at_player_count) {
-		return;
-	}
-
-	auto results = CharacterDataRepository::GetInstanceZonePlayerCounts(database, GetZoneID());
-	LogZoning("Zone sharding results count [{}]", results.size());
-
-	if (results.empty()) {
-		Message(Chat::White, "No zone shards found.");
-		return;
-	}
-
-	if (!results.empty()) {
-		Message(Chat::White, "Available Zone Shards:");
-	}
-
-	int number = 1;
-	for (auto &e: results) {
-		std::string teleport = fmt::format(
-			"{}",
-			Saylink::Silent(
-				fmt::format("#zoneshard {} {}", e.zone_id, (e.instance_id == 0 ? -1 : e.instance_id)),
-				"Teleport"
-			)
-		);
-
-		std::string yours;
-		if (e.zone_id == GetZoneID() && e.instance_id == GetInstanceID()) {
-			teleport = "Teleport";
-			yours = " (Yours)";
-		}
-
-		Message(
-			Chat::White, fmt::format(
-				" --> [{}] #{} {} ({}) [{}/{}] players {}",
-				teleport,
-				number,
-				z->long_name,
-				e.instance_id,
-				e.player_count,
-				z->shard_at_player_count,
-				yours
-			).c_str()
-		);
-		number++;
 	}
 }
 
