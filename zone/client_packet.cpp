@@ -1027,6 +1027,12 @@ void Client::CompleteConnect()
 	SetWeaponAppearance(true);
 
 	ApplyGlobalBuffs();
+
+	if (zone->GetZoneID() != Zones::BAZAAR && m_inv.HasItem(17899,1,invWherePersonal) >= 0) {
+		Message(Chat::System, "Trader's Satchels may not leave the Bazaar.");
+		const auto safe = zone_store.GetZoneSafeCoordinates(Zones::BAZAAR);
+		MovePC(Zones::BAZAAR, safe.x, safe.y, safe.z, safe.w);
+	}
 }
 
 // connecting opcode handlers
@@ -12339,6 +12345,11 @@ void Client::Handle_OP_PopupResponse(const EQApplicationPacket *app)
 	 */
 	std::string response;
 	switch (popup_response->popupid) {
+		case POPUPID_AUTOBAG_SELL_1:
+		case POPUPID_AUTOBAG_SELL_2:
+			DoAutoSellBags(popup_response->popupid);
+			return;
+			break;
 		case POPUPID_REPLACE_SPELLWINDOW:
 			DeleteItemInInventory(Strings::ToInt(GetEntityVariable("slot_id")), 1, true);
 			MemorizeSpellFromItem(Strings::ToInt(GetEntityVariable("spell_id")));
@@ -14988,6 +14999,7 @@ void Client::Handle_OP_ShopRequest(const EQApplicationPacket *app)
 
 		QueuePacket(outapp);
 		safe_delete(outapp);
+
 		return;
 	}
 
@@ -15042,6 +15054,9 @@ void Client::Handle_OP_ShopRequest(const EQApplicationPacket *app)
 		mco->rate = 1 / buy_cost_mod;
 	}
 
+	SendTargetCommand(tmp->GetID());
+	ProcessAutoSellBags(tmp);
+
 	outapp->priority = 6;
 	QueuePacket(outapp);
 	safe_delete(outapp);
@@ -15052,7 +15067,6 @@ void Client::Handle_OP_ShopRequest(const EQApplicationPacket *app)
 			SendBulkParcels();
 		}
 	}
-
 	return;
 }
 
