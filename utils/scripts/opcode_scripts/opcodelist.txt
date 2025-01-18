@@ -1556,7 +1556,7 @@ RoF2  Built May 10 2013 23:30:08
 0x10e0  
 0x7452  
 0x6d9f  
-0x7f80  
+0x7f80  OP_ItemPreviewRequest
 0xb07f  
 0x6b5c  OP_ItemPreview
 0x02b4  
