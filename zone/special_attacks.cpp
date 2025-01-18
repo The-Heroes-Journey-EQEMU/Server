@@ -1162,7 +1162,7 @@ bool Client::RangedAttack(Mob* other, bool CanDoubleAttack) {
 	}
 
 	//Shoots projectile and/or applies the archery damage
-	DoArcheryAttackDmg(other, RangeWeapon, Ammo,0,0,0,0,0,0, AmmoItem, ammo_slot);
+	DoArcheryAttackDmg(other, RangeWeapon, Ammo,0,0,0,0,0,0, AmmoItem, ammo_slot, 4.0f, CanDoubleAttack);
 
 	//EndlessQuiver AA base1 = 100% Chance to avoid consumption arrow.
 	int ChanceAvoidConsume = aabonuses.ConsumeProjectile + itembonuses.ConsumeProjectile + spellbonuses.ConsumeProjectile;
