@@ -1106,6 +1106,7 @@ RULE_BOOL(Custom,	GroupIncentiveProgram,					false, "Enable GroupIncentiveProgra
 RULE_BOOL(Custom, 	UseAAEXPVeterancy,						false, "Use max AA on any character in account for value of AA:ModernAAScalingAALimit if it is higher")
 RULE_REAL(Custom,	CastedSpellCritBonusRatio, 				1.0, "Multiply casted (Not procs) spells crit ratio by this value")
 RULE_REAL(Custom,	ProcSpellCritBonusRatio, 				1.0, "Multiply proc spells crit ratio by this value")
+RULE_STRING(Custom,     HubZones, 					"151,22", "Hub zones to display in #zoneshard output")
 
 RULE_BOOL(Custom,   UseHasteForMeleeSkills, 				true, "Use Haste stat for activated melee skills")
 RULE_REAL(Custom, 	PetWeaponTuningMult, 					0.5, "Value added to weapon ratio for pet weapon usage")
