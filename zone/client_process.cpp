@@ -1049,7 +1049,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 		}
 	}
 
-	if (!(IsSeasonal() || IsHardcore())) {
+	if (!(IsSeasonal())) {
 		auto temporary_merchant_list_two = zone->tmpmerchanttable[npcid];
 		temporary_merchant_list.clear();
 		for (auto ml : temporary_merchant_list_two) {

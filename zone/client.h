@@ -1160,8 +1160,10 @@ public:
 		}
 	}
 
-	// Hardcore Helper Methods
-	bool IsHardcore() { return Strings::ToBool(GetBucket("DiscordantCharacter")); }
+	// Hard Mode
+	bool IsHardMode() {
+
+	}
 
 	// Item methods
 	void UseAugmentContainer(int container_slot);

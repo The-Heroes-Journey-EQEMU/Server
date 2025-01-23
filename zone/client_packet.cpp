@@ -5471,10 +5471,6 @@ void Client::Handle_OP_ConsiderCorpse(const EQApplicationPacket *app)
 		if (t->IsSeasonal()) {
 			Message(Chat::Red, "This is a Seasonal character's kill, and will not unlock to be looted by others.");
 		}
-
-		if (t->IsHardcore()) {
-			Message(Chat::Red, "This is a Discordant character's kill, and will not unlock to be looted by others.");
-		}
 	} else if (t && t->IsPlayerCorpse()) {
 		remaining_time = t->GetRemainingRezTime();
 		if (!t->IsRezzed()) {
@@ -16197,11 +16193,6 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 	// Pass trade request on to recipient
 	if (tradee && tradee->IsClient()) {
-		if (IsHardcore() || tradee->CastToClient()->IsHardcore()) {
-			Message(Chat::Red, "A Discordant may not trade with other players.");
-			return;
-		}
-
 		if (IsSeasonal() != tradee->CastToClient()->IsSeasonal()) {
 			Message(Chat::Red, "Seasonal Characters may not trade with other players who are not Seasonal.");
 			return;

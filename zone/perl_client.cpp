@@ -3316,11 +3316,6 @@ void Perl_Client_DescribeSpecialAbilities(Client* self, NPC* n)
 int Perl_Client_IsSeasonal(Client* self) {
 	return self->IsSeasonal() ? 1 : 0;
 }
-
-int Perl_Client_IsHardcore(Client* self) {
-	return self->IsHardcore() ? 1 : 0;
-}
-
 void Perl_Client_ResetLeadershipAA(Client* self)
 {
 	self->ResetLeadershipAA();
@@ -4047,7 +4042,6 @@ void perl_register_client()
 	package.add("UseAugmentContainer", &Perl_Client_UseAugmentContainer);
 	package.add("WorldKick", &Perl_Client_WorldKick);
 	package.add("IsSeasonal", (int(*)(Client*))&Perl_Client_IsSeasonal);
-	package.add("IsHardcore", (int(*)(Client*))&Perl_Client_IsHardcore);
 }
 
 #endif //EMBPERL_XS_CLASSES
