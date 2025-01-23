@@ -3624,6 +3624,26 @@ void Lua_Client::ChangePetName(int class_id)
 	self->GrantPetNameChange(class_id);
 }
 
+bool Lua_Client::IsSelfFound() {
+	Lua_Safe_Call_Bool();
+	return self->IsSelfFound();
+}
+
+void Lua_Client::SetSelfFound(bool enabled) {
+	Lua_Safe_Call_Void();
+	self->SetSelfFound(enabled);
+}
+
+bool Lua_Client::IsIronman() {
+	Lua_Safe_Call_Bool();
+	return self->IsIronman();
+}
+
+void Lua_Client::SetIronman(bool enabled) {
+	Lua_Safe_Call_Void();
+	self->SetIronman(enabled);
+}
+
 luabind::scope lua_register_client() {
 	return luabind::class_<Lua_Client, Lua_Mob>("Client")
 	.def(luabind::constructor<>())
@@ -4232,7 +4252,11 @@ luabind::scope lua_register_client() {
 	.def("UpdateTaskActivity", (void(Lua_Client::*)(int,int,int))&Lua_Client::UpdateTaskActivity)
 	.def("UseDiscipline", (bool(Lua_Client::*)(int,int))&Lua_Client::UseDiscipline)
 	.def("UseAugmentContainer", (void(Lua_Client::*)(int))&Lua_Client::UseAugmentContainer)
-	.def("WorldKick", (void(Lua_Client::*)(void))&Lua_Client::WorldKick);
+	.def("WorldKick", (void(Lua_Client::*)(void))&Lua_Client::WorldKick)
+	.def("IsSelfFound", (bool(Lua_Client::*)(void))&Lua_Client::IsSelfFound)
+	.def("SetSelfFound", (void(Lua_Client::*)(bool))&Lua_Client::SetSelfFound)
+	.def("IsIronman", (bool(Lua_Client::*)(void))&Lua_Client::IsIronman)
+	.def("SetIronman", (void(Lua_Client::*)(bool))&Lua_Client::SetIronman);
 }
 
 luabind::scope lua_register_inventory_where() {

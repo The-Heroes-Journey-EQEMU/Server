@@ -622,6 +622,11 @@ public:
 	bool CheckTitle(int title_set);
 	void ChangePetName(int class_id);
 
+	bool IsSelfFound();
+	void SetSelfFound(bool enabled);
+	bool IsIronman();
+	void SetIronman(bool enabled);
+
 	Lua_Expedition  CreateExpedition(luabind::object expedition_info);
 	Lua_Expedition  CreateExpedition(std::string zone_name, uint32 version, uint32 duration, std::string expedition_name, uint32 min_players, uint32 max_players);
 	Lua_Expedition  CreateExpedition(std::string zone_name, uint32 version, uint32 duration, std::string expedition_name, uint32 min_players, uint32 max_players, bool disable_messages);

@@ -1160,9 +1160,42 @@ public:
 		}
 	}
 
-	// Hard Mode
-	bool IsHardMode() {
+	// SSF & Ironman
+	private:
+	enum SSFMode {
+		UNDEFINED = -1,
+		DISABLED = 0,
+		ENABLED = 1
+	};
 
+	int m_ssf_mode = SSFMode::UNDEFINED;
+	int m_ironman_mode = SSFMode::UNDEFINED;
+
+	public:
+	bool IsSelfFound() {
+		if (m_ssf_mode == SSFMode::UNDEFINED) {
+			m_ssf_mode = Strings::ToInt(GetBucket("SSF_Enabled"), SSFMode::DISABLED);
+		}
+
+		return m_ssf_mode == SSFMode::ENABLED;
+	}
+
+	void SetSelfFound(bool enabled) {
+		m_ssf_mode = enabled ? SSFMode::ENABLED : SSFMode::DISABLED;
+		SetBucket("SSF_Enabled", std::to_string(static_cast<int>(m_ssf_mode)));
+	}
+
+	bool IsIronman() {
+		if (m_ironman_mode == SSFMode::UNDEFINED) {
+			m_ironman_mode = Strings::ToInt(GetBucket("Ironman_Enabled"), SSFMode::DISABLED);
+		}
+
+		return m_ironman_mode == SSFMode::ENABLED;
+	}
+
+	void SetIronman(bool enabled) {
+		m_ironman_mode = enabled ? SSFMode::ENABLED : SSFMode::DISABLED;
+		SetBucket("Ironman_Mode", std::to_string(static_cast<int>(m_ironman_mode)));
 	}
 
 	// Item methods
@@ -1206,7 +1239,6 @@ public:
 	bool HasItemOnCorpse(uint32 item_id);
 
 	// Pet Bag Methods
-
 	bool IsPetBagActive();
 	bool IsValidPetBagForClass(int bag_id, int class_id);
 	bool IsValidPetBag(int item_id);
@@ -2131,7 +2163,6 @@ private:
 
 	uint16 m_door_tool_entity_id;
 	uint16 m_object_tool_entity_id;
-
 
 public:
 	uint16 GetDoorToolEntityId() const;

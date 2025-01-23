@@ -3316,6 +3316,23 @@ void Perl_Client_DescribeSpecialAbilities(Client* self, NPC* n)
 int Perl_Client_IsSeasonal(Client* self) {
 	return self->IsSeasonal() ? 1 : 0;
 }
+
+int Perl_Client_IsSelfFound(Client* self) {
+	return self->IsSelfFound();
+}
+
+void Perl_Client_SetSelfFound(Client* self, bool enabled) {
+	self->SetSelfFound(enabled);
+}
+
+int Perl_Client_IsIronman(Client* self) {
+	return self->IsIronman();
+}
+
+void Perl_Client_SetIronman(Client* self, bool enabled) {
+	self->SetIronman(enabled);
+}
+
 void Perl_Client_ResetLeadershipAA(Client* self)
 {
 	self->ResetLeadershipAA();
@@ -4042,6 +4059,10 @@ void perl_register_client()
 	package.add("UseAugmentContainer", &Perl_Client_UseAugmentContainer);
 	package.add("WorldKick", &Perl_Client_WorldKick);
 	package.add("IsSeasonal", (int(*)(Client*))&Perl_Client_IsSeasonal);
+	package.add("IsSelfFound", (bool(*)(Client*))&Perl_Client_IsSelfFound);
+	package.add("SetSelfFound", (void(*)(Client*, bool))&Perl_Client_SetSelfFound);
+	package.add("IsIronman", (bool(*)(Client*))&Perl_Client_IsIronman);
+	package.add("SetIronman", (void(*)(Client*, bool))&Perl_Client_SetIronman);
 }
 
 #endif //EMBPERL_XS_CLASSES
