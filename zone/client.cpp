@@ -70,6 +70,7 @@ extern volatile bool RunLoops;
 #include "../common/repositories/character_spells_repository.h"
 #include "../common/repositories/character_disciplines_repository.h"
 #include "../common/repositories/character_data_repository.h"
+#include "../common/repositories/character_pet_name_repository.h"
 #include "../common/repositories/discovered_items_repository.h"
 #include "../common/repositories/inventory_repository.h"
 #include "../common/repositories/keyring_repository.h"
@@ -153,48 +154,48 @@ Client::Client() : Mob(
 	0, // in_heroic_strikethrough
 	false // in_keeps_sold_items
 ),
-				   hpupdate_timer(2000),
-				   camp_timer(29000),
-				   process_timer(100),
-				   consume_food_timer(CONSUMPTION_TIMER),
-				   zoneinpacket_timer(1000),
-				   linkdead_timer(RuleI(Zone, ClientLinkdeadMS)),
-				   dead_timer(2000),
-				   global_channel_timer(1000),
-				   fishing_timer(8000),
-				   endupkeep_timer(1000),
-				   autosave_timer(RuleI(Character, AutosaveIntervalS) * 1000),
-				   m_client_npc_aggro_scan_timer(RuleI(Aggro, ClientAggroCheckIdleInterval)),
-				   m_client_zone_wide_full_position_update_timer(5 * 60 * 1000),
-				   tribute_timer(Tribute_duration),
-				   proximity_timer(ClientProximity_interval),
-				   TaskPeriodic_Timer(RuleI(TaskSystem, PeriodicCheckTimer) * 1000),
-				   charm_update_timer(6000),
-				   rest_timer(1),
-				   pick_lock_timer(1000),
-				   charm_class_attacks_timer(3000),
-				   charm_cast_timer(3500),
-				   qglobal_purge_timer(30000),
-				   TrackingTimer(2000),
-				   RespawnFromHoverTimer(0),
-				   merc_timer(RuleI(Mercs, UpkeepIntervalMS)),
-				   ItemQuestTimer(500),
-				   anon_toggle_timer(250),
-				   afk_toggle_timer(250),
-				   helm_toggle_timer(250),
-				   aggro_meter_timer(AGGRO_METER_UPDATE_MS),
-				   m_Proximity(FLT_MAX, FLT_MAX, FLT_MAX), //arbitrary large number
-				   m_ZoneSummonLocation(-2.0f, -2.0f, -2.0f, -2.0f),
-				   m_AutoAttackPosition(0.0f, 0.0f, 0.0f, 0.0f),
-				   m_AutoAttackTargetLocation(0.0f, 0.0f, 0.0f),
-				   last_region_type(RegionTypeUnsupported),
-				   m_dirtyautohaters(false),
-				   m_position_update_timer(10000),
-				   consent_throttle_timer(2000),
-				   tmSitting(0),
-				   parcel_timer(RuleI(Parcel, ParcelDeliveryDelay)),
-				   lazy_load_bank_check_timer(1000),
-				   bandolier_throttle_timer(0)
+	hpupdate_timer(2000),
+	camp_timer(29000),
+	process_timer(100),
+	consume_food_timer(CONSUMPTION_TIMER),
+	zoneinpacket_timer(1000),
+	linkdead_timer(RuleI(Zone, ClientLinkdeadMS)),
+	dead_timer(2000),
+	global_channel_timer(1000),
+	fishing_timer(8000),
+	endupkeep_timer(1000),
+	autosave_timer(RuleI(Character, AutosaveIntervalS) * 1000),
+	m_client_npc_aggro_scan_timer(RuleI(Aggro, ClientAggroCheckIdleInterval)),
+	m_client_bulk_npc_pos_update_timer(60 * 1000),
+	tribute_timer(Tribute_duration),
+	proximity_timer(ClientProximity_interval),
+	TaskPeriodic_Timer(RuleI(TaskSystem, PeriodicCheckTimer) * 1000),
+	charm_update_timer(6000),
+	rest_timer(1),
+	pick_lock_timer(1000),
+	charm_class_attacks_timer(3000),
+	charm_cast_timer(3500),
+	qglobal_purge_timer(30000),
+	TrackingTimer(2000),
+	RespawnFromHoverTimer(0),
+	merc_timer(RuleI(Mercs, UpkeepIntervalMS)),
+	ItemQuestTimer(500),
+	anon_toggle_timer(250),
+	afk_toggle_timer(250),
+	helm_toggle_timer(250),
+	aggro_meter_timer(AGGRO_METER_UPDATE_MS),
+	m_Proximity(FLT_MAX, FLT_MAX, FLT_MAX), //arbitrary large number
+	m_ZoneSummonLocation(-2.0f, -2.0f, -2.0f, -2.0f),
+	m_AutoAttackPosition(0.0f, 0.0f, 0.0f, 0.0f),
+	m_AutoAttackTargetLocation(0.0f, 0.0f, 0.0f),
+	last_region_type(RegionTypeUnsupported),
+	m_dirtyautohaters(false),
+	m_position_update_timer(10000),
+	consent_throttle_timer(2000),
+	tmSitting(0),
+	parcel_timer(RuleI(Parcel, ParcelDeliveryDelay)),
+	lazy_load_bank_check_timer(1000),
+	bandolier_throttle_timer(0)
 {
 	eqs = nullptr;
 	for (auto client_filter = FilterNone; client_filter < _FilterCount; client_filter = eqFilterType(client_filter + 1)) {
@@ -472,7 +473,7 @@ Client::Client(EQStreamInterface *ieqs) : Mob(
 	endupkeep_timer(1000),
 	autosave_timer(RuleI(Character, AutosaveIntervalS) * 1000),
 	m_client_npc_aggro_scan_timer(RuleI(Aggro, ClientAggroCheckIdleInterval)),
-	m_client_zone_wide_full_position_update_timer(5 * 60 * 1000),
+	m_client_bulk_npc_pos_update_timer(60 * 1000),
 	tribute_timer(Tribute_duration),
 	proximity_timer(ClientProximity_interval),
 	TaskPeriodic_Timer(RuleI(TaskSystem, PeriodicCheckTimer) * 1000),
@@ -648,8 +649,6 @@ Client::Client(EQStreamInterface *ieqs) : Mob(
 	adv_requested_id = 0;
 	adv_requested_member_count = 0;
 
-	sent_weapon = false;
-
 	for(int i = 0; i < XTARGET_HARDCAP; ++i)
 	{
 		XTargets[i].Type = Auto;
@@ -719,6 +718,7 @@ Client::~Client() {
 
 	mMovementManager->RemoveClient(this);
 
+	DataBucket::DeleteCachedBuckets(DataBucketLoadType::Account, AccountID());
 	DataBucket::DeleteCachedBuckets(DataBucketLoadType::Client, CharacterID());
 
 	if (RuleB(Bots, Enabled)) {
@@ -3049,7 +3049,7 @@ void Client::FriendsWho(char *FriendsString) {
 		Message(0, "Error: World server disconnected");
 	else {
 		auto pack =
-		    new ServerPacket(ServerOP_FriendsWho, sizeof(ServerFriendsWho_Struct) + strlen(FriendsString));
+			new ServerPacket(ServerOP_FriendsWho, sizeof(ServerFriendsWho_Struct) + strlen(FriendsString));
 		ServerFriendsWho_Struct* FriendsWho = (ServerFriendsWho_Struct*) pack->pBuffer;
 		FriendsWho->FromID = GetID();
 		strcpy(FriendsWho->FromName, GetName());
@@ -3436,7 +3436,7 @@ void Client::Stand() {
 }
 
 void Client::Sit() {
-    SetAppearance(eaSitting, false);
+	SetAppearance(eaSitting, false);
 }
 
 void Client::ChangeLastName(std::string last_name) {
@@ -5481,6 +5481,7 @@ void Client::SendOPTranslocateConfirm(Mob *Caster, uint16 SpellID) {
 
 	return;
 }
+
 void Client::SendPickPocketResponse(Mob *from, uint32 amt, int type, const EQ::ItemData* item){
 	auto outapp = new EQApplicationPacket(OP_PickPocket, sizeof(sPickPocket_Struct));
 	sPickPocket_Struct *pick_out = (sPickPocket_Struct *)outapp->pBuffer;
@@ -5508,6 +5509,165 @@ void Client::SetHoTT(uint32 mobid) {
 	ct->new_target = mobid;
 	QueuePacket(outapp);
 	safe_delete(outapp);
+}
+
+void Client::DoAutoSellBags(const int type) {
+    auto* const merchant = GetTarget();
+    if (!merchant || !merchant->IsNPC() || merchant->GetClass() != Class::Merchant) {
+        Message(Chat::Red, "Unable to find merchant to complete this transaction.");
+        return;
+    }
+
+    const auto& allowed_bags = Strings::Split(RuleS(Custom, AutoSellBagIDs), ",");
+
+    for (int general_slot = EQ::invslot::GENERAL_BEGIN; general_slot <= EQ::invslot::GENERAL_END; ++general_slot) {
+        const auto* const bag_inst = m_inv.GetItem(general_slot);
+        if (!bag_inst || !bag_inst->IsClassBag()) {
+            continue;
+        }
+
+        const std::string bag_id_str = std::to_string(bag_inst->GetID());
+        if (std::find(allowed_bags.begin(), allowed_bags.end(), bag_id_str) == allowed_bags.end()) {
+            continue;
+        }
+
+        for (int bag_slot = 0; bag_slot < bag_inst->GetItem()->BagSlots; ++bag_slot) {
+            const auto* const itm_inst = m_inv.GetItem(general_slot, bag_slot);
+            if (!itm_inst || !itm_inst->GetItem()->NoDrop || itm_inst->IsAttuned() || itm_inst->GetItem()->Price == 0 || itm_inst->GetAugmentItemID(5)) {
+                continue;
+            }
+
+            int quantity_to_sell = itm_inst->IsStackable() ? itm_inst->GetCharges() : 1;
+            if (type == POPUPID_AUTOBAG_SELL_2 && itm_inst->IsStackable()) {
+                quantity_to_sell -= 1;
+            }
+
+            if (quantity_to_sell <= 0) {
+                continue;
+            }
+
+            Merchant_Purchase_Struct mps;
+            mps.npcid = merchant->GetID();
+            mps.quantity = quantity_to_sell;
+            mps.itemslot = m_inv.CalcSlotId(general_slot, bag_slot);
+            mps.price = itm_inst->GetItem()->Price;
+
+            const uint32 packet_size = sizeof(Merchant_Purchase_Struct);
+            auto* packet = new EQApplicationPacket(OP_ShopPlayerSell, packet_size);
+            memcpy(packet->pBuffer, &mps, packet_size);
+
+            Handle_OP_ShopPlayerSell(packet);
+
+            safe_delete(packet);
+        }
+    }
+}
+
+void Client::ProcessAutoSellBags(Mob* merchant) {
+    if (!merchant) { return; }
+
+    std::unordered_map<int, int> items;
+
+    const auto& allowed_bags = Strings::Split(RuleS(Custom, AutoSellBagIDs), ",");
+
+    for (int general_slot = EQ::invslot::GENERAL_BEGIN; general_slot <= EQ::invslot::GENERAL_END; ++general_slot) {
+        const auto* const bag_inst = m_inv.GetItem(general_slot);
+        if (!bag_inst || !bag_inst->IsClassBag()) {
+            continue;
+        }
+
+        const std::string bag_id_str = std::to_string(bag_inst->GetID());
+        if (std::find(allowed_bags.begin(), allowed_bags.end(), bag_id_str) == allowed_bags.end()) {
+            continue;
+        }
+
+        for (int bag_slot = 0; bag_slot < bag_inst->GetItem()->BagSlots; ++bag_slot) {
+            const auto* const itm_inst = m_inv.GetItem(general_slot, bag_slot);
+            if (!itm_inst || !itm_inst->GetItem()->NoDrop || itm_inst->IsAttuned() || itm_inst->GetItem()->Price == 0) {
+                continue;
+            }
+
+            const int qty = itm_inst->IsStackable() ? itm_inst->GetCharges() : 1;
+            items[itm_inst->GetItem()->ID] += qty;
+        }
+    }
+
+    if (items.empty()) {
+        return;
+    }
+
+    std::vector<std::tuple<int, int, uint32>> sorted_items;
+
+    for (const auto& [item_id, qty] : items) {
+        const auto* item = database.GetItem(item_id);
+        if (!item) { continue; }
+
+        uint32 item_value = static_cast<uint32>(item->Price * qty) * Client::CalcPriceMod(merchant, true);
+        if (!RuleB(Merchant, UseClassicPriceMod)) {
+            item_value *= RuleR(Merchant, BuyCostMod);
+        }
+        item_value += 0.5;
+
+        sorted_items.emplace_back(item_id, qty, item_value);
+    }
+
+	int total_qty = 0;
+	int total_value = 0;
+	int row_count = 0;
+
+	std::string item_list;
+
+	for (const auto& [item_id, qty, row_value] : sorted_items) {
+		const auto* item = database.GetItem(item_id);
+		if (!item) { continue; }
+
+		row_count++;
+
+		total_qty += qty;
+		total_value += row_value;
+
+		std::string color_string = "CCCCCC";
+		if (GetItemStatValue(item) > 1.0) {
+			color_string = "00FF00";
+		}
+		if (item->ID >= 2000000 && item->ID < 3000000) {
+			color_string = "FF8000";
+		}
+		if (item->ID >= 1000000 && item->ID < 2000000) {
+			color_string = "007BFF";
+		}
+		if (Strings::Contains(std::string(item->Name), "Glamour-Stone")) {
+			color_string = "008080";
+		}
+
+		if (qty > 1) {
+			item_list += fmt::format("<c \"#{}\">{} x{}</c><br>", color_string, item->Name, Strings::Commify(qty));
+		} else {
+			item_list += fmt::format("<c \"#{}\">{}</c><br>", color_string, item->Name);
+		}
+
+		if (row_count >= 90) {
+			item_list += fmt::format("... Too Many Items, abbreviating list.");
+			break;
+		}
+	}
+
+	const int total_platinum = total_value / 1000;
+	const int total_gold = (total_value % 1000) / 100;
+	const int total_silver = (total_value % 100) / 10;
+	const int total_copper = total_value % 10;
+
+	std::string output_str = fmt::format(
+		"The following items will be sold for a total of <c \"#FFFF00\">{}p {}g {}s {}c</c><br>",
+		total_platinum, total_gold, total_silver, total_copper
+	);
+
+	output_str += "<c \"#FF0000\">WARNING: There will be no refunds or reimbursements for ANY mistakenly sold items.</c><br><br>";
+
+	output_str += item_list;
+
+	SendFullPopup("", output_str.c_str(), 0xFFFFFBA6, 0xFFFFFBA7, 2, 0, "Sell All", "Leave One per Stackable");
+
 }
 
 void Client::SendPopupToClient(const char *Title, const char *Text, uint32 PopupID, uint32 Buttons, uint32 Duration)
@@ -5785,12 +5945,10 @@ void Client::SetPetVanityName(std::string vanity_name, int class_id) {
         return;
     }
 
-	LogDebug("Setting Vanity Name for class [{}], name [{}]", class_id, vanity_name);
 	CharacterPetNameRepository::ReplaceOne(
 		database,
 		{ static_cast<int>(CharacterID()), vanity_name, static_cast<int8_t>(class_id) }
 	);
-	LogDebug("Completed");
 }
 
 std::string Client::GetPetVanityName(int class_id) {
@@ -5813,7 +5971,12 @@ std::string Client::GetPetVanityName(int class_id) {
 
 	std::string new_name;
 
+	int i = 0;
 	do {
+		i++;
+		if (i > 10) {
+			break;
+		}
 		switch (class_id) {
 			case Class::Magician:
 				new_name = GenerateElementalPetName();
@@ -5837,7 +6000,7 @@ std::string Client::GetPetVanityName(int class_id) {
 			default:
 				new_name = fmt::format("{}'s Pet", GetCleanName());
 		}
-	} while (database.CheckNameFilter(new_name) || database.IsNameUsed(new_name));
+	} while (database.IsNameUsed(new_name));
 
 	SetPetVanityName(new_name, class_id);
 	return new_name;
@@ -5867,22 +6030,14 @@ int8 Client::GetPetNameChangeClass() {
 	return -1;
 }
 
-void Client::InvokeChangePetName() {
+void Client::InvokeChangePetName(bool immediate) {
 	if (!IsPetNameChangeAllowed()) {
 		return;
 	}
 
-	auto outapp = new EQApplicationPacket(OP_InvokeChangePetNameImmediate, 0);
-	QueuePacket(outapp);
-	safe_delete(outapp);
-}
+	auto packet_op = immediate ? OP_InvokeChangePetNameImmediate : OP_InvokeChangePetName;
 
-void Client::InvokeChangePetNameNag() {
-	if (!IsPetNameChangeAllowed()) {
-		return;
-	}
-
-	auto outapp = new EQApplicationPacket(OP_InvokeChangePetName, 0);
+	auto outapp = new EQApplicationPacket(packet_op, 0);
 	QueuePacket(outapp);
 	safe_delete(outapp);
 }
@@ -5903,20 +6058,19 @@ void Client::ClearPetNameChange() {
 	DataBucket::DeleteData(k);
 }
 
-bool Client::ChangePetName(char* new_name) {
-    if (!new_name || strlen(new_name) == 0) {
-        return false;
-    }
+bool Client::ChangePetName(std::string new_name) {
+    if (new_name.empty()) {
+		return false;
+	}
 
     if (!IsPetNameChangeAllowed()) {
         return false;
     }
 
-    const char* cur_name = nullptr;
     if (GetPet()) {
-        cur_name = GetPet()->GetName();
+        std::string cur_name = GetPet()->GetName();
 
-        if (cur_name && strncmp(new_name, cur_name, strlen(new_name)) == 0) {
+        if (cur_name == new_name) {
             return false;
         }
     }
@@ -5934,7 +6088,7 @@ bool Client::ChangePetName(char* new_name) {
 
 	for (auto pet : GetAllPets()) {
 		if (pet->CastToNPC()->GetPetOriginClass() == GetPetNameChangeClass()) {
-			pet->TempName(new_name);
+			pet->TempName(new_name.c_str());
 		}
 	}
 
@@ -7204,13 +7358,13 @@ bool Client::TryReward(uint32 claim_id)
 
 	if (amt == 1) {
 		query = StringFormat("DELETE FROM account_rewards "
-				     "WHERE account_id = %i AND reward_id = %i",
-				     AccountID(), claim_id);
+					 "WHERE account_id = %i AND reward_id = %i",
+					 AccountID(), claim_id);
 		auto results = database.QueryDatabase(query);
 	} else {
 		query = StringFormat("UPDATE account_rewards SET amount = (amount-1) "
-				     "WHERE account_id = %i AND reward_id = %i",
-				     AccountID(), claim_id);
+					 "WHERE account_id = %i AND reward_id = %i",
+					 AccountID(), claim_id);
 		auto results = database.QueryDatabase(query);
 	}
 
@@ -9901,7 +10055,7 @@ int Client::GetQuiverHaste(int delay)
 	for (int r = EQ::invslot::GENERAL_BEGIN; r <= EQ::invslot::GENERAL_END; r++) {
 		pi = GetInv().GetItem(r);
 		if (pi && pi->IsClassBag() && pi->GetItem()->BagType == EQ::item::BagTypeQuiver &&
-		    pi->GetItem()->BagWR > 0)
+			pi->GetItem()->BagWR > 0)
 			break;
 		if (r == EQ::invslot::GENERAL_END)
 			// we will get here if we don't find a valid quiver
@@ -11377,7 +11531,7 @@ const ExpeditionLockoutTimer* Client::GetExpeditionLockout(
 	for (const auto& expedition_lockout : m_expedition_lockouts)
 	{
 		if ((include_expired || !expedition_lockout.IsExpired()) &&
-		    expedition_lockout.IsSameLockout(expedition_name, event_name))
+			expedition_lockout.IsSameLockout(expedition_name, event_name))
 		{
 			return &expedition_lockout;
 		}
@@ -11392,7 +11546,7 @@ std::vector<ExpeditionLockoutTimer> Client::GetExpeditionLockouts(
 	for (const auto& lockout : m_expedition_lockouts)
 	{
 		if ((include_expired || !lockout.IsExpired()) &&
-		    lockout.GetExpeditionName() == expedition_name)
+			lockout.GetExpeditionName() == expedition_name)
 		{
 			lockouts.emplace_back(lockout);
 		}
@@ -13591,7 +13745,6 @@ void Client::SendPath(Mob* target)
 
 
 	if (
-		!RuleB(Pathing, Find) &&
 		RuleB(Bazaar, EnableWarpToTrader) &&
 		target->IsClient() &&
 		(
@@ -14626,17 +14779,18 @@ void Client::SendTopLevelInventory()
 	}
 }
 
-void Client::CheckSendBulkClientPositionUpdate()
+void Client::CheckSendBulkNpcPositions()
 {
 	float distance_moved                      = DistanceNoZ(m_last_position_before_bulk_update, GetPosition());
-	bool  moved_far_enough_before_bulk_update = distance_moved >= zone->GetMaxNpcUpdateRange();
+	float update_range                        = RuleI(Range, MobCloseScanDistance);
+	bool  moved_far_enough_before_bulk_update = distance_moved >= update_range;
 	bool  is_ready_to_update                  = (
-		m_client_zone_wide_full_position_update_timer.Check() || moved_far_enough_before_bulk_update
+		m_client_bulk_npc_pos_update_timer.Check() || moved_far_enough_before_bulk_update
 	);
 
-	if (IsMoving() && is_ready_to_update) {
-		LogDebug("[[{}]] Client Zone Wide Position Update NPCs", GetCleanName());
-
+	int updated_count = 0;
+	int skipped_count = 0;
+	if (is_ready_to_update) {
 		auto &mob_movement_manager = MobMovementManager::Get();
 
 		for (auto &e: entity_list.GetMobList()) {
@@ -14656,16 +14810,15 @@ void Client::CheckSendBulkClientPositionUpdate()
 			}
 
 			// if we have seen this mob before, and it hasn't moved, skip it
-			if (RuleB(Zone, AkkadiusTempPerformanceFeatureFlag)) {
-				if (m_last_seen_mob_position.contains(mob->GetID())) {
-					if (m_last_seen_mob_position[mob->GetID()] == mob->GetPosition()) {
-						LogVisibilityDetail(
-							"Mob [{}] has already been sent to client [{}] at this position, skipping",
-							mob->GetCleanName(),
-							GetCleanName()
-						);
-						continue;
-					}
+			if (m_last_seen_mob_position.contains(mob->GetID())) {
+				if (m_last_seen_mob_position[mob->GetID()] == mob->GetPosition()) {
+					LogPositionUpdateDetail(
+						"Mob [{}] has already been sent to client [{}] at this position, skipping",
+						mob->GetCleanName(),
+						GetCleanName()
+					);
+					skipped_count++;
+					continue;
 				}
 			}
 
@@ -14679,7 +14832,18 @@ void Client::CheckSendBulkClientPositionUpdate()
 				ClientRangeAny,
 				this
 			);
+
+			updated_count++;
 		}
+
+		LogPositionUpdate(
+			"[{}] Sent [{}] bulk updated NPC positions, skipped [{}] distance_moved [{}] update_range [{}]",
+			GetCleanName(),
+			updated_count,
+			skipped_count,
+			distance_moved,
+			update_range
+		);
 
 		m_last_position_before_bulk_update = GetPosition();
 	}
@@ -14735,45 +14899,6 @@ void Client::ClientToNpcAggroProcess()
 		}
 		LogAggro("Checking Reverse Aggro (client->npc) scanned_npcs ([{}])", npc_scan_count);
 	}
-}
-
-void Client::BroadcastPositionUpdate()
-{
-	EQApplicationPacket               outapp(OP_ClientUpdate, sizeof(PlayerPositionUpdateServer_Struct));
-	PlayerPositionUpdateServer_Struct *spu = (PlayerPositionUpdateServer_Struct *) outapp.pBuffer;
-
-	memset(spu, 0x00, sizeof(PlayerPositionUpdateServer_Struct));
-	spu->spawn_id      = GetID();
-	spu->x_pos         = FloatToEQ19(GetX());
-	spu->y_pos         = FloatToEQ19(GetY());
-	spu->z_pos         = FloatToEQ19(GetZ());
-	spu->heading       = FloatToEQ12(GetHeading());
-	spu->delta_x       = FloatToEQ13(0);
-	spu->delta_y       = FloatToEQ13(0);
-	spu->delta_z       = FloatToEQ13(0);
-	spu->delta_heading = FloatToEQ10(0);
-	spu->animation     = 0;
-
-	entity_list.QueueCloseClients(this, &outapp, true, zone->GetMaxClientUpdateRange());
-
-	Group *g = GetGroup();
-	if (g) {
-		for (auto & m : g->members) {
-			if (m && m->IsClient() && m != this) {
-				m->CastToClient()->QueuePacket(&outapp);
-			}
-		}
-	}
-}
-
-void Client::SetVisibility(Mob* mob, bool visible) {
-	mob->SendAppearancePacket(
-		AppearanceType::Invisibility,
-		visible ? m_invisibility_state : Invisibility::GMInvis, // reset back to original visibility state when visible
-		false,
-		true,
-		this
-	);
 }
 
 const std::vector<int16>& Client::GetInventorySlots()
@@ -14847,4 +14972,97 @@ void Client::ShowZoneShardMenu()
 		);
 		number++;
 	}
+}
+
+void Client::SetAAEXPPercentage(uint8 percentage)
+{
+	const uint32 before_percentage = m_epp.perAA;
+
+	if (before_percentage > 0 && percentage == 0) {
+		MessageString(Chat::White, AA_OFF);
+	}
+	else if (before_percentage == 0 && percentage > 0) {
+		MessageString(Chat::White, AA_ON);
+	}
+
+	m_epp.perAA = EQ::Clamp(static_cast<int>(percentage), 0, 100);
+
+	SendAlternateAdvancementStats();
+	SendAlternateAdvancementTable();
+}
+
+void Client::BroadcastPositionUpdate()
+{
+	EQApplicationPacket               outapp(OP_ClientUpdate, sizeof(PlayerPositionUpdateServer_Struct));
+	PlayerPositionUpdateServer_Struct *spu = (PlayerPositionUpdateServer_Struct *) outapp.pBuffer;
+
+	memset(spu, 0x00, sizeof(PlayerPositionUpdateServer_Struct));
+	spu->spawn_id      = GetID();
+	spu->x_pos         = FloatToEQ19(GetX());
+	spu->y_pos         = FloatToEQ19(GetY());
+	spu->z_pos         = FloatToEQ19(GetZ());
+	spu->heading       = FloatToEQ12(GetHeading());
+	spu->delta_x       = FloatToEQ13(0);
+	spu->delta_y       = FloatToEQ13(0);
+	spu->delta_z       = FloatToEQ13(0);
+	spu->delta_heading = FloatToEQ10(0);
+	spu->animation     = 0;
+
+	entity_list.QueueCloseClients(this, &outapp, true, zone->GetClientUpdateRange());
+
+	Group *g = GetGroup();
+	if (g) {
+		for (auto &m: g->members) {
+			if (m && m->IsClient() && m != this) {
+				m->CastToClient()->QueuePacket(&outapp);
+			}
+		}
+	}
+}
+
+std::string Client::GetAccountBucket(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id   = AccountID();
+	k.key          = bucket_name;
+
+	return DataBucket::GetData(k).value;
+}
+
+void Client::SetAccountBucket(std::string bucket_name, std::string bucket_value, std::string expiration)
+{
+	DataBucketKey k = {};
+	k.account_id   = AccountID();
+	k.key          = bucket_name;
+	k.expires      = expiration;
+	k.value        = bucket_value;
+
+	DataBucket::SetData(k);
+}
+
+void Client::DeleteAccountBucket(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id   = AccountID();
+	k.key          = bucket_name;
+
+	DataBucket::DeleteData(k);
+}
+
+std::string Client::GetAccountBucketExpires(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id   = AccountID();
+	k.key          = bucket_name;
+
+	return DataBucket::GetDataExpires(k);
+}
+
+std::string Client::GetAccountBucketRemaining(std::string bucket_name)
+{
+	DataBucketKey k = {};
+	k.account_id   = AccountID();
+	k.key          = bucket_name;
+
+	return DataBucket::GetDataRemaining(k);
 }
