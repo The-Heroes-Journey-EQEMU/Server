@@ -569,7 +569,7 @@ bool Client::Process() {
 				p->ApplyGlobalBuffs();
 			}
 			GetGlobalBuffTimer()->Disable();
-			Message(Chat::Yellow, "You feel a surge of power. (Global buffs)");
+			Message(Chat::Yellow, "You feel a surge of power. (Global buffs have been applied to you)");
 		}
 
 		if (tic_timer.Check() && !dead) {
