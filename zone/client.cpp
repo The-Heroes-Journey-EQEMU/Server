@@ -8383,7 +8383,50 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 		//we allocated a new NPC type object, give the NPC ownership of that memory
 		swarm_pet_npc->GiveNPCTypeData(npc_type_copy);
 
-		entity_list.AddNPC(swarm_pet_npc);
+		for (int slot = EQ::invslot::EQUIPMENT_BEGIN; slot <= EQ::invslot::EQUIPMENT_END; slot++) {
+			auto inst = m_inv.GetItem(slot);
+			if (inst) {
+				auto aug0 = inst->GetAugment(0);
+				auto aug1 = inst->GetAugment(1);
+				auto aug2 = inst->GetAugment(2);
+				auto aug3 = inst->GetAugment(3);
+				auto aug4 = inst->GetAugment(4);
+				auto aug5 = inst->GetAugment(5);
+
+				swarm_pet_npc->AddItemFixed(inst->GetID(), inst->GetCharges(),	true,
+									aug0 != nullptr ? aug0->GetID() : 0,
+									aug1 != nullptr ? aug1->GetID() : 0,
+									aug2 != nullptr ? aug2->GetID() : 0,
+									aug3 != nullptr ? aug3->GetID() : 0,
+									aug4 != nullptr ? aug4->GetID() : 0,
+									aug5 != nullptr ? aug5->GetID() : 0);
+			}
+		}
+
+
+		auto spn = swarm_pet_npc->CastToNPC();
+		auto memmed_spells = GetMemmedSpells();
+		for (int spell : memmed_spells) {
+			int spell_type;
+
+			if (IsDamageSpell(spell)) {
+				spell_type = SpellType_Nuke;
+			} else if (IsLifetapSpell) {
+				spell_type = SpellType_Lifetap;
+			} else if (IsRegularSingleTargetHealSpell(spell) || IsRegularGroupHealSpell(spell) || IsFastHealSpell(spell) || IsVeryFastHealSpell(spell) || IsHealOverTimeSpell(spell)) {
+				spell_type = SpellType_Heal;
+			} else if (IsMesmerizeSpell(spell)) {
+				spell_type = SpellType_Mez;
+			} else if (IsSlowSpell(spell)) {
+				spell_type = SpellType_Slow;
+			}
+
+			if (spell_type) {
+				spn->AddSpellToNPCList(0, spell, spell_type, 0, spells[spell].recast_time, 0, 0, 0);
+			}
+		}
+
+
 		summon_count--;
 	}
 
