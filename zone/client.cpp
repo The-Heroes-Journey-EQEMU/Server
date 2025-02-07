@@ -8426,6 +8426,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 			}
 		}
 
+		entity_list.AddNPC(swarm_pet_npc);
 
 		summon_count--;
 	}
