@@ -172,9 +172,13 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			if (IsClient()) {
 				auto *inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary);
 				if (inst && inst->GetItem()) {
-					base = inst->GetItemBackstabDamage(true);
-					if (!inst->GetItemBackstabDamage()) {
-						base += inst->GetItemWeaponDamage(true);
+					if (RuleB(Custom, AdditiveBackstabDamage)) {
+						base = inst->GetItemWeaponDamage(true) + inst->GetItemBackstabDamage(true);
+					} else {
+						base = inst->GetItemBackstabDamage(true);
+						if (!inst->GetItemBackstabDamage()) {
+							base += inst->GetItemWeaponDamage(true);
+						}
 					}
 
 					if (target) {
@@ -2236,6 +2240,13 @@ void NPC::DoClassAttacks(Mob *target) {
 
 void Client::DoClassAttacks(Mob *ca_target, uint16 skill, bool IsRiposte)
 {
+	if (skill == EQ::skills::SkillBash) {
+		auto offhand = m_inv.GetItem(EQ::invslot::slotSecondary);
+		if (!offhand || offhand->GetItemType() != EQ::item::ItemTypeShield) {
+			return;
+		}
+	}
+
 	CombatAbility_Struct* ca_atk = new CombatAbility_Struct;
 
 	ca_atk->m_atk = 100;

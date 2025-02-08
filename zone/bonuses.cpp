@@ -1155,7 +1155,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			newbon->songModCap += base_value;
 			break;
 		case SE_PetCriticalHit:
-			newbon->PetCriticalHit += base_value;
+			newbon->PetCriticalHit = std::min(base_value + newbon->PetCriticalHit, RuleI(Custom, PetCriticalAACap));
 			break;
 		case SE_PetAvoidance:
 			newbon->PetAvoidance += base_value;
@@ -1228,7 +1228,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			newbon->FlurryChance += base_value;
 			break;
 		case SE_PetFlurry:
-			newbon->PetFlurry += base_value;
+			newbon->PetFlurry = std::min(base_value + newbon->PetFlurry, RuleI(Custom, PetFlurryAACap));
 			break;
 		case SE_BardSongRange:
 			newbon->SongRange += base_value;
@@ -2807,13 +2807,14 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses *ne
 			case SE_DamageModifier:
 			{
 				// Bad data or unsupported new skill
-				if (limit_value > EQ::skills::HIGHEST_SKILL)
+				if (limit_value > EQ::skills::HIGHEST_SKILL) {
 					break;
+				}
+
 				int skill = limit_value == ALL_SKILLS ? EQ::skills::HIGHEST_SKILL + 1 : limit_value;
-				if (effect_value < 0 && new_bonus->DamageModifier[skill] > effect_value)
-					new_bonus->DamageModifier[skill] = effect_value;
-				else if (effect_value > 0 && new_bonus->DamageModifier[skill] < effect_value)
-					new_bonus->DamageModifier[skill] = effect_value;
+
+				new_bonus->DamageModifier[skill] = std::min(effect_value + new_bonus->DamageModifier[skill], RuleI(Custom, SE_DamageModifierMaxCumulativeValue));
+
 				break;
 			}
 

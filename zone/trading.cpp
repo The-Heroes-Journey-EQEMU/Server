@@ -1080,6 +1080,7 @@ void Client::TraderStartTrader(const EQApplicationPacket *app)
 			trader_item.item_id               = inst->GetID();
 			trader_item.item_sn               = in->serial_number[i];
 			trader_item.slot_id               = i;
+			trader_item.listing_date          = time(nullptr);
 			if (inst->IsAugmented()) {
 				auto augs              = inst->GetAugmentIDs();
 				trader_item.aug_slot_1 = augs.at(0);
@@ -1679,34 +1680,36 @@ void Client::BuyTraderItem(TraderBuy_Struct *tbs, Client *Trader, const EQApplic
 	Trader->AddMoneyToPP(copper, silver, gold, platinum, true);
 
 	if (player_event_logs.IsEventEnabled(PlayerEvent::TRADER_PURCHASE)) {
-        auto e = PlayerEvent::TraderPurchaseEvent{
-            .item_id              = buy_item->GetID(),
-            .item_name            = buy_item->GetItem()->Name,
-            .trader_id            = Trader->CharacterID(),
-            .trader_name          = Trader->GetCleanName(),
-            .price                = tbs->price,
-            .charges              = outtbs->quantity,
-            .total_cost           = (tbs->price * outtbs->quantity),
-            .player_money_balance = GetCarriedMoney(),
-        };
+		auto e = PlayerEvent::TraderPurchaseEvent{
+			.item_id              = buy_item->GetID(),
+			.item_name            = buy_item->GetItem()->Name,
+			.trader_id            = Trader->CharacterID(),
+			.trader_name          = Trader->GetCleanName(),
+			.price                = tbs->price,
+			.quantity             = outtbs->quantity,
+			.charges              = buy_item->GetCharges(),
+			.total_cost           = (tbs->price * outtbs->quantity),
+			.player_money_balance = GetCarriedMoney(),
+		};
 
-        RecordPlayerEventLog(PlayerEvent::TRADER_PURCHASE, e);
-    }
+		RecordPlayerEventLog(PlayerEvent::TRADER_PURCHASE, e);
+	}
 
 	if (player_event_logs.IsEventEnabled(PlayerEvent::TRADER_SELL)) {
-        auto e = PlayerEvent::TraderSellEvent{
-            .item_id              = buy_item->GetID(),
-            .item_name            = buy_item->GetItem()->Name,
-            .buyer_id             = CharacterID(),
-            .buyer_name           = GetCleanName(),
-            .price                = tbs->price,
-            .charges              = outtbs->quantity,
-            .total_cost           = (tbs->price * outtbs->quantity),
-            .player_money_balance = Trader->GetCarriedMoney(),
-        };
+		auto e = PlayerEvent::TraderSellEvent{
+			.item_id              = buy_item->GetID(),
+			.item_name            = buy_item->GetItem()->Name,
+			.buyer_id             = CharacterID(),
+			.buyer_name           = GetCleanName(),
+			.price                = tbs->price,
+			.quantity             = outtbs->quantity,
+			.charges              = buy_item->GetCharges(),
+			.total_cost           = (tbs->price * outtbs->quantity),
+			.player_money_balance = Trader->GetCarriedMoney(),
+		};
 
-        RecordPlayerEventLogWithClient(Trader, PlayerEvent::TRADER_SELL, e);
-    }
+		RecordPlayerEventLogWithClient(Trader, PlayerEvent::TRADER_SELL, e);
+	}
 
 	LogTrading("Trader Received: [{}] Platinum, [{}] Gold, [{}] Silver, [{}] Copper", platinum, gold, silver, copper);
     ReturnTraderReq(app, outtbs->quantity, item_id);
@@ -1775,7 +1778,13 @@ void Client::SendBarterWelcome()
 
 void Client::DoBazaarSearch(BazaarSearchCriteria_Struct search_criteria)
 {
-	auto results = Bazaar::GetSearchResults(database, search_criteria, GetZoneID(), GetInstanceID());
+	std::vector<BazaarSearchResultsFromDB_Struct> results = Bazaar::GetSearchResults(
+		database,
+		content_db,
+		search_criteria,
+		GetZoneID(),
+		GetInstanceID()
+	);
 	if (results.empty()) {
 		SendBazaarDone(GetID());
 		return;
@@ -1796,8 +1805,7 @@ void Client::DoBazaarSearch(BazaarSearchCriteria_Struct search_criteria)
 		}
 	}
 
-
-
+	SetTraderTransactionDate();
 	std::stringstream           ss{};
 	cereal::BinaryOutputArchive ar(ss);
 	ar(results);
@@ -3096,6 +3104,7 @@ void Client::TraderPriceUpdate(const EQApplicationPacket *app)
 				trader_item.item_cost             = tpus->NewPrice;
 				trader_item.item_id               = newgis->items[i];
 				trader_item.item_sn               = newgis->serial_number[i];
+				trader_item.listing_date          = time(nullptr);
 				if (item_detail->IsAugmented()) {
 					auto augs              = item_detail->GetAugmentIDs();
 					trader_item.aug_slot_1 = augs.at(0);
@@ -3370,7 +3379,7 @@ void Client::BuyTraderItemVoucher(TraderBuy_Struct* tbs, const EQApplicationPack
 {
 	auto in          = (TraderBuy_Struct *) app->pBuffer;
 	auto trader_item = TraderRepository::GetItemBySerialNumber(database, tbs->serial_number, tbs->trader_id);
-	if (!trader_item.id) {
+	if (!trader_item.id || GetTraderTransactionDate() < trader_item.listing_date) {
 		LogTrading("Attempt to purchase an item outside of the Bazaar trader_id <red>[{}] item serial_number "
 				   "<red>[{}] The Traders data was outdated.",
 				   tbs->trader_id,
@@ -3521,7 +3530,7 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 {
 	auto in          = (TraderBuy_Struct *) app->pBuffer;
 	auto trader_item = TraderRepository::GetItemBySerialNumber(database, tbs->serial_number, tbs->trader_id);
-	if (!trader_item.id) {
+	if (!trader_item.id || GetTraderTransactionDate() < trader_item.listing_date) {
 		LogTrading("Attempt to purchase an item outside of the Bazaar trader_id <red>[{}] item serial_number "
 				   "<red>[{}] The Traders data was outdated.",
 				   tbs->trader_id,
@@ -3596,23 +3605,24 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 	);
 
 	// Determine the actual quantity for the purchase
+	int32 charges = static_cast<int32>(tbs->quantity);
 	if (!buy_item->IsStackable()) {
-		tbs->quantity = 1;
-	}
-	else {
-		int32 item_charges = buy_item->GetCharges();
-		if (item_charges <= 0) {
-			tbs->quantity = 1;
+		if (buy_item->GetCharges() <= 0) {
+			charges = 1;
 		}
-		else if (static_cast<uint32>(item_charges) < tbs->quantity) {
-			tbs->quantity = item_charges;
+		else {
+			charges = buy_item->GetCharges();
 		}
 	}
 
-	LogTrading("Actual quantity that will be traded is <green>[{}]", tbs->quantity);
+	LogTrading(
+		"Actual quantity that will be traded is <green>[{}] {}",
+		tbs->quantity,
+		buy_item->GetCharges() ? fmt::format("with {} charges", buy_item->GetCharges()) : ""
+	);
 
-	uint64 total_transaction_value = static_cast<uint64>(tbs->price) * static_cast<uint64>(tbs->quantity);
-	if (total_transaction_value > MAX_TRANSACTION_VALUE) {
+	uint64 total_cost = static_cast<uint64>(tbs->price) * static_cast<uint64>(tbs->quantity);
+	if (total_cost > MAX_TRANSACTION_VALUE) {
 		Message(
 			Chat::Red,
 			"That would exceed the single transaction limit of %u platinum.",
@@ -3623,10 +3633,8 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 		return;
 	}
 
-	uint32 total_cost = tbs->price * tbs->quantity;
-	float  parceL_delivery_cost_mod = zone->GetZoneID() == Zones::BAZAAR ? 0.0f : RuleR(Bazaar, ParcelDeliveryCostMod);
-	uint32 fee        = static_cast<uint32>(std::round((uint32) total_cost * parceL_delivery_cost_mod));
-	if (!TakeMoneyFromPP(total_cost + fee)) {
+	uint64 fee         = std::round(total_cost * (zone->GetZoneID() == Zones::BAZAAR ? 0.0f : RuleR(Bazaar, ParcelDeliveryCostMod)));
+	if (!TakeMoneyFromPPWithOverFlow(total_cost + fee, false)) {
 		RecordPlayerEventLog(
 			PlayerEvent::POSSIBLE_HACK,
 			PlayerEvent::PossibleHackEvent{
@@ -3654,7 +3662,8 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 			.trader_id            = tbs->trader_id,
 			.trader_name          = tbs->seller_name,
 			.price                = tbs->price,
-			.charges              = tbs->quantity,
+			.quantity             = tbs->quantity,
+			.charges              = buy_item->IsStackable() ? 1 : charges,
 			.total_cost           = total_cost,
 			.player_money_balance = GetCarriedMoney(),
 		};
@@ -3666,7 +3675,7 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 	parcel_out.from_name  = tbs->seller_name;
 	parcel_out.note       = "Delivered from a Bazaar Purchase";
 	parcel_out.sent_date  = time(nullptr);
-	parcel_out.quantity   = tbs->quantity;
+	parcel_out.quantity   = charges;
 	parcel_out.item_id    = buy_item->GetItem()->ID;
 	parcel_out.aug_slot_1 = buy_item->GetAugmentItemID(0);
 	parcel_out.aug_slot_2 = buy_item->GetAugmentItemID(1);
@@ -3706,7 +3715,8 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 		e.aug_slot_4       = parcel_out.aug_slot_4;
 		e.aug_slot_5       = parcel_out.aug_slot_5;
 		e.aug_slot_6       = parcel_out.aug_slot_6;
-		e.quantity         = parcel_out.quantity;
+		e.quantity         = tbs->quantity;
+		e.charges          = buy_item->IsStackable() ? 1 : charges;
 		e.sent_date        = parcel_out.sent_date;
 
 		RecordPlayerEventLog(PlayerEvent::PARCEL_SEND, e);
@@ -3749,6 +3759,8 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 	strn0cpy(out_data->trader_buy_struct.buyer_name, GetCleanName(), sizeof(out_data->trader_buy_struct.buyer_name));
 
 	worldserver.SendPacket(out_server.get());
+
+	SendMoneyUpdate();
 }
 
 void Client::SetBuyerWelcomeMessage(const char *welcome_message)

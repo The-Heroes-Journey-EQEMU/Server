@@ -2243,7 +2243,8 @@ void Client::ClearRestingDetrimentalEffects()
 			if (
 				IsValidSpell(buff_id) &&
 				IsDetrimentalSpell(buff_id) &&
-				(buffs[j].ticsremaining > 0)
+				(buffs[j].ticsremaining > 0) &&
+				buff_id != 2860
 			) {
 				BuffFadeBySlot(j);
 			}

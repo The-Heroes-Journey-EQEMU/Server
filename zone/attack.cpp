@@ -3632,8 +3632,12 @@ void Mob::DamageShield(Mob* attacker, bool spell_ds) {
 
 	if (rev_ds < 0) {
 		LogCombat("Applying Reverse Damage Shield of value [{}] to [{}]", rev_ds, attacker->GetName());
-		attacker->Damage(this, -rev_ds, rev_ds_spell_id, EQ::skills::SkillAbjuration/*hackish*/, false); //"this" (us) will get the hate, etc. not sure how this works on Live, but it'll works for now, and tanks will love us for this
-																											//do we need to send a damage packet here also?
+
+		// attacker->Damage(this, -rev_ds, rev_ds_spell_id, EQ::skills::SkillAbjuration/*hackish*/, false); //"this" (us) will get the hate, etc. not sure how this works on Live, but it'll works for now, and tanks will love us for this
+		// 																									//do we need to send a damage packet here also?
+
+		attacker->HealDamage(rev_ds, this, rev_ds_spell_id);
+		attacker->Message(Chat::DamageShield, "You feel rejuvenated by the Mark.");
 	}
 }
 
@@ -5074,7 +5078,7 @@ void Mob::HealDamage(uint64 amount, Mob* caster, uint16 spell_id)
 		acthealed = amount;
 	}
 
-	if (acthealed >= (GetMaxHP() / 100.0f)) {
+	if (acthealed) {
 		if (caster && IsValidSpell(spell_id)) {
 			eqFilterType filter = caster->IsClient() ? FilterPCSpells : FilterNPCSpells;
 			if (caster->GetOwner() && filter == FilterNPCSpells) {
@@ -5307,8 +5311,8 @@ void Mob::TryWeaponProc(const EQ::ItemInstance *inst, const EQ::ItemData *weapon
 	bool proced = false; // silly bool to prevent augs from going if weapon does
 
 	if (weapon->Proc.Type == EQ::item::ItemEffectCombatProc && IsValidSpell(weapon->Proc.Effect)) {
-		float WPC = ProcChance * (100.0f + // Proc chance for this weapon
-			static_cast<float>(weapon->ProcRate)) / 100.0f;
+		int item_proc_chance = RuleI(Custom, PetProcRateCap) && IsPet() ? std::min(RuleI(Custom, PetProcRateCap), weapon->ProcRate) : weapon->ProcRate;
+		float WPC = ProcChance * (100.0f + 	static_cast<float>(item_proc_chance)) / 100.0f;
 		if (zone->random.Roll(WPC)) {	// 255 dex = 0.084 chance of proc. No idea what this number should be really.
 			if (weapon->Proc.Level2 > ourlevel) {
 				LogCombat("Tried to proc ([{}]), but our level ([{}]) is lower than required ([{}])",
@@ -5349,8 +5353,9 @@ void Mob::TryWeaponProc(const EQ::ItemInstance *inst, const EQ::ItemData *weapon
 				continue;
 
 			if (aug->Proc.Type == EQ::item::ItemEffectCombatProc && IsValidSpell(aug->Proc.Effect)) {
+				int item_proc_chance = RuleI(Custom, PetProcRateCap) && IsPet() ? std::min(RuleI(Custom, PetProcRateCap), aug->ProcRate) : aug->ProcRate;
 				float APC = ProcChance * (100.0f + // Proc chance for this aug
-					static_cast<float>(aug->ProcRate)) / 100.0f;
+					static_cast<float>(item_proc_chance)) / 100.0f;
 				if (zone->random.Roll(APC)) {
 					if (aug->Proc.Level2 > ourlevel) {
 						if (IsPet()) {
