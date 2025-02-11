@@ -741,6 +741,7 @@ public:
 	float GetBaseExpValueForKill(int conlevel, int tier, EQ::ItemInstance* upgrade_item);
 	bool AddItemExperience(EQ::ItemInstance* item, int conlevel);
 	bool ConsumeItemOnCursor();
+	bool ConsumeAAs();
 	void EjectItemFromSlot(int16 slot_id);
 
 	uint64 GetExperienceForKill(Mob *against);
