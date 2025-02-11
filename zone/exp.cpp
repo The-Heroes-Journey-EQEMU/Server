@@ -582,6 +582,58 @@ bool Client::ConsumeItemOnCursor() {
 	return false;
 }
 
+bool Client::ConsumeAAs() {
+	auto pow_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+	if (!pow_item) {
+		Message(Chat::SpellFailure, "You must place an item in your Power Source slot in order to consume a similar item.");
+		return false;
+	}
+
+	int points_avail = GetAAPoints();
+	if (points_avail == 0) {
+		Message(Chat::SpellFailure, "No unspent AA points are available to consume.");
+		return false;
+	}
+
+	float ratio = RuleR(Custom, ConsumeAARatio);
+	if (ratio <= 0.0f) {
+		return false;
+	}
+
+	int pow_item_tier = pow_item->GetItemTier();
+	float item_experience = Strings::ToFloat(pow_item->GetCustomData("Exp"), 0.0f);
+
+	float max_needed = 100.0f - item_experience;
+	float max_aa_needed = std::ceil(max_needed * ratio);
+	float aa_to_consume = points_avail;
+	if (aa_to_consume > max_aa_needed) {
+		aa_to_consume = max_aa_needed;
+	}
+
+	float added_experience = aa_to_consume / ratio;
+	float new_experience = item_experience + added_experience;
+	if (new_experience > 100.0f) {
+		new_experience = 100.0f;
+	}
+
+	//Message(Chat::SpellFailure, "Max Needed %0.2f Points Avail %d Item EXP %0.2f Max AA Needed %0.2f", max_needed, points_avail, item_experience, max_aa_needed);
+	//Message(Chat::SpellFailure, "Consuming %0.2f AA points to produce %0.2f item exp", aa_to_consume, added_experience);
+
+	pow_item->SetCustomData("Exp", fmt::to_string(new_experience));
+	database.UpdateInventorySlot(CharacterID(), pow_item, EQ::invslot::slotPowerSource);
+
+	if (RemoveAAPoints(aa_to_consume)) {
+		if(!AddItemExperience(pow_item, ConsiderColor::Green)) {
+			AddAAPoints(aa_to_consume);
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 void Client::EjectItemFromSlot(int16 slot_id) {
 	const EQ::ItemInstance* pop_item = m_inv.PopItem(slot_id);
 	if (pop_item) {
