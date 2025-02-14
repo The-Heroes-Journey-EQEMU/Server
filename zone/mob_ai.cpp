@@ -2923,6 +2923,22 @@ bool ZoneDatabase::ExpBuffEnabled() {
 	return false;
 }
 
+bool ZoneDatabase::EventExpBuff() {
+	auto itr = global_buffs_cache.find(36844);
+	if (itr != global_buffs_cache.end()) {
+		return global_buffs_cache[43002].duration > Timer::GetTimeSeconds();
+	}
+	return false;
+}
+
+bool ZoneDatabase::EventExpBuff2() {
+	auto itr = global_buffs_cache.find(36845);
+	if (itr != global_buffs_cache.end()) {
+		return global_buffs_cache[43002].duration > Timer::GetTimeSeconds();
+	}
+	return false;
+}
+
 DBnpcspells_Struct *ZoneDatabase::GetNPCSpells(uint32 npc_spells_id)
 {
 	if (npc_spells_id == 0) {

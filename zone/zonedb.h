@@ -582,6 +582,9 @@ public:
 	bool LootBuffEnabled();
 	bool ExpBuffEnabled();
 
+	bool EventExpBuff();
+	bool EventExpBuff2();
+
 	const NPCType* LoadNPCTypesData(uint32 id, bool bulk_load = false);
 
 	/*Bots	*/
