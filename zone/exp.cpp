@@ -701,7 +701,10 @@ float Client::GetBaseExpValueForKill(int conlevel, int target_tier, EQ::ItemInst
 	}
 
 	exp_value = exp_value * (database.LootBuffEnabled() ? 1.5 : 1);
-	exp_value = exp_value * (database.ExpBuffEnabled() ? 1.5 : 1);
+
+	float exp_boost = XPRate / 100;
+
+	exp_value = exp_value * exp_boost;
 
 	LogDebug("tier: [{}], norm_val: [{}], exp_value [{}], conlevel [{}]", target_tier, norm_val, exp_value, conlevel);
 
@@ -926,9 +929,6 @@ void Client::AddEXP(ExpSource exp_source, uint64 in_add_exp, uint8 conlevel, boo
 
 	// Check for AA XP Cap
 	int aaexp_cap = RuleI(AA, MaxAAEXPPerKill) * GetConLevelModifierPercent(conlevel) * (GetLevel()/50.0f) * (XPRate / 100.0f) * (zone->newzone_data.zone_exp_multiplier - 1.0f) * (0.5 + RuleR(Character, FinalExpMultiplier));
-
-	if (database.EventExpBuff()) { aaexp *= 1.5; }
-	if (database.EventExpBuff2()) { aaexp *= 1.5; }
 
 	if (zone->GetInstanceVersion() == RuleI(Custom, StaticInstanceVersion) || zone->GetInstanceVersion() == RuleI(Custom, FarmingInstanceVersion) || zone->GetInstanceVersion() == RuleI(Custom, EventInstanceVersion)) {
 		int member_scale = GetGroup() ? std::min(0,(GetGroup()->GroupCount() - 2)) : 0;
