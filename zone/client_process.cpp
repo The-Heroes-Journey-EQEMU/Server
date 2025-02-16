@@ -722,7 +722,7 @@ bool Client::Process() {
 	EQApplicationPacket *app = nullptr;
 	if (!eqs->CheckState(CLOSING))
 	{
-		while (eqs && (app = eqs->PopPacket())) {
+		while (app = eqs->PopPacket()) {
 			HandlePacket(app);
 			safe_delete(app);
 		}
