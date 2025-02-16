@@ -937,7 +937,8 @@ void ZSList::SendServerReload(ServerReload::Type type, uchar *packet)
 			continue;
 		}
 
-		r->reload_at_unix = is_local ? 0 : std::time(nullptr) + (counter / 10);
+		// if the reload is local, we don't need to stagger the reloads
+		r->reload_at_unix = is_local ? 0 : (std::time(nullptr) + 1) + (counter / 10);
 		z->SendPacket(&pack);
 		++counter;
 	}
