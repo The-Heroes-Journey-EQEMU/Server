@@ -978,7 +978,7 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			break;
 		case SE_PercentXPIncrease:
 		{
-			newbon->XPRateMod += effect_value;
+			newbon->XPRateMod += base_value;
 			break;
 		}
 		case SE_SetBreathLevel:
