@@ -140,7 +140,7 @@ void EQEmuApiWorldDataService::reload(Json::Value &r, const std::vector<std::str
 	bool found_command = false;
 
 	for (auto &t: ServerReload::GetTypes()) {
-		if (std::to_string(t) == command) {
+		if (std::to_string(t) == command || Strings::ToLower(ServerReload::GetName(t)) == command) {
 			message(r, fmt::format("Reloading [{}] globally", ServerReload::GetName(t)));
 			zoneserver_list.SendServerReload(t, nullptr);
 		}

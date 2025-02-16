@@ -4298,58 +4298,8 @@ bool WorldServer::RezzPlayer(EQApplicationPacket* rpack, uint32 rezzexp, uint32 
 }
 
 void WorldServer::SendReloadTasks(uint8 reload_type, uint32 task_id) {
-//	SendReload(ServerReload::Type::Tasks);
-//	auto pack = new ServerPacket(ServerOP_ReloadTasks, sizeof(ReloadTasks_Struct));
-//	auto rts = (ReloadTasks_Struct*) pack->pBuffer;
-//
-//	rts->reload_type = reload_type;
-//	rts->task_id = task_id;
-//
-//	SendPacket(pack);
-//	safe_delete(pack);
+	SendReload(ServerReload::Type::Tasks);
 }
-
-//void WorldServer::HandleReloadTasks(ServerPacket *pack)
-//{
-//	auto rts = (ReloadTasks_Struct*) pack->pBuffer;
-//
-//	LogTasks("Global reload of tasks received with Reload Type [{}] Task ID [{}]", rts->reload_type, rts->task_id);
-//
-//	switch (rts->reload_type) {
-//		case RELOADTASKS:
-//		{
-//			entity_list.SaveAllClientsTaskState();
-//
-//			// TODO: Reload at the world level for shared tasks
-//
-//			if (!rts->task_id) {
-//				LogTasks("Global reload of all Tasks");
-//				safe_delete(task_manager);
-//				task_manager = new TaskManager;
-//				task_manager->LoadTasks();
-//
-//				entity_list.ReloadAllClientsTaskState();
-//			} else {
-//				LogTasks("Global reload of Task ID [{}]", rts->task_id);
-//				task_manager->LoadTasks(rts->task_id);
-//				entity_list.ReloadAllClientsTaskState(rts->task_id);
-//			}
-//
-//			break;
-//		}
-//		case RELOADTASKSETS:
-//		{
-//			LogTasks("Global reload of all Task Sets");
-//			task_manager->LoadTaskSets();
-//			break;
-//		}
-//		default:
-//		{
-//			LogTasks("Unhandled global reload of Tasks Reload Type [{}] Task ID [{}]", rts->reload_type, rts->task_id);
-//			break;
-//		}
-//	}
-//}
 
 uint32 WorldServer::NextGroupID() {
 	//this system wastes a lot of potential group IDs (~5%), but
@@ -4693,6 +4643,11 @@ void WorldServer::ProcessReload(const ServerReload::Request& request)
 		case ServerReload::Type::Quests:
 			entity_list.ClearAreas();
 			parse->ReloadQuests(false);
+			break;
+
+		case ServerReload::Type::QuestsTimerReset:
+			entity_list.ClearAreas();
+			parse->ReloadQuests(true);
 			break;
 
 		case ServerReload::Type::Titles:
