@@ -3614,6 +3614,12 @@ void Lua_Client::ChangePetName(int class_id)
 	self->GrantPetNameChange(class_id);
 }
 
+bool Lua_Client::ChangeName()
+{
+	Lua_Safe_Call_Bool();
+	return self->GrantNameChange();
+}
+
 std::string Lua_Client::GetBandolierName(uint8 bandolier_slot)
 {
 	Lua_Safe_Call_String();
@@ -3755,6 +3761,7 @@ luabind::scope lua_register_client() {
 	.def("CashReward", &Lua_Client::CashReward)
 	.def("ChangeLastName", (void(Lua_Client::*)(std::string))&Lua_Client::ChangeLastName)
 	.def("ChangePetName", (void(Lua_Client::*)(int))&Lua_Client::ChangePetName)
+	.def("ChangeName", &Lua_Client::ChangeName)
 	.def("CharacterID", (uint32(Lua_Client::*)(void))&Lua_Client::CharacterID)
 	.def("CheckIncreaseSkill", (void(Lua_Client::*)(int,Lua_Mob))&Lua_Client::CheckIncreaseSkill)
 	.def("CheckIncreaseSkill", (void(Lua_Client::*)(int,Lua_Mob,int))&Lua_Client::CheckIncreaseSkill)
