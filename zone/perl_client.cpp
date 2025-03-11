@@ -3411,7 +3411,7 @@ bool Perl_Client_ChangeName(Client* self)
 	return self->GrantNameChange();
 }
 
-void Perl_Client_ChangePetName(Client* self, int class_id)
+void Perl_Client_GrantPetNameChange(Client* self, int class_id)
 {
 	self->GrantPetNameChange(class_id);
 }
@@ -3556,7 +3556,7 @@ void perl_register_client()
 	package.add("CanHaveSkill", &Perl_Client_CanHaveSkill);
 	package.add("CashReward", &Perl_Client_CashReward);
 	package.add("ChangeLastName", &Perl_Client_ChangeLastName);
-	package.add("ChangePetName", (void(*)(Client*, int))&Perl_Client_ChangePetName);
+	package.add("GrantPetNameChange", (void(*)(Client*, int))&Perl_Client_GrantPetNameChange);
 	package.add("ChangeName", (bool(*)(Client*))&Perl_Client_ChangeName);
 	package.add("GetPetNameChangeClass", (int(*)(Client*))&Perl_Client_GetPetNameChangeClass);
 	package.add("IsPetNameChangeAllowed", (bool(*)(Client*))&Perl_Client_IsPetNameChangeAllowed);

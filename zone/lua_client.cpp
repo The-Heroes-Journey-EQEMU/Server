@@ -3608,7 +3608,7 @@ std::string Lua_Client::GetAccountBucketRemaining(std::string bucket_name)
 	return self->GetAccountBucketRemaining(bucket_name);
 }
 
-void Lua_Client::ChangePetName(int class_id)
+void Lua_Client::GrantPetNameChange(int class_id)
 {
 	Lua_Safe_Call_Void();
 	self->GrantPetNameChange(class_id);
@@ -3760,7 +3760,7 @@ luabind::scope lua_register_client() {
 	.def("CanHaveSkill", (bool(Lua_Client::*)(int))&Lua_Client::CanHaveSkill)
 	.def("CashReward", &Lua_Client::CashReward)
 	.def("ChangeLastName", (void(Lua_Client::*)(std::string))&Lua_Client::ChangeLastName)
-	.def("ChangePetName", (void(Lua_Client::*)(int))&Lua_Client::ChangePetName)
+	.def("GrantPetNameChange", (void(Lua_Client::*)(int))&Lua_Client::GrantPetNameChange)
 	.def("ChangeName", &Lua_Client::ChangeName)
 	.def("CharacterID", (uint32(Lua_Client::*)(void))&Lua_Client::CharacterID)
 	.def("CheckIncreaseSkill", (void(Lua_Client::*)(int,Lua_Mob))&Lua_Client::CheckIncreaseSkill)

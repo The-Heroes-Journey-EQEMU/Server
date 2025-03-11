@@ -339,17 +339,21 @@ public:
 	bool KeyRingClear();
 	bool KeyRingRemove(uint32 item_id);
 	void KeyRingList();
+
 	bool IsNameChangeAllowed();
 	void InvokeChangeNameWindow(bool immediate = true);
 	bool GrantNameChange();
+
 	bool IsPetNameChangeAllowed();
-	int8 GetPetNameChangeClass();
 	void GrantPetNameChange(uint8 class_id);
 	void ClearPetNameChange();
 	void InvokeChangePetName(bool immediate = true);
 	bool ChangePetName(std::string new_name);
+
+	int8 GetPetNameChangeClass();
 	void DeletePetVanityName(int class_id);
 	void SetPetVanityName(std::string vanity_name, int class_id);
+
 	std::string GetPetVanityName(int class_id);
 	bool IsClient() const override { return true; }
 	bool IsOfClientBot() const override { return true; }
