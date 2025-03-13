@@ -436,7 +436,7 @@ int QuestParserCollection::EventNPC(
 )
 {
 	if (npc->IsResumedFromZoneSuspend()) {
-		if (event_id == EVENT_DEATH_COMPLETE || event_id == EVENT_DEATH) {
+		if (event_id == EVENT_DEATH_COMPLETE || event_id == EVENT_DEATH || npc->IsQueuedForCorpse()) {
 			return 0;
 		}
 	}
