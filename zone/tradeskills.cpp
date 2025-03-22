@@ -1424,29 +1424,31 @@ bool ZoneDatabase::GetTradeRecipe(
 		LogTradeskills("Fetching item [{}]", slot_id);
 
 		const auto inst = container->GetItem(slot_id);
-		if (!inst) {
+		if (!inst || !inst->GetItem()) {
 			continue;
 		}
+
+		int item_id = (container->GetItem() && container->GetItem()->BagSlots <= 10) ? inst->GetItem()->ID % 1000000 : inst->GetItem()->ID;
 
 		if (inst->IsAugmented()) {
 			*is_augmented = true;
 			return false;
 		}
 
-		const auto item = database.GetItem(inst->GetItem()->OriginalID % 1000000);
+		const auto item = database.GetItem(item_id);
 		if (!item) {
-			LogTradeskills("item [{}] not found!", inst->GetItem()->OriginalID % 1000000);
+			LogTradeskills("item [{}] not found!", item_id);
 			continue;
 		}
 
 		if (first) {
-			buf2 += fmt::format("{}", (item->OriginalID % 1000000));
+			buf2 += fmt::format("{}", item_id);
 			first = false;
 		} else {
-			buf2 += fmt::format(", {}", (item->OriginalID % 1000000));
+			buf2 += fmt::format(", {}", item_id);
 		}
 
-		sum += (item->OriginalID % 1000000);
+		sum += item_id;
 		count++;
 
 		LogTradeskills(
@@ -1587,7 +1589,7 @@ bool ZoneDatabase::GetTradeRecipe(
 	for (auto row : results) {
 		int component_count = 0;
 
-		for (uint8 slot_id = EQ::invbag::SLOT_BEGIN; slot_id < EQ::invtype::WORLD_SIZE; slot_id++) {
+		for (uint8 slot_id = EQ::invbag::SLOT_BEGIN; slot_id < (container->GetItem() ? container->GetItem()->BagSlots : EQ::invtype::WORLD_SIZE); slot_id++) {
 			const auto inst = container->GetItem(slot_id);
 			if (!inst || !inst->GetItem()) {
 				continue;
@@ -1598,12 +1600,14 @@ bool ZoneDatabase::GetTradeRecipe(
 				return false;
 			}
 
-			const auto item = database.GetItem(inst->GetItem()->OriginalID % 1000000);
+			int item_id = (container->GetItem() && container->GetItem()->BagSlots <= 10) ? inst->GetItem()->ID % 1000000 : inst->GetItem()->ID;
+
+			const auto item = database.GetItem(item_id);
 			if (!item) {
 				continue;
 			}
 
-			if ((item->OriginalID % 1000000) == Strings::ToUnsignedInt(row[0])) {
+			if (item_id == Strings::ToUnsignedInt(row[0])) {
 				component_count++;
 			}
 
@@ -1616,7 +1620,7 @@ bool ZoneDatabase::GetTradeRecipe(
 		}
 
 		if (component_count != Strings::ToInt(row[1])) {
-			LogTradeskills("Abort: Component Count: [{}] Expected [{}] for ItemID [{}]", component_count, Strings::ToInt(row[1]), Strings::ToInt(row[0]));
+			LogTradeskills("Aborted due to getting component count [{}] instead of [{}] for item [{}]", component_count, row[1], row[0]);
 			return false;
 		}
 	}
