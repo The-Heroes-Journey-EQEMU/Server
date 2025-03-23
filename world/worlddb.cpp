@@ -136,22 +136,13 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 		memset(&pp, 0, sizeof(PlayerProfile_Struct));
 		memset(cse->Name, 0, sizeof(cse->Name));
 		strcpy(cse->Name, e.name.c_str());
-		cse->Race        = e.race;
-		cse->Level       = e.level;
-		cse->ShroudClass = cse->Class;
-		cse->ShroudRace  = cse->Race;
-		cse->Zone        = e.zone_id;
-		cse->Instance    = 0;
-		cse->Gender      = e.gender;
-		cse->Face        = e.face;
 
 		// multi-classing
 		if (RuleB(Custom, MulticlassingEnabled)) {
 			bool found = false;
 			for (auto &b : buckets) {
 				if (b.character_id == e.id) {
-					pp.classes = Strings::ToInt(b.value);
-					std::cout << "Found classes " << pp.classes << " for character " << e.name << std::endl;
+					pp.classes = static_cast<uint32>(Strings::ToInt(b.value));
 					found = true;
 					break;
 				}
@@ -173,7 +164,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 				// Randomly select one of the classes if there are any
 				if (!class_ids.empty()) {
 					int random_index = rand() % class_ids.size(); // Get a random index
-					cse->Class = static_cast<uint8>(class_ids[random_index]);
+					cse->Class = static_cast<uint32>(class_ids[random_index]);
 				} else {
 					cse->Class = 0xFFFF; // Fallback if no classes were found in bitmask
 				}
@@ -184,6 +175,14 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 			cse->Deity = e.deity;
 		}
 
+		cse->Race        = e.race;
+		cse->Level       = static_cast<uint8_t>(e.level);
+		cse->ShroudClass = static_cast<uint8_t>(cse->Class);
+		cse->ShroudRace  = cse->Race;
+		cse->Zone        = static_cast<uint16_t>(e.zone_id);
+		cse->Instance    = 0;
+		cse->Gender      = e.gender;
+		cse->Face        = static_cast<uint8_t>(e.face);
 
 		for (auto &s: cse->Equip) {
 			s.Material        = 0;
@@ -198,7 +197,6 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 		cse->Unknown19       = 0xFF;
 		cse->DrakkinTattoo   = e.drakkin_tattoo;
 		cse->DrakkinDetails  = e.drakkin_details;
-		cse->Deity           = e.deity;
 		cse->PrimaryIDFile   = 0;                            // Processed Below
 		cse->SecondaryIDFile = 0;                        // Processed Below
 		cse->HairColor       = e.hair_color;
