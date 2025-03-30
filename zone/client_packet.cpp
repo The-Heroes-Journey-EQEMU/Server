@@ -3300,6 +3300,7 @@ void Client::Handle_OP_AugmentItem(const EQApplicationPacket *app)
 
 					if (!(slots_new & slots_old)) {
 						if (!RuleB(Custom, PowerSourceItemUpgrade)) { LogError("Unable to create item with no usability."); }
+						LogDebug("Trapped! [{}] & [{}] = [{}]", slots_new, slots_old, slots_new & slots_old);
 						Message(Chat::Red, "The result of this combine would produce an item unusable by anyone.");
 						break;
 					}
