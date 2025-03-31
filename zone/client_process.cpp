@@ -596,13 +596,9 @@ bool Client::Process() {
 			DoEnduranceRegen();
 			BuffProcess();
 
-			if (!sent_weapon) {
-				SetWeaponAppearance(HasClass(Class::Ranger));
-				sent_weapon = true;
-			}
-
 			if (m_initial_wc.Check(false)) {
 				SendArmorAppearance();
+				SetWeaponAppearance(GetAttackMode() == AttackMode::RANGED);
 				m_initial_wc.Disable();
 			}
 

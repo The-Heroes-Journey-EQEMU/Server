@@ -12468,8 +12468,9 @@ void Client::RemoveItem(uint32 item_id, uint32 quantity)
 	}
 }
 
-void Client::SetWeaponAppearance(bool bow_visible) {
-	if (!HasClass(Class::Ranger)) {
+void Client::SetWeaponAppearance(bool bow_visible)
+{
+	if (GetAttackMode() == AttackMode::MELEE) {
 		return;
 	}
 
@@ -12480,6 +12481,22 @@ void Client::SetWeaponAppearance(bool bow_visible) {
 		SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, GetEquipmentMaterial(EQ::textures::TextureSlot::weaponPrimary));
 		SendTextureWC(EQ::textures::TextureSlot::weaponSecondary, GetEquipmentMaterial(EQ::textures::TextureSlot::weaponSecondary));
 	}
+}
+
+const Client::AttackMode Client::GetAttackMode()
+{
+	if (m_attack_mode == UNDEFINED) {
+		m_attack_mode = (AttackMode) Strings::ToInt(GetBucket("attack_mode"), AttackMode::MELEE);
+	}
+
+	return m_attack_mode;
+}
+
+void Client::SetAttackMode(Client::AttackMode mode)
+{
+	m_attack_mode = mode;
+	SetBucket("attacK_mode", std::to_string(mode));
+	SetWeaponAppearance(true);
 }
 
 void Client::SetGMStatus(int new_status) {

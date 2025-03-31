@@ -1926,6 +1926,12 @@ public:
 
 	void SetWeaponAppearance(bool bow_visible = false);
 
+	enum AttackMode {
+		UNDEFINED, MELEE, RANGED
+	};
+	void SetAttackMode(Client::AttackMode mode);
+	const Client::AttackMode GetAttackMode();
+
 	inline int32 GetEnvironmentDamageModifier() const { return environment_damage_modifier; }
 	void SetEnvironmentDamageModifier(int32 val) { environment_damage_modifier = val; }
 	inline bool GetInvulnerableEnvironmentDamage() const { return invulnerable_environment_damage; }
@@ -2234,9 +2240,9 @@ private:
 	int32 current_endurance;
 
 	int sent_inventory;
-	bool sent_weapon;
 
 	Timer m_initial_wc;
+	Client::AttackMode m_attack_mode;
 
 	// https://github.com/EQEmu/Server/pull/2479
 	bool m_lock_save_position = false;

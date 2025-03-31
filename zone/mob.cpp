@@ -1388,6 +1388,10 @@ void Mob::FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho)
 		ns->spawn.equipment.Slot[i].Material = texture;
 	}
 
+	if (IsClient() && CastToClient()->GetAttackMode() == Client::AttackMode::RANGED) {
+		ns->spawn.equipment.Slot[EQ::textures::weaponPrimary].Material = 0;
+	}
+
 	memset(ns->spawn.set_to_0xFF, 0xFF, sizeof(ns->spawn.set_to_0xFF));
 	if(IsNPC() && IsDestructibleObject())
 	{

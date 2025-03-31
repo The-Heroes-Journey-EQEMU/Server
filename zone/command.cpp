@@ -92,6 +92,7 @@ int command_init(void)
 		command_add("appearanceeffects", "[Help|Remove|Set|View] - Modify appearance effects on yourself or your target.", AccountStatus::GMAdmin, command_appearanceeffects) ||
 		command_add("apply_shared_memory", "[shared_memory_name] - Tells every zone and world to apply a specific shared memory segment by name.", AccountStatus::GMImpossible, command_apply_shared_memory) ||
 		command_add("attack", "[Entity Name] - Make your NPC target attack an entity by name", AccountStatus::GMLeadAdmin, command_attack) ||
+		command_add("attackmode", "Toggle Ranged and Melee Autoattack modes", AccountStatus::Player, command_attackmode) ||
 		command_add("augmentitem", "Force augments an item. Must have the augment item window open.", AccountStatus::GMImpossible, command_augmentitem) ||
 		command_add("award", "EoM", AccountStatus::GMAdmin, command_award) ||
 		command_add("soulmark", "Manipulate account flags", AccountStatus::GMAdmin, command_soulmark) ||
@@ -784,6 +785,7 @@ void command_bot(Client *c, const Seperator *sep)
 #include "gm_commands/appearance.cpp"
 #include "gm_commands/appearanceeffects.cpp"
 #include "gm_commands/attack.cpp"
+#include "gm_commands/attackmode.cpp"
 #include "gm_commands/award.cpp"
 #include "gm_commands/augmentitem.cpp"
 #include "gm_commands/ban.cpp"

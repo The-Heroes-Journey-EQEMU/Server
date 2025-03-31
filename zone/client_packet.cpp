@@ -3645,7 +3645,7 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 			los_status_facing          = false;
 		}
 
-		SetWeaponAppearance();
+		SetWeaponAppearance(false);
 	}
 }
 
