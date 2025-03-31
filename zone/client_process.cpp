@@ -358,7 +358,7 @@ bool Client::Process() {
 				- being stunned or mezzed
 				- having used a ranged weapon recently
 		*/
-		if (auto_attack || AutoFireEnabled()) {
+		if (AutoAttackEnabled() || AutoFireEnabled()) {
 			if (!IsAIControlled() && !dead
 				&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
 				&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled()
@@ -446,7 +446,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (auto_attack && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
+		if (AutoAttackEnabled() && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
 			//check if change
 			//only check on primary attack.. sorry offhand you gotta wait!
 			if (aa_los_them_mob) {
@@ -543,7 +543,7 @@ bool Client::Process() {
 			}
 		}
 
-		if ((AutoFireEnabled() || auto_attack) && auto_attack_target != nullptr && may_use_attacks && attack_autoskill_timer.Check()) {
+		if ((AutoFireEnabled() || AutoAttackEnabled()) && auto_attack_target != nullptr && may_use_attacks && attack_autoskill_timer.Check()) {
 			for (const auto skill : GetAvailableAutoSkills()) {
 				if (GetAutoSkillStatus(skill)) {
 					SetEntityVariable("auto_skill", "enabled");
