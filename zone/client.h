@@ -1924,7 +1924,7 @@ public:
 	void PlayMP3(const char* fname);
 	void ExpeditionSay(const char *str, int ExpID);
 
-	void SetWeaponAppearance(bool bow_visible = false);
+	void SetWeaponAppearance();
 
 	enum AttackMode {
 		UNDEFINED, MELEE, RANGED

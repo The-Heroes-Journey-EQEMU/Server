@@ -6,7 +6,7 @@ void command_attackmode(Client *c, const Seperator *sep)
 		return;
 	}
 
-	std::string usage = "Usage: #attackmode [ranged or melee]";
+	std::string usage = "Usage: #attackmode [ranged or melee].";
 
 	if (sep->argnum == 0) {
 		Client::AttackMode current_mode = c->GetAttackMode();

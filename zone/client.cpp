@@ -12468,18 +12468,14 @@ void Client::RemoveItem(uint32 item_id, uint32 quantity)
 	}
 }
 
-void Client::SetWeaponAppearance(bool bow_visible)
+void Client::SetWeaponAppearance()
 {
-	if (GetAttackMode() == AttackMode::MELEE) {
-		return;
-	}
-
-	if (bow_visible && m_inv.GetItem(EQ::invslot::slotRange) && m_inv.GetItem(EQ::invslot::slotRange)->GetItemType() == EQ::item::ItemTypeBow) {
+	if (GetAttackMode() == AttackMode::RANGED && m_inv.GetItem(EQ::invslot::slotRange) && m_inv.GetItem(EQ::invslot::slotRange)->GetItemType() == EQ::item::ItemTypeBow) {
 		SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, 0);
 		SendTextureWC(EQ::textures::TextureSlot::weaponSecondary, GetWeaponMaterial(m_inv.GetItem(EQ::invslot::slotRange)));
 	} else {
-		SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, GetEquipmentMaterial(EQ::textures::TextureSlot::weaponPrimary));
-		SendTextureWC(EQ::textures::TextureSlot::weaponSecondary, GetEquipmentMaterial(EQ::textures::TextureSlot::weaponSecondary));
+		SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, GetWeaponMaterial(m_inv.GetItem(EQ::invslot::slotPrimary)));
+		SendTextureWC(EQ::textures::TextureSlot::weaponSecondary, GetWeaponMaterial(m_inv.GetItem(EQ::invslot::slotSecondary)));
 	}
 }
 
@@ -12495,8 +12491,8 @@ const Client::AttackMode Client::GetAttackMode()
 void Client::SetAttackMode(Client::AttackMode mode)
 {
 	m_attack_mode = mode;
-	SetBucket("attacK_mode", std::to_string(mode));
-	SetWeaponAppearance(true);
+	SetBucket("attack_mode", std::to_string(mode));
+	SetWeaponAppearance();
 }
 
 void Client::SetGMStatus(int new_status) {

@@ -1040,7 +1040,7 @@ void Client::CompleteConnect()
 		return;
 	}
 
-	SetWeaponAppearance(true);
+	SetWeaponAppearance();
 
 	ApplyGlobalBuffs();
 
@@ -3607,6 +3607,8 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 		return;
 	}
 
+	SetWeaponAppearance();
+
 	if (app->pBuffer[0] == 0) {
 		auto_attack = false;
 		if (IsAIControlled()) {
@@ -3619,8 +3621,6 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 		m_AutoAttackPosition       = glm::vec4();
 		m_AutoAttackTargetLocation = glm::vec3();
 		aa_los_them_mob            = nullptr;
-
-		SetWeaponAppearance(true);
 	}
 	else if (app->pBuffer[0] == 1) {
 		auto_attack = true;
@@ -3644,8 +3644,6 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 			los_status                 = false;
 			los_status_facing          = false;
 		}
-
-		SetWeaponAppearance(false);
 	}
 }
 

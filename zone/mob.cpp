@@ -1388,10 +1388,6 @@ void Mob::FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho)
 		ns->spawn.equipment.Slot[i].Material = texture;
 	}
 
-	if (IsClient() && CastToClient()->GetAttackMode() == Client::AttackMode::RANGED) {
-		ns->spawn.equipment.Slot[EQ::textures::weaponPrimary].Material = 0;
-	}
-
 	memset(ns->spawn.set_to_0xFF, 0xFF, sizeof(ns->spawn.set_to_0xFF));
 	if(IsNPC() && IsDestructibleObject())
 	{
@@ -3576,6 +3572,19 @@ void Mob::DoAnim(const int animation_id, int animation_speed, bool ackreq, eqFil
 {
 	if (!attack_anim_timer.Check()) {
 		return;
+	}
+
+	if (IsClient() && CastToClient()->GetAttackMode() == Client::AttackMode::RANGED) {
+		switch (animation_id) {
+			case anim1HPiercing:
+			case anim1HWeapon:
+			case anim2HWeapon:
+			case anim2HSlashing:
+				CastToClient()->SendTextureWC(EQ::textures::TextureSlot::weaponPrimary, GetWeaponMaterial( CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary)));
+				break;
+			default:
+				CastToClient()->SetWeaponAppearance();
+		};
 	}
 
 	static EQApplicationPacket p(OP_Animation, sizeof(Animation_Struct));

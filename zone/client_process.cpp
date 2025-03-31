@@ -387,7 +387,8 @@ bool Client::Process() {
 			}
 		}
 
-		if (AutoFireEnabled() && may_use_attacks) {
+		if ((AutoFireEnabled() || (AutoAttackEnabled() && GetAttackMode() == AttackMode::RANGED)) && may_use_attacks) {
+			SetWeaponAppearance();
 			if (GetTarget() == this) {
 				MessageString(Chat::TooFarAway, TRY_ATTACKING_SOMEONE);
 				auto_fire = false;
@@ -446,7 +447,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (auto_attack && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
+		if ((auto_attack && GetAttackMode() == AttackMode::MELEE) && auto_attack_target != nullptr && may_use_attacks && attack_timer.Check()) {
 			//check if change
 			//only check on primary attack.. sorry offhand you gotta wait!
 			if (aa_los_them_mob) {
@@ -479,7 +480,8 @@ bool Client::Process() {
 			}
 
 			if (!CombatRange(auto_attack_target)) {
-				MessageString(Chat::TooFarAway, TARGET_TOO_FAR);
+				//MessageString(Chat::TooFarAway, TARGET_TOO_FAR);
+				Message(Chat::TooFarAway, "Your target is too far away, get closer!");
 			}
 			else if (auto_attack_target == this) {
 				MessageString(Chat::TooFarAway, TRY_ATTACKING_SOMEONE);
@@ -516,7 +518,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (auto_attack && may_use_attacks && auto_attack_target != nullptr
+		if ((auto_attack && GetAttackMode() == AttackMode::MELEE) && may_use_attacks && auto_attack_target != nullptr
 			&& CanThisClassDualWield() && attack_dw_timer.Check())
 		{
 			// Range check
@@ -598,7 +600,14 @@ bool Client::Process() {
 
 			if (m_initial_wc.Check(false)) {
 				SendArmorAppearance();
-				SetWeaponAppearance(GetAttackMode() == AttackMode::RANGED);
+				SetWeaponAppearance();
+
+				for (auto client : entity_list.GetClientList()) {
+					if (client.second->GetAttackMode() == AttackMode::RANGED) {
+						client.second->SetWeaponAppearance();
+					}
+				}
+
 				m_initial_wc.Disable();
 			}
 
