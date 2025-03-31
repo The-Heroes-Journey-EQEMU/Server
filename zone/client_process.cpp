@@ -358,7 +358,7 @@ bool Client::Process() {
 				- being stunned or mezzed
 				- having used a ranged weapon recently
 		*/
-		if (auto_attack || AutoFireEnabled()) {
+		if (AutoAttackEnabled() || AutoFireEnabled()) {
 			if (!IsAIControlled() && !dead
 				&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
 				&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled()
@@ -541,6 +541,15 @@ bool Client::Process() {
 					TryCombatProcs(wpn, auto_attack_target, EQ::invslot::slotSecondary);
 
 					DoAttackRounds(auto_attack_target, EQ::invslot::slotSecondary);
+				}
+			}
+		}
+
+		if ((AutoFireEnabled() || AutoAttackEnabled()) && auto_attack_target != nullptr && may_use_attacks && attack_autoskill_timer.Check()) {
+			for (const auto skill : GetAvailableAutoSkills()) {
+				if (GetAutoSkillStatus(skill)) {
+					SetEntityVariable("auto_skill", "enabled");
+					DoClassAttacks(auto_attack_target, skill, false);
 				}
 			}
 		}

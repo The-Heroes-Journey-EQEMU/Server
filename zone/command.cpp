@@ -94,6 +94,7 @@ int command_init(void)
 		command_add("attack", "[Entity Name] - Make your NPC target attack an entity by name", AccountStatus::GMLeadAdmin, command_attack) ||
 		command_add("attackmode", "Toggle Ranged and Melee Autoattack modes", AccountStatus::Player, command_attackmode) ||
 		command_add("augmentitem", "Force augments an item. Must have the augment item window open.", AccountStatus::GMImpossible, command_augmentitem) ||
+		command_add("autoskill", "Configure automatic combat skill usage.", AccountStatus::Player, command_autoskill) ||
 		command_add("award", "EoM", AccountStatus::GMAdmin, command_award) ||
 		command_add("soulmark", "Manipulate account flags", AccountStatus::GMAdmin, command_soulmark) ||
 		command_add("ban", "[Character Name] [Reason] - Ban by character name", AccountStatus::GMLeadAdmin, command_ban) ||
@@ -788,6 +789,7 @@ void command_bot(Client *c, const Seperator *sep)
 #include "gm_commands/attackmode.cpp"
 #include "gm_commands/award.cpp"
 #include "gm_commands/augmentitem.cpp"
+#include "gm_commands/autoskill.cpp"
 #include "gm_commands/ban.cpp"
 #include "gm_commands/bugs.cpp"
 #include "gm_commands/camerashake.cpp"
