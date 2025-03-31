@@ -968,6 +968,11 @@ public:
 	void SetHoTT(uint32 mobid);
 	void ShowSkillsWindow();
 
+	const bool GetAutoSkillStatus(EQ::skills::SkillType skill_id);
+	void SetAutoSkillStatus(EQ::skills::SkillType skill_id, bool enabled);
+	const std::vector<EQ::skills::SkillType> GetAutoSkillsList() const;
+	const std::vector<EQ::skills::SkillType> GetAvailableAutoSkills() const;
+
 	uint16 MaxSkill(EQ::skills::SkillType skill_id, uint16 class_id, uint8 level) const;
 	uint16 MaxSkillOriginal(EQ::skills::SkillType skill_id, uint16 class_id, uint16 level) const;
 	inline uint16 MaxSkill(EQ::skills::SkillType skill_id) const { return MaxSkill(skill_id, GetClass(), GetLevel()); }
@@ -2261,6 +2266,8 @@ private:
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary
 
 	std::vector<PetInfo> m_petinfomulti;
+
+	std::map<EQ::skills::SkillType, bool> m_autoskill;
 
 	InspectMessage_Struct m_inspect_message;
 	bool temp_pvp;

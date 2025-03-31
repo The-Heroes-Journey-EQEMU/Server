@@ -543,6 +543,15 @@ bool Client::Process() {
 			}
 		}
 
+		if (auto_attack && auto_attack_target != nullptr && may_use_attacks && attack_autoskill_timer.Check()) {
+			for (const auto skill : GetAvailableAutoSkills()) {
+				if (GetAutoSkillStatus(skill)) {
+					SetEntityVariable("auto_skill", "enabled");
+					DoClassAttacks(auto_attack_target, skill, false);
+				}
+			}
+		}
+
 		if (viral_timer.Check() && !dead) {
 			VirusEffectProcess();
 		}

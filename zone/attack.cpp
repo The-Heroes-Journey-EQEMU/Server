@@ -6931,6 +6931,8 @@ void Client::SetAttackTimer()
 	//an invalid weapon equipped:
 	attack_timer.SetAtTrigger(4000, true);
 
+	attack_autoskill_timer.SetAtTrigger(500, true);
+
 	Timer *TimerToUse = nullptr;
 
 	for (int i = EQ::invslot::slotRange; i <= EQ::invslot::slotSecondary; i++) {
