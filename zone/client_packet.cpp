@@ -11277,12 +11277,6 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 	Mob* mypet = GetActivePet();
 	Mob *target = entity_list.GetMob(pet->target);
 
-	if (pet->target == mypet->GetID()) {
-		return;
-	}
-
-	LogDebug("PetCommand: [{}], Target [{}], mypet_id [{}]", pet->command, pet->target, mypet->GetID());
-
 	if (!mypet || pet->command == PET_LEADER) {
 		if (pet->command == PET_LEADER) {
 			// we either send the ID of an NPC we're interested in or no ID for our own pet
@@ -11300,8 +11294,17 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 		return;
 	}
 
+	// This eats the commands that pet sends itself when it is spawned as pet, needed for multipet, probably neutral for other setups
+	LogDebug("PetCommand: [{}], Target [{}], mypet_id [{}]", pet->command, pet->target, mypet->GetID());
+	if (pet->target == mypet->GetID()) {
+		return;
+	}
+
 	if (mypet->GetPetType() == petTargetLock && (pet->command != PET_HEALTHREPORT && pet->command != PET_GETLOST))
 		return;
+
+	mypet->CastToNPC()->DoPetCommand(pet->command, target);
+	return;
 
 	// just let the command "/pet get lost" work for familiars
 	if (mypet->GetPetType() == petFamiliar && pet->command != PET_GETLOST)
@@ -11796,14 +11799,14 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 		}
 		break;
 	}
-
 	case PET_FEIGN: {
 		if (aabonuses.PetCommands[PetCommand] && mypet->IsNPC()) {
 			if (mypet->IsFeared())
 				break;
 
-			int pet_fd_chance = aabonuses.FeignedMinionChance;
-			if (zone->random.Int(0, 99) > pet_fd_chance) {
+			int pet_fd_chance = aabonuses.FeignedMinionChance + 100;
+			LogDebug("FeignedMinionChance: [{}]", pet_fd_chance);
+			if (!GetFeigned() && zone->random.Int(0, 99) > pet_fd_chance) {
 				mypet->SetFeigned(false);
 				entity_list.MessageCloseString(this, false, 200, 10, STRING_FEIGNFAILED, mypet->GetCleanName());
 			}

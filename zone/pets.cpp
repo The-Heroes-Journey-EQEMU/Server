@@ -952,13 +952,6 @@ bool Mob::RemovePet(uint16 pet_id) {
 
 				pet->SetOwnerID(0);  // Detach the pet from its owner
 				pet->SendAppearancePacket(AppearanceType::Pet, 0, true, true);
-				pet->SetPetType(petNone);
-				pet->SetHeld(false);
-				pet->SetGHeld(false);
-				pet->SetNoCast(false);
-				pet->SetFocused(false);
-				pet->SetPetStop(false);
-				pet->SetPetRegroup(false);
             }
             petids.erase(it);        // Remove the pet ID from the vector
 			ValidatePetList();

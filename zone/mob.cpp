@@ -663,6 +663,98 @@ void Mob::SetPetOrder(eStandingPetOrder i) {
 	pStandingPetOrder = i;
 }
 
+void Mob::SetPetStop(bool nState) {
+	if (IsPetOwnerClient())
+	{
+		Client* owner = GetOwner()->CastToClient();
+
+		if (GetID() == owner->focused_pet_id) {
+			owner->SetPetCommandState(PET_BUTTON_STOP, nState);
+		}
+	}
+
+	if (nState) {
+		StopNavigation();
+		SetTarget(nullptr);
+		SetPetRegroup(false);
+	}
+
+	pet_stop = nState;
+ }
+
+void Mob::SetPetRegroup(bool nState) {
+	if (IsPetOwnerClient())
+	{
+		Client* owner = GetOwner()->CastToClient();
+
+		if (GetID() == owner->focused_pet_id) {
+			owner->SetPetCommandState(PET_BUTTON_REGROUP, nState);
+		}
+	}
+
+	pet_regroup = nState;
+}
+
+void Mob::SetHeld(bool nState) {
+	if (IsPetOwnerClient())
+	{
+		Client* owner = GetOwner()->CastToClient();
+
+		if (GetID() == owner->focused_pet_id) {
+			owner->SetPetCommandState(PET_BUTTON_HOLD, nState);
+		}
+	}
+
+	if (nState) {
+		SetGHeld(false);
+	}
+
+	held = nState;
+}
+
+void Mob::SetGHeld(bool nState) {
+	if (IsPetOwnerClient())
+	{
+		Client* owner = GetOwner()->CastToClient();
+
+		if (GetID() == owner->focused_pet_id) {
+			owner->SetPetCommandState(PET_BUTTON_GHOLD, nState);
+		}
+	}
+
+	if (nState) {
+		SetHeld(false);
+	}
+
+	gheld = nState;
+}
+
+void Mob::SetNoCast(bool nState) {
+	if (IsPetOwnerClient())
+	{
+		Client* owner = GetOwner()->CastToClient();
+
+		if (GetID() == owner->focused_pet_id) {
+			owner->SetPetCommandState(PET_BUTTON_SPELLHOLD, nState);
+		}
+	}
+
+	nocast = nState;
+}
+
+void Mob::SetFocused(bool nState) {
+	if (IsPetOwnerClient())
+	{
+		Client* owner = GetOwner()->CastToClient();
+
+		if (GetID() == owner->focused_pet_id) {
+			owner->SetPetCommandState(PET_BUTTON_FOCUS, nState);
+		}
+	}
+
+	focused = nState;
+}
+
 void Mob::SetInvisible(uint8 state, bool set_on_bonus_calc) {
 	if (state == Invisibility::Visible) {
 		SendAppearancePacket(AppearanceType::Invisibility, Invisibility::Visible);

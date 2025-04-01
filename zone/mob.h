@@ -1260,17 +1260,17 @@ public:
 
 	void SetPetOrder(eStandingPetOrder i);
 	inline const eStandingPetOrder GetPetOrder() const { return pStandingPetOrder; }
-	inline void SetHeld(bool nState) { held = nState; }
+	void SetHeld(bool nState);
 	inline const bool IsHeld() const { return held; }
-	inline void SetGHeld(bool nState) { gheld = nState; }
+	void SetGHeld(bool nState);
 	inline const bool IsGHeld() const { return gheld; }
-	inline void SetNoCast(bool nState) { nocast = nState; }
+	void SetNoCast(bool nState);
 	inline const bool IsNoCast() const { return nocast; }
-	inline void SetFocused(bool nState) { focused = nState; }
+	void SetFocused(bool nState);
 	inline const bool IsFocused() const { return focused; }
-	inline void SetPetStop(bool nState) { pet_stop = nState; }
+	void SetPetStop(bool nState);
 	inline const bool IsPetStop() const { return pet_stop; }
-	inline void SetPetRegroup(bool nState) { pet_regroup = nState; }
+	void SetPetRegroup(bool nState);
 	inline const bool IsPetRegroup() const { return pet_regroup; }
 	inline const bool IsRoamer() const { return roamer; }
 	inline const int GetWanderType() const { return wandertype; }

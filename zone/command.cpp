@@ -191,6 +191,7 @@ int command_init(void)
 		command_add("parcels", "View and edit the parcel system.  Requires parcels to be enabled in rules.", AccountStatus::GMMgmt, command_parcels) ||
 		command_add("path", "view and edit pathing", AccountStatus::GMMgmt, command_path) ||
 		command_add("peqzone", "[Zone ID|Zone Short Name] - Teleports you to the specified zone if you meet the requirements.", AccountStatus::Player, command_peqzone) ||
+		command_add("petcmd", "Issue commands to specific pets", AccountStatus::Player, command_petcmd) ||
 		command_add("petitems", "View your pet's items if you have one", AccountStatus::ApprenticeGuide, command_petitems) ||
 		command_add("picklock", "Analog for ldon pick lock for the newer clients since we still don't have it working.", AccountStatus::Player, command_picklock) ||
 		command_add("profanity", "Manage censored language.", AccountStatus::GMLeadAdmin, command_profanity) ||
@@ -879,6 +880,7 @@ void command_bot(Client *c, const Seperator *sep)
 #include "gm_commands/parcels.cpp"
 #include "gm_commands/path.cpp"
 #include "gm_commands/peqzone.cpp"
+#include "gm_commands/petcmd.cpp"
 #include "gm_commands/petitems.cpp"
 #include "gm_commands/petname.cpp"
 #include "gm_commands/picklock.cpp"

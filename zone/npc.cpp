@@ -2344,6 +2344,446 @@ void NPC::PetOnSpawn(NewSpawn_Struct* ns)
 	}
 }
 
+void NPC::DoPetCommand(int pet_command_id, Mob* target) {
+	switch (pet_command_id) {
+		case PET_ATTACK:
+			DoPetCommandAttack(target, true);
+			break;
+		case PET_QATTACK:
+			DoPetCommandAttack(target, false);
+			break;
+		case PET_BACKOFF:
+			DoPetCommandBackOff();
+			break;
+		case PET_HEALTHREPORT:
+			DoPetCommandHealthReport();
+			break;
+		case PET_GETLOST:
+			DoPetCommandGetLost();
+			break;
+		case PET_GUARDHERE:
+			DoPetCommandGuardHere();
+			break;
+		case PET_FOLLOWME:
+			DoPetCommandFollowMe();
+			break;
+		case PET_TAUNT:
+			DoPetCommandTaunt(!IsTaunting());
+			break;
+		case PET_TAUNT_ON:
+			DoPetCommandTaunt(true);
+			break;
+		case PET_TAUNT_OFF:
+			DoPetCommandTaunt(false);
+			break;
+		case PET_GUARDME:
+			DoPetCommandGuardMe();
+			break;
+		case PET_SIT:
+			DoPetCommandSit(!GetPetOrder() == SPO_Sit);
+			break;
+		case PET_STANDUP:
+			DoPetCommandSit(false);
+			break;
+		case PET_SITDOWN:
+			DoPetCommandSit(true);
+			break;
+		case PET_HOLD:
+			DoPetCommandHold(!IsHeld());
+			break;
+		case PET_HOLD_ON:
+			DoPetCommandHold(true);
+			break;
+		case PET_HOLD_OFF:
+			DoPetCommandHold(false);
+			break;
+		case PET_GHOLD:
+			DoPetCommandGHold(!IsGHeld());
+			break;
+		case PET_GHOLD_ON:
+			DoPetCommandGHold(true);
+			break;
+		case PET_GHOLD_OFF:
+			DoPetCommandGHold(false);
+			break;
+		case PET_SPELLHOLD:
+			DoPetCommandSpellhold(!IsNoCast());
+			break;
+		case PET_SPELLHOLD_ON:
+			DoPetCommandSpellhold(true);
+			break;
+		case PET_SPELLHOLD_OFF:
+			DoPetCommandSpellhold(false);
+			break;
+		case PET_FOCUS:
+			DoPetCommandFocus(!IsFocused());
+			break;
+		case PET_FOCUS_ON:
+			DoPetCommandFocus(true);
+			break;
+		case PET_FOCUS_OFF:
+			DoPetCommandFocus(false);
+			break;
+		case PET_FEIGN:
+			DoPetCommandFeign();
+			break;
+		case PET_STOP:
+			DoPetCommandStop(!IsPetStop());
+			break;
+		case PET_STOP_ON:
+			DoPetCommandStop(true);
+			break;
+		case PET_STOP_OFF:
+			DoPetCommandStop(false);
+			break;
+		case PET_REGROUP:
+			DoPetCommandRegroup(!IsPetRegroup());
+			break;
+		case PET_REGROUP_ON:
+			DoPetCommandRegroup(true);
+			break;
+		case PET_REGROUP_OFF:
+			DoPetCommandRegroup(false);
+			break;
+	}
+}
+
+Client* NPC::DoPetCommandChecks(int pet_command_id) {
+	if (!IsPet() || IsFeared()) {
+		return nullptr; // prevent pets from following orders while feared
+	}
+
+	if (!GetOwner() || !GetOwner()->IsClient()) {
+		return nullptr;
+	}
+
+	if (GetPetType() == petAnimation && !aabonuses.PetCommands[pet_command_id]) {
+		return nullptr;
+	}
+
+	if (GetPetType() == petFamiliar) {
+		return nullptr;
+	}
+
+	return GetOwner()->CastToClient();
+}
+
+void NPC::DoPetCommandAttack(Mob* target, bool force) {
+	if (!target) { return; }
+
+	Client* owner = DoPetCommandChecks(force ? PET_ATTACK : PET_QATTACK);
+
+	if (!owner) { return; }
+
+	if (RuleB(Pets, PetsRequireLoS) && !DoLosChecks(target)) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'I beg forgiveness, Master. That is not a legal target.", GetCleanName()).c_str());
+		return;
+	}
+
+	if (!IsAttackAllowed(target)) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'I beg forgiveness, Master. That is not a legal target.", GetCleanName()).c_str());
+		return;
+	}
+
+	if (DistanceSquared(GetPosition(), target->GetPosition()) >= RuleR(Aggro, PetAttackRange)) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'I beg forgiveness, Master. That target is too far away.", GetCleanName()).c_str());
+		return;
+	}
+
+	if (target->IsMezzed()) {
+		owner->MessageString(Chat::PetResponse, CANNOT_WAKE, GetCleanName(), target->GetCleanName());
+		return;
+	}
+
+	SetFeigned(false);
+	SetPetStop(false);
+	SetPetRegroup(false);
+
+	if (owner->focused_pet_id == GetID()) {
+		owner->SetPetCommandState(PET_BUTTON_SIT, 0);
+	}
+
+	if (GetPetOrder() == SPO_Sit || GetPetOrder() == SPO_FeignDeath) {
+		SetPetOrder(GetPreviousPetOrder());
+		SetAppearance(eaStanding);
+	}
+
+	zone->AddAggroMob();
+	int hate = 1;
+
+	if (IsEngaged() && force) {
+		auto top = GetHateMost();
+		if (top && top != target) {
+			hate += GetHateAmount(top) - GetHateAmount(target) + 1000;
+		}
+	}
+
+	AddToHateList(target, hate, hate, true, false, false, SPELL_UNKNOWN, true);
+	owner->MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
+	SetTarget(target);
+
+	return;
+}
+
+void NPC::DoPetCommandBackOff() {
+
+	Client* owner = DoPetCommandChecks(PET_BACKOFF);
+	if (!owner) { return; }
+
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'As you command, Master, calming down.", GetCleanName()).c_str());
+
+	WipeHateList();
+	SetTarget(nullptr);
+	SetPetStop(false);
+	return;
+}
+
+void NPC::DoPetCommandHealthReport() {
+    Client* owner = DoPetCommandChecks(PET_HEALTHREPORT);
+    if (!owner) { return; }
+
+    owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'I have {} percent of my hot points left, Master. Here is what I have equipped...", GetCleanName(), GetHPRatio()).c_str());
+
+    for (int i = EQ::invslot::EQUIPMENT_BEGIN; i <= EQ::invslot::EQUIPMENT_END; i++) {
+        const EQ::ItemInstance *inst_main = nullptr;
+        const EQ::ItemData     *item_data = nullptr;
+
+        EQ::SayLinkEngine linker;
+        linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+
+        inst_main = GetInvPublic().GetItem(i);
+
+        if (inst_main) {
+            item_data = inst_main->GetItem();
+            linker.SetItemInst(inst_main);
+        } else {
+            item_data = nullptr;
+        }
+
+        // Only display slots that have items and aren't special slots
+        if (item_data && i != EQ::invslot::slotCharm && i != EQ::invslot::slotPowerSource && i != EQ::invslot::slotAmmo) {
+            // Get the slot name
+            std::string slot_name = EQ::invslot::GetInvPossessionsSlotName(i);
+
+            // Format as [Item Name] (Slot)
+            std::string output = fmt::format("[{}] ({})",
+                linker.GenerateLink(),
+                slot_name);
+
+            owner->Message(
+                Chat::PetResponse, output.c_str()
+            );
+        }
+    }
+}
+
+void NPC::DoPetCommandGetLost() {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	if (Charmed() || GetPetType() == petCharmed) { return; }
+
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'As you wish, oh great one.", GetCleanName()).c_str());
+	owner->RemovePet(this);
+
+	Depop();
+}
+
+void NPC::DoPetCommandGuardHere() {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetFeigned(false);
+	SetAppearance(eaStanding);
+	SetPetOrder(SPO_Guard);
+	SetPetStop(false);
+	SaveGuardSpot(GetPosition());
+
+	if (!GetTarget()) {
+		StopNavigation();
+	}
+
+	if (owner->focused_pet_id == GetID()) {
+		owner->SetPetCommandState(PET_BUTTON_SIT, 0);
+	}
+
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Guarding this spot with my life, splendid one.", GetCleanName()).c_str());
+}
+
+void NPC::DoPetCommandFollowMe() {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetFeigned(false);
+	SetPetOrder(SPO_Follow);
+	SetAppearance(eaStanding);
+	SetPetStop(false);
+
+	if (owner->focused_pet_id == GetID()) {
+		owner->SetPetCommandState(PET_BUTTON_SIT, 0);
+	}
+
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Following you, Master.", GetCleanName()).c_str());
+}
+
+void NPC::DoPetCommandTaunt(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetTaunting(enabled);
+
+	if (IsTaunting()) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Taunting attackers as ordered, Master.", GetCleanName()).c_str());
+	} else {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'No longer taunting attackers, Master.", GetCleanName()).c_str());
+	}
+}
+
+void NPC::DoPetCommandGuardMe() {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetFeigned(false);
+	SetPetStop(false);
+	SetAppearance(eaStanding);
+	SetPetOrder(SPO_Follow);
+
+	DoPetCommandHold(false);
+	DoPetCommandGHold(false);
+	DoPetCommandTaunt(true);
+
+	if (owner->focused_pet_id == GetID()) {
+		owner->SetPetCommandState(PET_BUTTON_SIT, 0);
+	}
+
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Guarding you, Master.", GetCleanName()).c_str());
+}
+
+void NPC::DoPetCommandSit(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetFeigned(false);
+
+	owner->SetPetCommandState(PET_BUTTON_SIT, enabled);
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Changing position, Master.", GetCleanName()).c_str());
+
+	if (enabled) {
+		SetPetOrder(SPO_Sit);
+		SetRunAnimSpeed(0);
+		InterruptSpell();
+		SetAppearance(eaSitting);
+	} else {
+		SetPetOrder(GetPreviousPetOrder());
+		SetAppearance(eaStanding);
+	}
+}
+
+void NPC::DoPetCommandHold(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetHeld(enabled);
+
+	if (enabled) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Waiting for your order to attack, Master.", GetCleanName()).c_str());
+	} else {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Attacking at will, Master.", GetCleanName()).c_str());
+	}
+}
+
+void NPC::DoPetCommandGHold(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetGHeld(enabled);
+
+	if (enabled) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Waiting for your order to attack any new targets, Master.", GetCleanName()).c_str());
+	} else {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Attacking at will, Master.", GetCleanName()).c_str());
+	}
+}
+
+void NPC::DoPetCommandSpellhold(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetNoCast(enabled);
+
+	if (enabled) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'No longer casting spells, Master.", GetCleanName()).c_str());
+	} else {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Casting spells at will, Master.", GetCleanName()).c_str());
+	}
+}
+
+void NPC::DoPetCommandFocus(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetFocused(enabled);
+
+	if (enabled) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Focusing on a single target, Master.", GetCleanName()).c_str());
+	} else {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'No longer focusing on a single target, Master.", GetCleanName()).c_str());
+	}
+}
+
+void NPC::DoPetCommandFeign() {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Playing dead, Master.", GetCleanName()).c_str());
+
+	int pet_fd_chance = aabonuses.FeignedMinionChance + 25;
+	LogDebug("FeignedMinionChance: [{}]", pet_fd_chance);
+	if (!GetFeigned() && zone->random.Int(0, 99) > pet_fd_chance) {
+		SetFeigned(false);
+		entity_list.MessageCloseString(this, false, 200, 10, STRING_FEIGNFAILED, GetCleanName());
+	} else {
+		bool has_aggro_immunity = GetSpecialAbility(SpecialAbility::AggroImmunity);
+		SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
+		WipeHateList();
+		SetPetOrder(SPO_FeignDeath);
+		SetRunAnimSpeed(0);
+		StopNavigation();
+		SetAppearance(eaDead);
+		SetFeigned(true);
+		SetTarget(nullptr);
+		InterruptSpell();
+
+		if (!has_aggro_immunity) {
+			SetSpecialAbility(SpecialAbility::AggroImmunity, 0);
+		}
+	}
+}
+
+void NPC::DoPetCommandStop(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetPetStop(enabled);
+
+	if (enabled) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'As you wish, oh great one.", GetCleanName()).c_str());
+	}
+}
+
+void NPC::DoPetCommandRegroup(bool enabled) {
+	Client* owner = DoPetCommandChecks(PET_GETLOST);
+	if (!owner) { return; }
+
+	SetPetRegroup(enabled);
+
+	if (enabled) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Regrouping with you, oh great one.", GetCleanName()).c_str());
+	} else {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'No longer regrouping with you, oh great one.", GetCleanName()).c_str());
+	}
+}
+
 void NPC::SetLevel(uint8 in_level, bool command)
 {
 	if(in_level > level)

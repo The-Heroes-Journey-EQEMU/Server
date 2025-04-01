@@ -290,7 +290,27 @@ public:
 	void	SetSwarmTarget(int target_id = 0);
 	void	DepopSwarmPets();
 	void	TryDepopTargetLockedPets(Mob* current_target);
-	void PetOnSpawn(NewSpawn_Struct *ns);
+	void 	PetOnSpawn(NewSpawn_Struct *ns);
+
+	void    DoPetCommand(int pet_command_id, Mob* target = nullptr);
+	Client* DoPetCommandChecks(int pet_command_id);
+	void    DoPetCommandHealthReport();
+	void    DoPetCommandLeaderReport();
+	void    DoPetCommandAttack(Mob* target, bool force = false);
+	void    DoPetCommandFollowMe();
+	void    DoPetCommandGuardHere();
+	void    DoPetCommandSit(bool enabled);
+	void    DoPetCommandStop(bool enabled);
+	void    DoPetCommandTaunt(bool enabled);
+	void    DoPetCommandHold(bool enabled);
+	void    DoPetCommandGHold(bool enabled);
+	void    DoPetCommandSpellhold(bool enabled);
+	void    DoPetCommandFocus(bool enabled);
+	void    DoPetCommandFeign();
+	void    DoPetCommandBackOff();
+	void    DoPetCommandGetLost();
+	void    DoPetCommandGuardMe();
+	void    DoPetCommandRegroup(bool enabled);
 
 	void	SignalNPC(int _signal_id);
 	void	SendPayload(int payload_id, std::string payload_value = std::string());
