@@ -717,19 +717,6 @@ void Mob::ConfigurePetWindow(Mob* selected_pet) {
 
 		focused_pet_id = pet_npc->GetID();
 
-		// Handle SPO? Maybe just Follow\Guard
-		switch (pet_npc->GetPetOrder()) {
-			case SPO_Follow:
-				pet_npc->SetEntityVariable("IgnoreNextFollowCommand", "true");
-				break;
-			case SPO_Guard:
-				pet_npc->SetEntityVariable("IgnoreNextGuardCommand", "true");
-				break;
-			case SPO_Sit:
-				pet_npc->SetEntityVariable("IgnoreNextSitCommand", "true");
-				break;
-		}
-
 		pet_npc->CreateDespawnPacket(outapp, false);
 		pet_npc->CreateSpawnPacket(outapp2, this);
 
@@ -740,46 +727,23 @@ void Mob::ConfigurePetWindow(Mob* selected_pet) {
 
 		for (auto pet_iter : GetAllPets()) {
 			if (pet_iter->GetID() != pet_npc->GetID()) {
-				switch (pet_npc->GetPetOrder()) {
-					case SPO_Follow:
-						pet_iter->SetEntityVariable("IgnoreNextFollowCommand", "true");
-						break;
-					case SPO_Guard:
-						pet_iter->SetEntityVariable("IgnoreNextGuardCommand", "true");
-						break;
-					case SPO_Sit:
-						pet_iter->SetEntityVariable("IgnoreNextSitCommand", "true");
-						break;
-				}
 				pet_iter->SendAppearancePacket(AppearanceType::Pet, GetID(), true, true);
 			}
 		}
 		if (GetTarget() && GetTarget()->GetID() == pet_npc->GetID()) { pet_npc->SendBuffsToClient(this_client); }
+
 		pet_npc->SendPetBuffsToClient();
 
-		if (pet_npc->IsHeld()) { pet_npc->SetEntityVariable("IgnoreNextHoldCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_HOLD, pet_npc->IsHeld());
-
-		if (pet_npc->IsTaunting()) { pet_npc->SetEntityVariable("IgnoreNextTauntCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_TAUNT, pet_npc->IsTaunting());
-
-		if (pet_npc->IsGHeld()) { pet_npc->SetEntityVariable("IgnoreNextGHoldCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_GHOLD, pet_npc->IsGHeld());
-
-		if (pet_npc->IsFocused()) { pet_npc->SetEntityVariable("IgnoreNextFocusCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_FOCUS, pet_npc->IsFocused());
-
-		if (pet_npc->IsNoCast()) { pet_npc->SetEntityVariable("IgnoreNextSpellholdCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_SPELLHOLD, pet_npc->IsNoCast());
-
-		if (pet_npc->GetPetOrder() == SPO_Follow) { pet_npc->SetEntityVariable("IgnoreNextFollowCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_FOLLOW, pet_npc->GetPetOrder() == SPO_Follow);
-
-		if (pet_npc->GetPetOrder() == SPO_Guard) { pet_npc->SetEntityVariable("IgnoreNextGuardCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_GUARD, pet_npc->GetPetOrder() == SPO_Guard);
-
-		if (pet_npc->GetPetOrder() == SPO_Sit) { pet_npc->SetEntityVariable("IgnoreNextSitCommand", "true"); }
-		this_client->SetPetCommandState(PET_BUTTON_SIT, pet_npc->GetPetOrder() == SPO_Sit);
+		this_client->SetPetCommandState(PET_BUTTON_SIT, 		pet_npc->GetPetOrder() == SPO_Sit);
+		this_client->SetPetCommandState(PET_BUTTON_STOP, 		pet_npc->IsPetStop());
+		this_client->SetPetCommandState(PET_BUTTON_REGROUP, 	pet_npc->IsPetRegroup());
+		this_client->SetPetCommandState(PET_BUTTON_FOLLOW, 		pet_npc->GetPetOrder() == SPO_Follow);
+		this_client->SetPetCommandState(PET_BUTTON_GUARD, 		pet_npc->GetPetOrder() == SPO_Guard);
+		this_client->SetPetCommandState(PET_BUTTON_TAUNT,		pet_npc->IsTaunting());
+		this_client->SetPetCommandState(PET_BUTTON_HOLD,		pet_npc->IsHeld());
+		this_client->SetPetCommandState(PET_BUTTON_GHOLD,		pet_npc->IsGHeld());
+		this_client->SetPetCommandState(PET_BUTTON_FOCUS,		pet_npc->IsFocused());
+		this_client->SetPetCommandState(PET_BUTTON_SPELLHOLD,	pet_npc->IsNoCast());
 
 		safe_delete(outapp);
 		safe_delete(outapp2);
@@ -894,6 +858,27 @@ Mob* Mob::GetPet(uint8 idx) {
     }
 
     return m;  // Return the Mob instance of the pet if all checks pass
+}
+
+Mob* Mob::GetActivePet()
+{
+	if (!IsClient()) {
+		return GetPet();
+	}
+
+	Client* c = CastToClient();
+
+	if (!c->focused_pet_id) {
+		ConfigurePetWindow(GetPet());
+	}
+
+	for (auto pet : GetAllPets()) {
+		if (pet->GetID() == focused_pet_id) {
+			return pet;
+		}
+	}
+
+	return GetPet();
 }
 
 std::vector<Mob*> Mob::GetAllPets() {
