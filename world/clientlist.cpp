@@ -1970,8 +1970,6 @@ void ClientList::AddToZoneServerCaches(ClientListEntry* cle)
 		return;
 	}
 
-	std::cout << "Adding to zone server caches for " << cle->name() << std::endl;
-
 	uint32_t server_id = cle->Server()->GetID();
 
 	// Add GM zone server if applicable
