@@ -4324,7 +4324,7 @@ void ZoneDatabase::LoadCharacterTitleSets(Client* c)
 
 void ZoneDatabase::SaveCharacterTitleSets(Client* c)
 {
-	if (!zone || !c) {
+	if (!zone || !c || c->GetTitles().empty()) {
 		return;
 	}
 
