@@ -2358,10 +2358,6 @@ void Client::BuyerItemSearch(const EQApplicationPacket *app)
 			continue;
 		}
 
-		if (RuleB(Character, EnableDiscoveredItems) && !IsDiscovered(item->ID)) {
-			continue;
-		}
-
 		auto item_name_match = std::strstr(
 			Strings::ToLower(item->Name).c_str(),
 			Strings::ToLower(bis->search_string).c_str()
