@@ -48,12 +48,7 @@ void EQ::Net::DaybreakConnectionManager::Attach(uv_loop_t *loop)
 			DaybreakConnectionManager *c = (DaybreakConnectionManager*)handle->data;
 			c->UpdateDataBudget();
 			c->Process();
-			auto now = Clock::now();
-			if (std::chrono::duration_cast<std::chrono::milliseconds>(now - c->m_last_resend_check).count() > c->m_resend_check_interval) {
-				c->ProcessResend();
-				c->m_last_resend_check = now;
-				return;
-			}
+			c->ProcessResend();
 		}, update_rate, update_rate);
 
 		uv_udp_init(loop, &m_socket);
