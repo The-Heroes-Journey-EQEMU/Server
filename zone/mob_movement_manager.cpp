@@ -871,6 +871,10 @@ void MobMovementManager::SendCommandToClients(
 				continue;
 			}
 
+			if (c->IsAFK()) {
+				continue;
+			}
+
 			_impl->Stats.TotalSent++;
 
 			if (anim != 0) {
@@ -908,6 +912,10 @@ void MobMovementManager::SendCommandToClients(
 			}
 
 			if (ignore_client && c == ignore_client) {
+				continue;
+			}
+
+			if (c->IsAFK()) {
 				continue;
 			}
 

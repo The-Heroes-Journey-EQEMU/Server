@@ -233,6 +233,7 @@ RULE_INT(Character, BandolierSwapDelay, 0, "Bandolier swap delay in milliseconds
 RULE_BOOL(Character, EnableQuestExperience, true, "Whether or not Quest experience is enabled.")
 RULE_BOOL(Character, EnableHackedFastCampForGM, false, "Enables hacked fast camp for GM clients, if the GM doesn't have a hacked client they'll camp like normal")
 RULE_BOOL(Character, AlwaysAllowNameChange, false, "Enable this option to allow /changename to work without enabling a name change via scripts.")
+RULE_INT(Character, SecondsBeforeAFK, 300, "Seconds before a player is considered AFK")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Mercs)
